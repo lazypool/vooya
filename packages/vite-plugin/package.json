@@ -1,0 +1,13 @@
+{
+  "name": "@voya/vite-plugin",
+  "version": "0.0.0",
+  "description": "Vite integration for Voya component islands.",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "peerDependencies": {
+    "vite": "^7.0.0"
+  }
+}

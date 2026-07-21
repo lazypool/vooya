@@ -7,6 +7,16 @@
   ],
   "scripts": {
     "build:core": "node scripts/build-core.mjs",
-    "demo:runtime": "npm run build:core && python3 -m http.server 4173"
+    "demo:runtime": "npm run build:core && python3 -m http.server 4173",
+    "dev:vue": "vite --config examples/vue-counter/vite.config.js",
+    "build:vue": "vite build --config examples/vue-counter/vite.config.js",
+    "typecheck": "vue-tsc --noEmit -p examples/vue-counter/tsconfig.json"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.0",
+    "typescript": "~5.5.4",
+    "vite": "^7.0.0",
+    "vue": "^3.5.0",
+    "vue-tsc": "^2.1.0"
   }
 }

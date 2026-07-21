@@ -1,6 +1,7 @@
 /target
 /node_modules
 /dist
+examples/*/dist
 /.vite
 /.playwright-cli
 packages/*/dist

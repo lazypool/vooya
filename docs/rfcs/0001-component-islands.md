@@ -61,6 +61,8 @@ individual DOM calls across the JS/WASM boundary as a performance strategy.
 
 - Rust component syntax and macro design.
 - DOM renderer architecture: retained tree versus direct incremental updates.
-- HMR state preservation semantics.
+- HMR state preservation semantics. The Stage 2 plugin rebuilds the Rust core
+  and requests a full page reload when Rust source changes; it does not claim
+  state preservation.
 - CSS scoping and asset loading.
 - A React adapter, to be reconsidered only after Stage 4.

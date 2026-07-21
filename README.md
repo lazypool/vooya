@@ -8,6 +8,25 @@ islands.
 The project is private and at the architecture-validation stage. The intended
 first integration target is Vue via Vite.
 
+## Vue runtime spike
+
+The `examples/vue-counter` application demonstrates the current host contract:
+
+```vue
+<script setup lang="ts">
+import Counter from "./Counter.voya";
+</script>
+
+<template>
+  <Counter :initial="1" @change="console.log" />
+</template>
+```
+
+Run it with `npm install` followed by `npm run dev:vue`. The Vite plugin builds
+the Rust core and turns `.voya` imports into Vue components. Rust source changes
+currently rebuild the core and reload the page; preserving island state across
+updates is explicitly deferred.
+
 ## Direction
 
 ```text
