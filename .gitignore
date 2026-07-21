@@ -1,0 +1,8 @@
+/target
+/node_modules
+/dist
+/.vite
+*.wasm
+*.wasm.d.ts
+*.tsbuildinfo
+.DS_Store
