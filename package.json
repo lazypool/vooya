@@ -1,0 +1,12 @@
+{
+  "name": "voya",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build:core": "node scripts/build-core.mjs",
+    "demo:runtime": "npm run build:core && python3 -m http.server 4173"
+  }
+}

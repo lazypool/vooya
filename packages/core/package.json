@@ -1,0 +1,16 @@
+{
+  "name": "@voya/core",
+  "version": "0.0.0",
+  "description": "Voya's browser WASM runtime.",
+  "type": "module",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/voya_core.js"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-core.mjs"
+  }
+}
