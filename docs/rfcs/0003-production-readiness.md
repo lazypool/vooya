@@ -19,6 +19,19 @@ The first alpha is a coordinated package set:
 All packages share one `0.0.x-alpha.y` version initially. Independently
 versioning adapters is deferred until the WASM ABI is explicitly stable.
 
+## Alpha distribution decision
+
+The first alpha uses **prebuilt component artifacts**. Rust components are built
+before application bundling and checked into, or otherwise supplied to, the
+application as WASM plus bindgen output. `@voya/core`, `@voya/vue`, and
+`@voya/react` are runtime packages and do not require a user's machine to have
+Cargo installed.
+
+The current Vite plugin remains a repository development tool. It is not part
+of the first installable alpha because its current compiler path is tied to the
+Voya checkout. A portable compiler distribution, including a Vite-integrated
+mode, is deferred until it can run against a consumer project's source tree.
+
 ## ABI rule
 
 The Rust export names, generated bindgen module shape, and adapter binding
