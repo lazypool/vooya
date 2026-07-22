@@ -11,8 +11,8 @@ export default defineConfig({
   plugins: [react(), voya({ framework: "react" })],
   resolve: {
     alias: {
-      "@voya/core": `${repositoryRoot}/packages/core`,
-      "@voya/react": `${repositoryRoot}/packages/react/src/index.tsx`,
+      "@voyajs/core": `${repositoryRoot}/packages/core`,
+      "@voyajs/react": `${repositoryRoot}/packages/react/src/index.tsx`,
     },
   },
 });

@@ -1,5 +1,5 @@
 {
-  "name": "@voya/vue",
+  "name": "@voyajs/vue",
   "version": "0.0.0",
   "description": "Vue host adapter for Voya component islands.",
   "type": "module",

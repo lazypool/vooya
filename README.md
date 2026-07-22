@@ -33,7 +33,7 @@ adapter. See [RFC 0002](docs/rfcs/0002-reactive-component-model.md) for the
 current component-model contract.
 
 `npm run dev:react` mounts the same Counter WASM island in React. The React
-adapter shares `@voya/core` and the Vite build pipeline with Vue; only the host
+adapter shares `@voyajs/core` and the Vite build pipeline with Vue; only the host
 lifecycle bridge changes.
 
 ## Direction

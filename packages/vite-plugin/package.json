@@ -1,5 +1,5 @@
 {
-  "name": "@voya/vite-plugin",
+  "name": "@voyajs/vite-plugin",
   "version": "0.0.0",
   "description": "Vite integration for Voya component islands.",
   "type": "module",

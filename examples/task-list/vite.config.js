@@ -11,8 +11,8 @@ export default defineConfig({
   plugins: [vue(), voya()],
   resolve: {
     alias: {
-      "@voya/core": `${repositoryRoot}/packages/core`,
-      "@voya/vue": `${repositoryRoot}/packages/vue/src/index.ts`,
+      "@voyajs/core": `${repositoryRoot}/packages/core`,
+      "@voyajs/vue": `${repositoryRoot}/packages/vue/src/index.ts`,
     },
   },
 });

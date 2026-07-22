@@ -1,5 +1,5 @@
 {
-  "name": "@voya/react",
+  "name": "@voyajs/react",
   "version": "0.0.0",
   "description": "React host adapter for Voya component islands.",
   "type": "module",
