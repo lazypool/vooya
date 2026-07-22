@@ -26,3 +26,6 @@ Continue Stage 4 only when the Voya implementation improves at least one
 user-visible interaction under the target workload without introducing an
 unacceptable first-load regression. The report must present both wins and
 regressions; a faster isolated compute loop is insufficient evidence.
+
+The first run and its decision are recorded in
+[the Stage 3 result](2026-07-data-grid.md).

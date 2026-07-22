@@ -5,6 +5,12 @@ use web_sys::{Element, Event, HtmlElement, HtmlInputElement};
 
 const ROW_HEIGHT: i32 = 28;
 const WINDOW_SIZE: usize = 24;
+const BENCHMARK_ROUNDS: usize = 20;
+const BENCHMARK_QUERIES: [&str; 20] = [
+    "item-000", "item-001", "item-010", "item-011", "item-020", "item-021", "item-030", "item-031",
+    "item-040", "item-041", "item-050", "item-051", "item-060", "item-061", "item-070", "item-071",
+    "item-080", "item-081", "item-090", "item-091",
+];
 
 struct Row {
     id: usize,
@@ -19,6 +25,7 @@ struct GridState {
     descending: bool,
     start: usize,
     selected: Option<usize>,
+    benchmark: Option<(f64, f64)>,
 }
 
 impl GridState {
@@ -38,6 +45,7 @@ impl GridState {
             descending: false,
             start: 0,
             selected: None,
+            benchmark: None,
         };
         state.refresh();
         state
@@ -106,6 +114,7 @@ pub fn mount_data_grid(host: Element, row_count: usize) -> Result<DataGridHandle
         <div class="voya-grid-toolbar">
           <input aria-label="Filter rows" data-voya-filter placeholder="Filter rows">
           <button data-voya-sort>Sort score</button>
+          <button data-voya-benchmark>Run filter benchmark</button>
           <output data-voya-summary></output>
         </div>
         <div class="voya-grid-viewport" data-voya-viewport>
@@ -153,6 +162,34 @@ pub fn mount_data_grid(host: Element, row_count: usize) -> Result<DataGridHandle
     });
     sort.add_event_listener_with_callback("click", sort_handler.as_ref().unchecked_ref())?;
 
+    let benchmark: HtmlElement = root
+        .query_selector("[data-voya-benchmark]")?
+        .ok_or_else(|| JsValue::from_str("Voya grid benchmark button is missing"))?
+        .dyn_into()?;
+    let benchmark_root = root.clone();
+    let benchmark_state = state.clone();
+    let benchmark_handler = Closure::new(move |_event: Event| {
+        let mut samples = Vec::with_capacity(BENCHMARK_ROUNDS);
+        for _ in 0..BENCHMARK_ROUNDS {
+            let started = js_sys::Date::now();
+            let mut state = benchmark_state.borrow_mut();
+            for query in BENCHMARK_QUERIES {
+                state.query = query.to_owned();
+                state.refresh();
+            }
+            samples.push(js_sys::Date::now() - started);
+        }
+        samples.sort_by(|left, right| left.total_cmp(right));
+        let mut state = benchmark_state.borrow_mut();
+        state.benchmark = Some((
+            samples[BENCHMARK_ROUNDS / 2],
+            samples[BENCHMARK_ROUNDS * 95 / 100],
+        ));
+        render(&benchmark_root, &state);
+    });
+    benchmark
+        .add_event_listener_with_callback("click", benchmark_handler.as_ref().unchecked_ref())?;
+
     let viewport: HtmlElement = root
         .query_selector("[data-voya-viewport]")?
         .ok_or_else(|| JsValue::from_str("Voya grid viewport is missing"))?
@@ -175,7 +212,12 @@ pub fn mount_data_grid(host: Element, row_count: usize) -> Result<DataGridHandle
     Ok(DataGridHandle {
         root,
         state,
-        _handlers: vec![input_handler, sort_handler, scroll_handler],
+        _handlers: vec![
+            input_handler,
+            sort_handler,
+            benchmark_handler,
+            scroll_handler,
+        ],
     })
 }
 
@@ -198,7 +240,13 @@ fn render(root: &Element, state: &GridState) {
         .collect::<String>();
 
     if let Ok(Some(summary)) = root.query_selector("[data-voya-summary]") {
-        summary.set_text_content(Some(&format!("{total} matching rows")));
+        let text = match state.benchmark {
+            Some((median, p95)) => format!(
+                "{total} matching | 20 filter/sort ops x{BENCHMARK_ROUNDS}: median {median:.1} ms, p95 {p95:.1} ms"
+            ),
+            None => format!("{total} matching rows"),
+        };
+        summary.set_text_content(Some(&text));
     }
     if let Ok(Some(spacer)) = root.query_selector("[data-voya-spacer]") {
         let _ = spacer.set_attribute("style", &format!("height: {}px", total as i32 * ROW_HEIGHT));

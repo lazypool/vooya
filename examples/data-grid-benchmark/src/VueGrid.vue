@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 
 const rows = Array.from({ length: 100_000 }, (_, id) => ({
   id,
@@ -9,6 +9,13 @@ const rows = Array.from({ length: 100_000 }, (_, id) => ({
 const query = ref("");
 const descending = ref(false);
 const start = ref(0);
+const benchmark = ref<{ median: number; p95: number }>();
+
+const queries = [
+  "item-000", "item-001", "item-010", "item-011", "item-020", "item-021", "item-030",
+  "item-031", "item-040", "item-041", "item-050", "item-051", "item-060", "item-061",
+  "item-070", "item-071", "item-080", "item-081", "item-090", "item-091",
+];
 
 const matching = computed(() => {
   const values = rows.filter((row) => row.name.includes(query.value));
@@ -20,6 +27,20 @@ const visible = computed(() => matching.value.slice(start.value, start.value + 2
 function onScroll(event: Event) {
   start.value = Math.floor((event.target as HTMLElement).scrollTop / 28);
 }
+
+async function runBenchmark() {
+  const samples: number[] = [];
+  for (let round = 0; round < 20; round += 1) {
+    const started = performance.now();
+    for (const value of queries) {
+      query.value = value;
+      await nextTick();
+    }
+    samples.push(performance.now() - started);
+  }
+  samples.sort((left, right) => left - right);
+  benchmark.value = { median: samples[10], p95: samples[19] };
+}
 </script>
 
 <template>
@@ -27,7 +48,14 @@ function onScroll(event: Event) {
     <div class="grid-toolbar">
       <input v-model="query" aria-label="Filter rows" placeholder="Filter rows">
       <button @click="descending = !descending">Sort score</button>
-      <output>{{ matching.length }} matching rows</output>
+      <button @click="runBenchmark">Run filter benchmark</button>
+      <output>
+        {{ matching.length }} matching
+        <template v-if="benchmark">
+          | 20 filter/sort ops x20: median {{ benchmark.median.toFixed(1) }} ms,
+          p95 {{ benchmark.p95.toFixed(1) }} ms
+        </template>
+      </output>
     </div>
     <div class="grid-viewport" @scroll="onScroll">
       <div class="grid-spacer" :style="{ height: `${matching.length * 28}px` }"></div>

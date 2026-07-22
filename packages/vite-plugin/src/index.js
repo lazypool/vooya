@@ -1,15 +1,13 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildCore, repositoryRoot } from "./build-core.mjs";
-
-const coreArtifact = resolve(repositoryRoot, "packages/core/dist/voya_core.js");
 
 export function voya() {
   return {
     name: "voya",
     enforce: "pre",
     buildStart() {
-      if (!existsSync(coreArtifact)) buildCore();
+      buildCore();
     },
     resolveId(source, importer) {
       if (!source.endsWith(".voya") || !importer) return null;
