@@ -24,6 +24,11 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
   return function VoyaCounter({ initial, onChange, className }: VoyaCounterProps) {
     const host = useRef<HTMLDivElement>(null);
     const handle = useRef<CounterHandle>();
+    const initialRef = useRef(initial);
+    const onChangeRef = useRef(onChange);
+
+    initialRef.current = initial;
+    onChangeRef.current = onChange;
 
     useEffect(() => {
       let active = true;
@@ -32,11 +37,11 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
 
       const receiveChange = (event: Event) => {
         const value = (event as CustomEvent<unknown>).detail;
-        if (typeof value === "number") onChange?.(value);
+        if (typeof value === "number") onChangeRef.current?.(value);
       };
       element.addEventListener("voya-change", receiveChange);
       void loadBindings().then((bindings) => {
-        if (active) handle.current = bindings.mount_counter(element, initial);
+        if (active) handle.current = bindings.mount_counter(element, initialRef.current);
       });
 
       return () => {
@@ -45,7 +50,7 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
         handle.current?.dispose();
         handle.current = undefined;
       };
-    }, [loadBindings, onChange]);
+    }, [loadBindings]);
 
     useEffect(() => {
       handle.current?.update_initial(initial);
