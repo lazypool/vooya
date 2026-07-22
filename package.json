@@ -16,10 +16,18 @@
     "typecheck:benchmark": "vue-tsc --noEmit -p examples/data-grid-benchmark/tsconfig.json",
     "dev:tasks": "vite --config examples/task-list/vite.config.js",
     "build:tasks": "vite build --config examples/task-list/vite.config.js",
-    "typecheck:tasks": "vue-tsc --noEmit -p examples/task-list/tsconfig.json"
+    "typecheck:tasks": "vue-tsc --noEmit -p examples/task-list/tsconfig.json",
+    "dev:react": "vite --config examples/react-counter/vite.config.js",
+    "build:react": "vite build --config examples/react-counter/vite.config.js",
+    "typecheck:react": "tsc --noEmit -p examples/react-counter/tsconfig.json"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "~5.5.4",
     "vite": "^7.0.0",
     "vue": "^3.5.0",

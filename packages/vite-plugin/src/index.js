@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildCore, repositoryRoot } from "./build-core.mjs";
 
-export function voya() {
+export function voya({ framework = "vue" } = {}) {
   return {
     name: "voya",
     enforce: "pre",
@@ -16,10 +16,14 @@ export function voya() {
     load(id) {
       if (!id.endsWith(".voya")) return null;
       const component = readFileSync(id, "utf8").trim();
+      const adapter = framework === "react" ? "@voya/react" : "@voya/vue";
       if (component === "data-grid") {
+        if (framework === "react") {
+          this.error("The Stage 5 React adapter currently supports counter islands only.");
+        }
         return `
           import init, { mount_data_grid } from "@voya/core";
-          import { defineVoyaDataGrid } from "@voya/vue";
+        import { defineVoyaDataGrid } from "${adapter}";
 
           let bindings;
           async function loadBindings() {
@@ -31,9 +35,12 @@ export function voya() {
         `;
       }
       if (component === "task-list") {
+        if (framework === "react") {
+          this.error("The Stage 5 React adapter currently supports counter islands only.");
+        }
         return `
           import init, { mount_task_list } from "@voya/core";
-          import { defineVoyaTaskList } from "@voya/vue";
+        import { defineVoyaTaskList } from "${adapter}";
 
           let bindings;
           async function loadBindings() {
@@ -49,7 +56,7 @@ export function voya() {
       }
       return `
         import init, { mount_counter } from "@voya/core";
-        import { defineVoyaCounter } from "@voya/vue";
+        import { defineVoyaCounter } from "${adapter}";
 
         let bindings;
         async function loadBindings() {
