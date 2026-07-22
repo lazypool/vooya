@@ -1,0 +1,42 @@
+# RFC 0002: Reactive Component Model MVP
+
+## Status
+
+Accepted for Stage 4.
+
+## Decision
+
+`voya-core` provides a single-threaded `Signal<T>` and explicit `Effect` API.
+Signals own a value and notify subscribed effects after `set` or `update`.
+Effects own rendering work. The first proof component, `TaskList`, uses three
+signals for tasks, filter selection, and validation errors; one effect renders
+the component's owned DOM subtree.
+
+```rust
+let tasks = signal(Vec::<Task>::new());
+let render = effect(move || render(tasks.get()));
+tasks.subscribe(render.clone());
+
+tasks.update(|items| items.push(task));
+```
+
+## Required behavior in this stage
+
+- State changes trigger subscribed effects synchronously.
+- Components render only inside their Voya-owned root.
+- Conditional branches are represented by ordinary state-dependent rendering.
+- Lists use stable task IDs as DOM keys and move/reuse keyed row roots.
+- User input validation is represented as a signal and rendered through an
+  accessible `role="alert"` node.
+
+## Non-goals
+
+- Dependency tracking inferred from calls to `get`.
+- Batched scheduling, async resources, cleanup callbacks, or concurrent render.
+- A public Rust macro, template parser, or JSX-like syntax.
+- Fine-grained child reconciliation below a keyed row root.
+- Automatic escaping policy beyond the component's use of structured DOM APIs.
+
+The Task List demonstrates that a manually authored Rust component can be
+meaningful before Voya commits to a source-level component DSL. A later macro
+must compile to this runtime contract rather than replace it.

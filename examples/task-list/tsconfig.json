@@ -1,0 +1,4 @@
+{
+  "extends": "../vue-counter/tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
+}

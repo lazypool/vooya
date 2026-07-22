@@ -13,7 +13,10 @@
     "typecheck": "vue-tsc --noEmit -p examples/vue-counter/tsconfig.json",
     "dev:benchmark": "vite --config examples/data-grid-benchmark/vite.config.js",
     "build:benchmark": "vite build --config examples/data-grid-benchmark/vite.config.js",
-    "typecheck:benchmark": "vue-tsc --noEmit -p examples/data-grid-benchmark/tsconfig.json"
+    "typecheck:benchmark": "vue-tsc --noEmit -p examples/data-grid-benchmark/tsconfig.json",
+    "dev:tasks": "vite --config examples/task-list/vite.config.js",
+    "build:tasks": "vite build --config examples/task-list/vite.config.js",
+    "typecheck:tasks": "vue-tsc --noEmit -p examples/task-list/tsconfig.json"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.0",

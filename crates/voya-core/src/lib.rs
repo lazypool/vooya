@@ -9,7 +9,11 @@ use wasm_bindgen::{JsCast, JsValue, closure::Closure, prelude::wasm_bindgen};
 use web_sys::{CustomEvent, CustomEventInit, Element, Event, HtmlElement};
 
 mod data_grid;
+mod reactive;
+mod task_list;
 pub use data_grid::{DataGridHandle, mount_data_grid};
+pub use reactive::{Effect, Signal, effect, signal};
+pub use task_list::{TaskListHandle, mount_task_list};
 
 #[wasm_bindgen]
 pub struct CounterHandle {

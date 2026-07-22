@@ -27,6 +27,11 @@ the Rust core and turns `.voya` imports into Vue components. Rust source changes
 currently rebuild the core and reload the page; preserving island state across
 updates is explicitly deferred.
 
+`npm run dev:tasks` runs the Stage 4 Task List example. It is authored in Rust
+with signals and effects, then mounted as a Vue component through the same
+adapter. See [RFC 0002](docs/rfcs/0002-reactive-component-model.md) for the
+current component-model contract.
+
 ## Direction
 
 ```text

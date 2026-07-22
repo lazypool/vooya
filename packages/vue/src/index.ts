@@ -32,6 +32,16 @@ export interface DataGridBindings {
 
 export type DataGridBindingsLoader = () => Promise<DataGridBindings>;
 
+export interface TaskListHandle {
+  dispose(): void;
+}
+
+export interface TaskListBindings {
+  mount_task_list(host: Element): TaskListHandle;
+}
+
+export type TaskListBindingsLoader = () => Promise<TaskListBindings>;
+
 /**
  * Adapts the first Voya WASM runtime spike to Vue's component contract.
  * Vue owns the host element; Voya owns everything mounted beneath it.
@@ -103,6 +113,32 @@ export function defineVoyaDataGrid(loadBindings: DataGridBindingsLoader) {
         const bindings = await loadBindings();
         if (!mounted || !host.value) return;
         handle = bindings.mount_data_grid(host.value, props.rows);
+      });
+
+      onBeforeUnmount(() => {
+        mounted = false;
+        handle?.dispose();
+        handle = undefined;
+      });
+
+      return () => h("div", { ...attrs, ref: host, "data-voya-host": "" });
+    },
+  });
+}
+
+export function defineVoyaTaskList(loadBindings: TaskListBindingsLoader) {
+  return defineComponent({
+    name: "VoyaTaskList",
+    inheritAttrs: false,
+    setup(_, { attrs }) {
+      const host = ref<Element>();
+      let mounted = true;
+      let handle: TaskListHandle | undefined;
+
+      onMounted(async () => {
+        const bindings = await loadBindings();
+        if (!mounted || !host.value) return;
+        handle = bindings.mount_task_list(host.value);
       });
 
       onBeforeUnmount(() => {

@@ -30,6 +30,20 @@ export function voya() {
           export default defineVoyaDataGrid(loadBindings);
         `;
       }
+      if (component === "task-list") {
+        return `
+          import init, { mount_task_list } from "@voya/core";
+          import { defineVoyaTaskList } from "@voya/vue";
+
+          let bindings;
+          async function loadBindings() {
+            if (!bindings) bindings = init().then(() => ({ mount_task_list }));
+            return bindings;
+          }
+
+          export default defineVoyaTaskList(loadBindings);
+        `;
+      }
       if (component !== "counter") {
         this.error(`Unknown Voya component kind in ${id}: ${component}`);
       }
