@@ -14,21 +14,29 @@ export type CounterBindingsLoader = () => Promise<CounterBindings>;
 export interface VoyaCounterProps {
   initial: number;
   onChange?: (value: number) => void;
+  onError?: (error: VoyaMountError) => void;
   className?: string;
+}
+
+export interface VoyaMountError {
+  stage: "load" | "mount";
+  cause: unknown;
 }
 
 /**
  * React owns the host element while the loaded Voya component owns its subtree.
  */
 export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
-  return function VoyaCounter({ initial, onChange, className }: VoyaCounterProps) {
+  return function VoyaCounter({ initial, onChange, onError, className }: VoyaCounterProps) {
     const host = useRef<HTMLDivElement>(null);
     const handle = useRef<CounterHandle>();
     const initialRef = useRef(initial);
     const onChangeRef = useRef(onChange);
+    const onErrorRef = useRef(onError);
 
     initialRef.current = initial;
     onChangeRef.current = onChange;
+    onErrorRef.current = onError;
 
     useEffect(() => {
       let active = true;
@@ -40,9 +48,17 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
         if (typeof value === "number") onChangeRef.current?.(value);
       };
       element.addEventListener("voya-change", receiveChange);
-      void loadBindings().then((bindings) => {
-        if (active) handle.current = bindings.mount_counter(element, initialRef.current);
-      });
+      void loadBindings()
+        .then((bindings) => {
+          if (!active) return;
+          try {
+            handle.current = bindings.mount_counter(element, initialRef.current);
+          } catch (cause) {
+            element.removeEventListener("voya-change", receiveChange);
+            onErrorRef.current?.({ stage: "mount", cause });
+          }
+        })
+        .catch((cause) => onErrorRef.current?.({ stage: "load", cause }));
 
       return () => {
         active = false;

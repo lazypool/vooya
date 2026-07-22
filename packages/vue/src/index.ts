@@ -19,6 +19,11 @@ export interface CounterBindings {
 
 export type CounterBindingsLoader = () => Promise<CounterBindings>;
 
+export interface VoyaMountError {
+  stage: "load" | "mount";
+  cause: unknown;
+}
+
 export interface DataGridHandle {
   update_filter(query: string): void;
   toggle_sort(): void;
@@ -58,6 +63,7 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
     },
     emits: {
       change: (value: number) => typeof value === "number",
+      error: (error: VoyaMountError) => error instanceof Object,
     },
     setup(props, { attrs, emit }) {
       const host = ref<Element>();
@@ -70,11 +76,20 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
       };
 
       onMounted(async () => {
-        const bindings = await loadBindings();
-        if (!mounted || !host.value) return;
+        try {
+          const bindings = await loadBindings();
+          if (!mounted || !host.value) return;
 
-        host.value.addEventListener("voya-change", onChange);
-        handle = bindings.mount_counter(host.value, props.initial);
+          host.value.addEventListener("voya-change", onChange);
+          try {
+            handle = bindings.mount_counter(host.value, props.initial);
+          } catch (cause) {
+            host.value.removeEventListener("voya-change", onChange);
+            emit("error", { stage: "mount", cause });
+          }
+        } catch (cause) {
+          emit("error", { stage: "load", cause });
+        }
       });
 
       watch(
