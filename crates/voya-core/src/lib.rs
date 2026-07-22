@@ -1,0 +1,88 @@
+//! The Voya runtime core.
+//!
+//! This first implementation deliberately exposes only an island boundary:
+//! mount a counter below a host element, update its input, and dispose it.
+
+use std::{cell::Cell, rc::Rc};
+
+use wasm_bindgen::{JsCast, JsValue, closure::Closure, prelude::wasm_bindgen};
+use web_sys::{CustomEvent, CustomEventInit, Element, Event, HtmlElement};
+
+mod data_grid;
+mod reactive;
+mod task_list;
+pub use data_grid::{DataGridHandle, mount_data_grid};
+pub use reactive::{Effect, Signal, effect, signal};
+pub use task_list::{TaskListHandle, mount_task_list};
+
+#[wasm_bindgen]
+pub struct CounterHandle {
+    root: Element,
+    count: Rc<Cell<i32>>,
+    // Retained for the lifetime of the island so its browser listener remains live.
+    _click_handler: Closure<dyn FnMut(Event)>,
+}
+
+#[wasm_bindgen]
+impl CounterHandle {
+    /// Updates the host-provided input without recreating the island.
+    pub fn update_initial(&self, initial: i32) {
+        render_count(&self.root, &self.count, initial);
+    }
+
+    /// Removes the Voya-owned subtree and releases the event listener.
+    pub fn dispose(&mut self) {
+        self.root.remove();
+    }
+}
+
+/// Mounts a small Voya-owned component into a host-framework-owned element.
+#[wasm_bindgen]
+pub fn mount_counter(host: Element, initial: i32) -> Result<CounterHandle, JsValue> {
+    let document = host
+        .owner_document()
+        .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;
+    let root = document.create_element("section")?;
+    root.set_class_name("voya-counter");
+    root.set_attribute("data-voya-island", "counter")?;
+
+    let label = document.create_element("output")?;
+    label.set_attribute("data-voya-count", "")?;
+    let button: HtmlElement = document.create_element("button")?.dyn_into()?;
+    button.set_text_content(Some("Increment"));
+
+    root.append_child(&label)?;
+    root.append_child(&button)?;
+    host.append_child(&root)?;
+
+    let count = Rc::new(Cell::new(initial));
+    render_count(&root, &count, initial);
+
+    let callback_root = root.clone();
+    let callback_count = count.clone();
+    let click_handler = Closure::new(move |_event: Event| {
+        let next = callback_count.get() + 1;
+        render_count(&callback_root, &callback_count, next);
+
+        let init = CustomEventInit::new();
+        init.set_bubbles(true);
+        init.set_detail(&JsValue::from_f64(f64::from(next)));
+        if let Ok(change) = CustomEvent::new_with_event_init_dict("voya-change", &init) {
+            let _ = callback_root.dispatch_event(&change);
+        }
+    });
+    button.add_event_listener_with_callback("click", click_handler.as_ref().unchecked_ref())?;
+
+    Ok(CounterHandle {
+        root,
+        count,
+        _click_handler: click_handler,
+    })
+}
+
+fn render_count(root: &Element, count: &Cell<i32>, value: i32) {
+    count.set(value);
+    if let Ok(Some(label)) = root.query_selector("[data-voya-count]") {
+        label.set_text_content(Some(&value.to_string()));
+    }
+}

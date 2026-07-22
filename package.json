@@ -1,0 +1,39 @@
+{
+  "name": "voya",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build:core": "node scripts/build-core.mjs",
+    "demo:runtime": "npm run build:core && python3 -m http.server 4173",
+    "dev:vue": "vite --config examples/vue-counter/vite.config.js",
+    "build:vue": "vite build --config examples/vue-counter/vite.config.js",
+    "typecheck": "vue-tsc --noEmit -p examples/vue-counter/tsconfig.json",
+    "dev:benchmark": "vite --config examples/data-grid-benchmark/vite.config.js",
+    "build:benchmark": "vite build --config examples/data-grid-benchmark/vite.config.js",
+    "typecheck:benchmark": "vue-tsc --noEmit -p examples/data-grid-benchmark/tsconfig.json",
+    "dev:tasks": "vite --config examples/task-list/vite.config.js",
+    "build:tasks": "vite build --config examples/task-list/vite.config.js",
+    "typecheck:tasks": "vue-tsc --noEmit -p examples/task-list/tsconfig.json",
+    "dev:react": "vite --config examples/react-counter/vite.config.js",
+    "build:react": "vite build --config examples/react-counter/vite.config.js",
+    "typecheck:react": "tsc --noEmit -p examples/react-counter/tsconfig.json",
+    "build:packages": "npm run build --workspace @voyajs/core && npm run build --workspace @voyajs/vue && npm run build --workspace @voyajs/react",
+    "pack:check": "npm run build:packages && npm pack --dry-run --workspace @voyajs/core && npm pack --dry-run --workspace @voyajs/vue && npm pack --dry-run --workspace @voyajs/react"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "~5.5.4",
+    "vite": "^7.0.0",
+    "vue": "^3.5.0",
+    "vue-tsc": "^2.1.0"
+  }
+}
