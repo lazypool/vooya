@@ -19,6 +19,19 @@ export interface CounterBindings {
 
 export type CounterBindingsLoader = () => Promise<CounterBindings>;
 
+export interface DataGridHandle {
+  update_filter(query: string): void;
+  toggle_sort(): void;
+  scroll_to(row: number): void;
+  dispose(): void;
+}
+
+export interface DataGridBindings {
+  mount_data_grid(host: Element, rows: number): DataGridHandle;
+}
+
+export type DataGridBindingsLoader = () => Promise<DataGridBindings>;
+
 /**
  * Adapts the first Voya WASM runtime spike to Vue's component contract.
  * Vue owns the host element; Voya owns everything mounted beneath it.
@@ -62,6 +75,38 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
       onBeforeUnmount(() => {
         mounted = false;
         host.value?.removeEventListener("voya-change", onChange);
+        handle?.dispose();
+        handle = undefined;
+      });
+
+      return () => h("div", { ...attrs, ref: host, "data-voya-host": "" });
+    },
+  });
+}
+
+export function defineVoyaDataGrid(loadBindings: DataGridBindingsLoader) {
+  return defineComponent({
+    name: "VoyaDataGrid",
+    inheritAttrs: false,
+    props: {
+      rows: {
+        type: Number as PropType<number>,
+        default: 100_000,
+      },
+    },
+    setup(props, { attrs }) {
+      const host = ref<Element>();
+      let mounted = true;
+      let handle: DataGridHandle | undefined;
+
+      onMounted(async () => {
+        const bindings = await loadBindings();
+        if (!mounted || !host.value) return;
+        handle = bindings.mount_data_grid(host.value, props.rows);
+      });
+
+      onBeforeUnmount(() => {
+        mounted = false;
         handle?.dispose();
         handle = undefined;
       });

@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildCore, repositoryRoot } from "./build-core.mjs";
 
@@ -17,6 +17,24 @@ export function voya() {
     },
     load(id) {
       if (!id.endsWith(".voya")) return null;
+      const component = readFileSync(id, "utf8").trim();
+      if (component === "data-grid") {
+        return `
+          import init, { mount_data_grid } from "@voya/core";
+          import { defineVoyaDataGrid } from "@voya/vue";
+
+          let bindings;
+          async function loadBindings() {
+            if (!bindings) bindings = init().then(() => ({ mount_data_grid }));
+            return bindings;
+          }
+
+          export default defineVoyaDataGrid(loadBindings);
+        `;
+      }
+      if (component !== "counter") {
+        this.error(`Unknown Voya component kind in ${id}: ${component}`);
+      }
       return `
         import init, { mount_counter } from "@voya/core";
         import { defineVoyaCounter } from "@voya/vue";
