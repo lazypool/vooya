@@ -19,15 +19,18 @@
     "typecheck:tasks": "vue-tsc --noEmit -p examples/task-list/tsconfig.json",
     "dev:react": "vite --config examples/react-counter/vite.config.js",
     "build:react": "vite build --config examples/react-counter/vite.config.js",
-    "typecheck:react": "tsc --noEmit -p examples/react-counter/tsconfig.json"
+    "typecheck:react": "tsc --noEmit -p examples/react-counter/tsconfig.json",
+    "build:packages": "npm run build --workspace @voya/core && npm run build --workspace @voya/vue && npm run build --workspace @voya/react",
+    "pack:check": "npm run build:packages && npm pack --dry-run --workspace @voya/core && npm pack --dry-run --workspace @voya/vue && npm pack --dry-run --workspace @voya/react"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "tsup": "^8.5.1",
     "typescript": "~5.5.4",
     "vite": "^7.0.0",
     "vue": "^3.5.0",

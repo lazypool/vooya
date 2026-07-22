@@ -4,8 +4,15 @@
   "description": "React host adapter for Voya component islands.",
   "type": "module",
   "private": true,
+  "files": ["dist"],
   "exports": {
-    ".": "./src/index.tsx"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.tsx --format esm --dts --external react --tsconfig tsconfig.json --clean"
   },
   "peerDependencies": {
     "react": "^19.0.0"

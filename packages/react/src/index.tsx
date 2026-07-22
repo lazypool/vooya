@@ -29,7 +29,7 @@ export interface VoyaMountError {
 export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
   return function VoyaCounter({ initial, onChange, onError, className }: VoyaCounterProps) {
     const host = useRef<HTMLDivElement>(null);
-    const handle = useRef<CounterHandle>();
+    const handle = useRef<CounterHandle | undefined>(undefined);
     const initialRef = useRef(initial);
     const onChangeRef = useRef(onChange);
     const onErrorRef = useRef(onError);
