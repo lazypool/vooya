@@ -131,8 +131,8 @@ foundation, not a template language or virtual DOM.
 
 ## Current Status
 
-Vooya is currently an architecture-validation prototype, not a published stable
-compiler.
+Vooya is currently a published alpha and an architecture-validation prototype,
+not a stable compiler.
 
 The repository now has:
 
@@ -157,9 +157,15 @@ The repository now has:
 
 Source `.voo` compilation still requires Cargo, the WASM Rust target, and the
 `wasm-bindgen` CLI on the author's machine. Non-trivial component code still
-needs some low-level `web_sys` DOM APIs. Vooya is not yet published or stable,
-and precompiled component packages that remove the Rust requirement for
-consumers remain future work.
+needs some low-level `web_sys` DOM APIs. The published packages can change
+between alpha versions, and precompiled component packages that remove the Rust
+requirement for consumers remain future work.
+
+## Documentation
+
+Start with the [documentation index](docs/README.md) for installation, component
+authoring, architecture, tooling, and an honest separation between current
+behavior and planned work.
 
 ## Development
 
