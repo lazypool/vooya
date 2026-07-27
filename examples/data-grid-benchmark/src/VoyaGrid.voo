@@ -90,7 +90,9 @@ impl Component {
     }
 }
 
-pub fn mount(host: Element, row_count: usize) -> Result<Component, JsValue> {
+pub fn mount(context: Context) -> Result<Component, JsValue> {
+    let host = context.host;
+    let row_count = context.props.rows;
     let document = host
         .owner_document()
         .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;

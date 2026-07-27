@@ -45,7 +45,8 @@ impl Component {
     }
 }
 
-pub fn mount(host: Element) -> Result<Component, JsValue> {
+pub fn mount(context: Context) -> Result<Component, JsValue> {
+    let host = context.host;
     let document = host
         .owner_document()
         .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;

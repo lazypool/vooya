@@ -5,12 +5,14 @@ import {
   generateRustComponents,
   generatedAdapterDefinition,
   generatedComponentBinding,
+  generatedComponentPrelude,
   generatedScopeId,
 } from "./voo-codegen.js";
 
 const counter = {
   name: "Counter",
   props: [{ name: "initial", rustType: "i32", required: true }],
+  events: [],
   rust: {
     content: "pub struct Component;\nimpl Component {\n    pub fn update_initial(&self, _: i32) {}\n    pub fn dispose(&mut self) {}\n}\npub fn mount(_: web_sys::Element, _: i32) -> Result<Component, wasm_bindgen::JsValue> { Ok(Component) }",
   },
@@ -20,14 +22,31 @@ test("generates a stable WASM component binding", () => {
   assert.deepEqual(generatedComponentBinding(counter), {
     exportName: "voo_counter_mount",
     handleName: "VooCounterHandle",
+    propsName: "VooCounterProps",
+    eventsName: "VooCounterEvents",
+    contextName: "VooCounterContext",
   });
 
   const generated = generateRustComponents([counter]);
   assert.match(generated, /mod voo_counter_component/);
   assert.match(generated, /pub struct VooCounterHandle\(voo_counter_component::Component\)/);
   assert.match(generated, /pub fn update_initial\(&self, value: i32\)/);
+  assert.match(generated, /pub struct VooCounterContext/);
   assert.match(generated, /pub fn voo_counter_mount\(/);
-  assert.match(generated, /voo_counter_component::mount\(host, initial\)/);
+  assert.match(generated, /voo_counter_component::mount\(context\)/);
+});
+
+test("generates typed event dispatch and a component source prelude", () => {
+  const component = {
+    ...counter,
+    events: [{ name: "change", parameters: [{ name: "value", rustType: "i32" }] }],
+  };
+  const generated = generateRustComponents([component]);
+
+  assert.equal(generatedComponentPrelude(component), "use super::VooCounterContext as Context;\n");
+  assert.match(generated, /pub fn change\(&self, value: i32\)/);
+  assert.match(generated, /JsValue::from_f64\(value as f64\)/);
+  assert.match(generated, /new_with_event_init_dict\("voya-change"/);
 });
 
 test("references extracted Rust sources for compiler diagnostics", () => {

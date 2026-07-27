@@ -73,7 +73,6 @@ events:
 
 <rust>
 use wasm_bindgen::JsValue;
-use web_sys::Element;
 
 pub struct Component {
     // Rust-owned state and browser resources
@@ -89,8 +88,12 @@ impl Component {
     }
 }
 
-pub fn mount(host: Element, initial: i32) -> Result<Component, JsValue> {
-    // Build the component below the framework-owned host.
+pub fn mount(context: Context) -> Result<Component, JsValue> {
+    let host = context.host;
+    let initial = context.props.initial;
+
+    // Event handlers can call context.events.change(next_value).
+    // Build the component below host and retain its browser resources.
     todo!()
 }
 </rust>
@@ -104,9 +107,11 @@ pub fn mount(host: Element, initial: i32) -> Result<Component, JsValue> {
 </style>
 ```
 
-The compiler turns `mount`, `update_<prop>`, and `dispose` into the public WASM
-ABI. Authors do not write `wasm_bindgen` exports, WASM initialization,
-Vue/React adapter factories, TypeScript declarations, or CSS scope attributes.
+The compiler generates the component's typed `Context`, `Props`, and `Events`,
+then turns `mount`, `update_<prop>`, and `dispose` into the public WASM ABI.
+Authors do not write `wasm_bindgen` exports, `CustomEvent` plumbing, WASM
+initialization, Vue/React adapter factories, TypeScript declarations, or CSS
+scope attributes.
 
 The lower-level Rust DOM implementation is temporary. A higher-level Voya view
 and event API is the next authoring milestone; it must compile to the same

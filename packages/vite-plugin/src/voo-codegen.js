@@ -19,7 +19,15 @@ export function generatedComponentBinding(component) {
   return {
     exportName: `voo_${stem}_mount`,
     handleName: `Voo${component.name}Handle`,
+    propsName: `Voo${component.name}Props`,
+    eventsName: `Voo${component.name}Events`,
+    contextName: `Voo${component.name}Context`,
   };
+}
+
+export function generatedComponentPrelude(component) {
+  const { contextName } = generatedComponentBinding(component);
+  return `use super::${contextName} as Context;\n`;
 }
 
 export function generatedAdapterDefinition(component) {
@@ -55,11 +63,11 @@ export function generatedScopeId(component) {
 function generateRustComponent(component, sourcePath) {
   const stem = rustStem(component.name);
   const moduleName = `voo_${stem}_component`;
-  const { exportName, handleName } = generatedComponentBinding(component);
+  const { exportName, handleName, propsName, eventsName, contextName } =
+    generatedComponentBinding(component);
   const mountParameters = component.props
     .map((prop) => `, ${prop.name}: ${prop.rustType}`)
     .join("");
-  const mountArguments = component.props.map((prop) => `, ${prop.name}`).join("");
   const updateMethods = component.props
     .map(
       (prop) => `
@@ -73,7 +81,46 @@ function generateRustComponent(component, sourcePath) {
     ? `#[path = ${JSON.stringify(sourcePath)}]\nmod ${moduleName};`
     : `mod ${moduleName} {\n${indent(component.rust.content, 4)}\n}`;
 
-  return `${module}
+  const propFields = component.props
+    .map((prop) => `    pub ${prop.name}: ${prop.rustType},`)
+    .join("\n");
+  const propValues = component.props.map((prop) => `        ${prop.name},`).join("\n");
+  const eventMethods = component.events.map(generateEventMethod).join("\n\n");
+  const eventsDefinition = eventMethods
+    ? `#[derive(Clone)]
+pub struct ${eventsName} {
+    target: web_sys::Element,
+}
+
+impl ${eventsName} {
+    fn new(target: web_sys::Element) -> Self {
+        Self { target }
+    }
+
+${eventMethods}
+}`
+    : `#[derive(Clone)]
+pub struct ${eventsName};
+
+impl ${eventsName} {
+    fn new(_target: web_sys::Element) -> Self {
+        Self
+    }
+}`;
+
+  return `pub struct ${propsName} {
+${propFields}
+}
+
+${eventsDefinition}
+
+pub struct ${contextName} {
+    pub host: web_sys::Element,
+    pub props: ${propsName},
+    pub events: ${eventsName},
+}
+
+${module}
 
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub struct ${handleName}(${moduleName}::Component);
@@ -90,8 +137,53 @@ impl ${handleName} {${updateMethods}
 pub fn ${exportName}(
     host: web_sys::Element${mountParameters}
 ) -> Result<${handleName}, wasm_bindgen::JsValue> {
-    ${moduleName}::mount(host${mountArguments}).map(${handleName})
+    let context = ${contextName} {
+        host: host.clone(),
+        props: ${propsName} {
+${propValues}
+        },
+        events: ${eventsName}::new(host),
+    };
+    ${moduleName}::mount(context).map(${handleName})
 }`;
+}
+
+function generateEventMethod(event) {
+  const methodName = rustStem(event.name);
+  const parameters = event.parameters
+    .map((parameter) => `${parameter.name}: ${parameter.rustType}`)
+    .join(", ");
+  const detail = generateEventDetail(event.parameters);
+  return `    pub fn ${methodName}(&self${parameters ? `, ${parameters}` : ""}) -> Result<(), wasm_bindgen::JsValue> {
+${indent(detail, 8)}
+        let init = web_sys::CustomEventInit::new();
+        init.set_bubbles(true);
+        init.set_detail(&detail);
+        let event = web_sys::CustomEvent::new_with_event_init_dict("voya-${event.name}", &init)?;
+        self.target.dispatch_event(&event)?;
+        Ok(())
+    }`;
+}
+
+function generateEventDetail(parameters) {
+  if (parameters.length === 0) return "let detail = wasm_bindgen::JsValue::UNDEFINED;";
+  if (parameters.length === 1) {
+    return `let detail = ${rustValueToJs(parameters[0].name, parameters[0].rustType)};`;
+  }
+  const pushes = parameters
+    .map(
+      (parameter) =>
+        `detail.push(&${rustValueToJs(parameter.name, parameter.rustType)});`,
+    )
+    .join("\n");
+  return `let detail = js_sys::Array::new();\n${pushes}\nlet detail: wasm_bindgen::JsValue = detail.into();`;
+}
+
+function rustValueToJs(name, rustType) {
+  const type = javascriptType(rustType);
+  if (type === "number") return `wasm_bindgen::JsValue::from_f64(${name} as f64)`;
+  if (type === "boolean") return `wasm_bindgen::JsValue::from_bool(${name})`;
+  return `wasm_bindgen::JsValue::from_str(&${name})`;
 }
 
 function rustStem(name) {

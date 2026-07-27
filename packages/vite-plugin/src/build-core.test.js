@@ -12,10 +12,15 @@ test("maps extracted Rust diagnostics back to the voo source", () => {
       rendered: `error: cannot find value\n --> ${generated}:4:9\n  |\n4 | missing\n  | ^^^^^^^\n`,
       spans: [{ file_name: generated, line_start: 4, column_start: 9 }],
     },
-    new Map([[generated, { id: "/project/src/Counter.voo", startLine: 10 }]]),
+    new Map([
+      [
+        generated,
+        { id: "/project/src/Counter.voo", startLine: 10, generatedLineOffset: 1 },
+      ],
+    ]),
   );
 
-  assert.match(diagnostic, /\/project\/src\/Counter\.voo:13:9/);
-  assert.match(diagnostic, /13 \| missing/);
+  assert.match(diagnostic, /\/project\/src\/Counter\.voo:12:9/);
+  assert.match(diagnostic, /12 \| missing/);
   assert.doesNotMatch(diagnostic, /0-Counter\.rs:4:9/);
 });

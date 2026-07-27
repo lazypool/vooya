@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
-import { generateRustComponents } from "./voo-codegen.js";
+import { generateRustComponents, generatedComponentPrelude } from "./voo-codegen.js";
 
 export const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
@@ -19,11 +19,13 @@ export function buildCore(root = repositoryRoot, components = []) {
   mkdirSync(sourceDir, { recursive: true });
   for (const [index, component] of components.entries()) {
     const sourcePath = resolve(sourceDir, `${index}-${component.name}.rs`);
-    writeIfChanged(sourcePath, `${component.rust.content}\n`);
+    const prelude = generatedComponentPrelude(component);
+    writeIfChanged(sourcePath, `${prelude}${component.rust.content}\n`);
     sourcePaths.set(component.id, sourcePath);
     diagnosticMappings.set(sourcePath, {
       id: component.id,
       startLine: component.rust.startLine,
+      generatedLineOffset: prelude.split(/\r?\n/).length - 1,
     });
   }
   writeIfChanged(
@@ -56,7 +58,8 @@ export function remapRustDiagnostic(message, mappings) {
     const sourcePath = resolve(span.file_name);
     const mapping = mappings.get(sourcePath);
     if (!mapping) continue;
-    const sourceLine = mapping.startLine + span.line_start - 1;
+    const sourceLine =
+      mapping.startLine + span.line_start - 1 - (mapping.generatedLineOffset ?? 0);
     rendered = rendered.replaceAll(
       `${span.file_name}:${span.line_start}:${span.column_start}`,
       `${mapping.id}:${sourceLine}:${span.column_start}`,

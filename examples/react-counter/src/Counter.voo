@@ -10,7 +10,7 @@ events:
 use std::{cell::Cell, rc::Rc};
 
 use wasm_bindgen::{JsCast, JsValue, closure::Closure};
-use web_sys::{CustomEvent, CustomEventInit, Element, Event, HtmlElement};
+use web_sys::{Element, Event, HtmlElement};
 
 pub struct Component {
     root: Element,
@@ -28,7 +28,10 @@ impl Component {
     }
 }
 
-pub fn mount(host: Element, initial: i32) -> Result<Component, JsValue> {
+pub fn mount(context: Context) -> Result<Component, JsValue> {
+    let host = context.host;
+    let initial = context.props.initial;
+    let events = context.events;
     let document = host
         .owner_document()
         .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;
@@ -54,12 +57,7 @@ pub fn mount(host: Element, initial: i32) -> Result<Component, JsValue> {
         let next = callback_count.get() + 1;
         render_count(&callback_root, &callback_count, next);
 
-        let init = CustomEventInit::new();
-        init.set_bubbles(true);
-        init.set_detail(&JsValue::from_f64(f64::from(next)));
-        if let Ok(change) = CustomEvent::new_with_event_init_dict("voya-change", &init) {
-            let _ = callback_root.dispatch_event(&change);
-        }
+        let _ = events.change(next);
     });
     button.add_event_listener_with_callback("click", click_handler.as_ref().unchecked_ref())?;
 
