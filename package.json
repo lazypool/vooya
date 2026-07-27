@@ -19,7 +19,7 @@
     "typecheck:tasks": "vue-tsc --noEmit -p examples/task-list/tsconfig.json",
     "dev:react": "vite --config examples/react-counter/vite.config.js",
     "build:react": "vite build --config examples/react-counter/vite.config.js",
-    "typecheck:react": "tsc --noEmit -p examples/react-counter/tsconfig.json",
+    "typecheck:react": "node packages/vite-plugin/src/generate-declarations.mjs examples/react-counter react && tsc --noEmit -p examples/react-counter/tsconfig.json",
     "test:voo": "npm test --workspace @voyajs/vite-plugin",
     "test:e2e": "playwright test",
     "build:packages": "npm run build --workspace @voyajs/core && npm run build --workspace @voyajs/vue && npm run build --workspace @voyajs/react",

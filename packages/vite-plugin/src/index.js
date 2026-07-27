@@ -36,14 +36,12 @@ export function voya({ framework = "vue" } = {}) {
       if (!id.endsWith(componentExtension)) return null;
       const component = parseVooComponent(readFileSync(id, "utf8"), id);
       if (component.format === "source") {
-        if (framework !== "vue") {
-          this.error(`Source components currently support Vue only: ${id}.`);
-        }
         const { exportName } = generatedComponentBinding(component);
         const definition = generatedAdapterDefinition(component);
+        const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";
         return `
           import init, { ${exportName} } from "@voyajs/core";
-          import { defineVoyaComponent } from "@voyajs/vue";
+          import { defineVoyaComponent } from "${adapter}";
 
           let bindings;
           async function loadBindings() {
