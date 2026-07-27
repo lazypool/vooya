@@ -10,10 +10,8 @@ use web_sys::{CustomEvent, CustomEventInit, Element, Event, HtmlElement};
 
 mod data_grid;
 mod reactive;
-mod task_list;
 pub use data_grid::{DataGridHandle, mount_data_grid};
 pub use reactive::{Effect, Signal, effect, signal};
-pub use task_list::{TaskListHandle, mount_task_list};
 
 include!(concat!(env!("OUT_DIR"), "/voya_generated.rs"));
 

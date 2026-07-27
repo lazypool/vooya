@@ -7,7 +7,7 @@ test("runs the Rust .voo component through the React lifecycle", async ({ page }
   });
   page.on("pageerror", (error) => browserErrors.push(error.message));
 
-  await page.goto("http://127.0.0.1:4175");
+  await page.goto("/");
 
   await expect(page.getByRole("status")).toHaveText("1");
   await page.getByRole("button", { name: "Increment" }).click();
