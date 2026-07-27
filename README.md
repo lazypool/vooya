@@ -227,8 +227,9 @@ npx voo-format --check src
 ## Versioning and alpha releases
 
 The four `@vooya` packages use one fixed version while the compiler ABI and
-framework adapters are evolving together. Changesets owns version changes and
-publishes prereleases under the `alpha` dist-tag:
+framework adapters are evolving together. Changesets owns version changes, and
+the release command synchronizes every published prerelease to the `alpha`
+dist-tag:
 
 ```sh
 npm run changeset
@@ -239,6 +240,8 @@ npm run release:alpha
 Independent adapter versions are deferred until the generated ABI is stable.
 Publishing remains an explicit maintainer action; the release command runs the
 full Rust, compiler, type, browser, portable-package, HMR, and tarball gates.
+Before the first stable release exists, npm may also expose the newest alpha as
+`latest`; consumers should install `@vooya/*@alpha` during the preview.
 
 ## Roadmap
 
