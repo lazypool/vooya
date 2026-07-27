@@ -22,7 +22,7 @@
     "format:voo": "node packages/vite-plugin/bin/voo-format.mjs examples tests/fixtures",
     "format:voo:check": "node packages/vite-plugin/bin/voo-format.mjs --check examples tests/fixtures",
     "verify:editor": "node scripts/verify-vscode-extension.mjs && npm run package:editor",
-    "package:editor": "mkdir -p dist && cd editors/vscode && vsce package --no-dependencies --out ../../dist/voya-vscode.vsix",
+    "package:editor": "mkdir -p dist && cd editors/vscode && vsce package --no-dependencies --out ../../dist/voo-vscode.vsix",
     "changeset": "changeset",
     "version:packages": "changeset version",
     "verify:versions": "node scripts/verify-package-versions.mjs",

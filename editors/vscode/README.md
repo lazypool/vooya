@@ -1,6 +1,6 @@
-# Voya for VS Code
+# Vooya for VS Code
 
-Language support for Voya `.voo` Rust components.
+Language support for Vooya `.voo` Rust components.
 
 The extension provides syntax highlighting for component contracts and legacy
 manifests, with native Rust and CSS highlighting inside `<rust>` and `<style>`
@@ -10,5 +10,5 @@ Build the extension from the Voya repository root:
 
 ```sh
 npm run package:editor
-code --install-extension dist/voya-vscode.vsix
+code --install-extension dist/voo-vscode.vsix
 ```

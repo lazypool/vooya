@@ -229,7 +229,7 @@ embedded Rust, and scoped CSS highlighting:
 
 ```sh
 npm run package:editor
-code --install-extension dist/voya-vscode.vsix
+code --install-extension dist/voo-vscode.vsix
 ```
 
 ## Versioning and alpha releases

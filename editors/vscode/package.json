@@ -1,7 +1,7 @@
 {
-  "name": "voya",
-  "displayName": "Voya",
-  "description": "Language support for Voya .voo Rust components.",
+  "name": "voo",
+  "displayName": "Vooya",
+  "description": "Language support for Vooya .voo Rust components.",
   "version": "0.1.0",
   "publisher": "vooya",
   "license": "MIT OR Apache-2.0",
