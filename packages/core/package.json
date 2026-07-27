@@ -1,9 +1,17 @@
 {
-  "name": "@voyajs/core",
-  "version": "0.0.0",
+  "name": "@vooya/core",
+  "version": "0.1.0-alpha.0",
   "description": "Voya's browser WASM runtime.",
   "type": "module",
-  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voyajs/voya.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
     "rust"

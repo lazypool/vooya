@@ -19,7 +19,7 @@ mounts one component into one host-owned element. Once mounted, Voya owns every
 DOM node below that element. The host owns the element itself and its place in
 the application tree.
 
-The first host is Vue 3 through a Vite plugin and `@voyajs/vue`. The core is not
+The first host is Vue 3 through a Vite plugin and `@vooya/vue`. The core is not
 allowed to depend on Vue APIs.
 
 ```text

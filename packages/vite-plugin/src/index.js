@@ -61,12 +61,12 @@ export function voya({ framework = "vue", rust = {} } = {}) {
         component.id = id;
         const { exportName } = generatedComponentBinding(component);
         const definition = generatedAdapterDefinition(component);
-        const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";
+        const adapter = framework === "react" ? "@vooya/react" : "@vooya/vue";
         return `
           ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
           import init, { ${exportName}, voo_abi_version } from "${runtimeId}";
           import { defineVoyaComponent } from "${adapter}";
-          import { assertVooAbiVersion } from "@voyajs/vite-plugin/runtime";
+          import { assertVooAbiVersion } from "@vooya/vite-plugin/runtime";
 
           let bindings;
           async function loadBindings() {
@@ -83,7 +83,7 @@ export function voya({ framework = "vue", rust = {} } = {}) {
           export default defineVoyaComponent(${JSON.stringify(definition)}, loadBindings);
         `;
       }
-      const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";
+      const adapter = framework === "react" ? "@vooya/react" : "@vooya/vue";
       const factory = component.adapters[framework];
       if (!factory) {
         this.error(`Unsupported Voo component ${component.name} for framework ${framework}.`);

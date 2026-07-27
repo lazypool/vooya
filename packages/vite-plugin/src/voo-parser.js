@@ -1,4 +1,4 @@
-const defaultRuntime = "@voyajs/core";
+const defaultRuntime = "@vooya/core";
 
 export class VooParseError extends Error {
   constructor(message, id, line) {

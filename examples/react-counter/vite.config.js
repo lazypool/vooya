@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import { voya } from "@voyajs/vite-plugin";
+import { voya } from "@vooya/vite-plugin";
 import { defineConfig } from "vite";
 
 export default defineConfig({

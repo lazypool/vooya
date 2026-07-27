@@ -11,10 +11,10 @@ The first alpha is a coordinated package set:
 
 | Package | Responsibility | Peer dependency |
 | --- | --- | --- |
-| `@voyajs/core` | Rust runtime source and baseline browser bindings | none |
-| `@voyajs/vite-plugin` | Rust build, `.voo` transform, development reload | Vite |
-| `@voyajs/vue` | Vue host lifecycle bridge | Vue 3 |
-| `@voyajs/react` | React host lifecycle bridge | React 19 |
+| `@vooya/core` | Rust runtime source and baseline browser bindings | none |
+| `@vooya/vite-plugin` | Rust build, `.voo` transform, development reload | Vite |
+| `@vooya/vue` | Vue host lifecycle bridge | Vue 3 |
+| `@vooya/react` | React host lifecycle bridge | React 19 |
 
 All packages share one `0.0.x-alpha.y` version initially. Independently
 versioning adapters is deferred until the WASM ABI is explicitly stable.
@@ -22,7 +22,7 @@ versioning adapters is deferred until the WASM ABI is explicitly stable.
 ## Compiler distribution decision
 
 The Vite plugin compiles source `.voo` files in a generated, application-local
-Cargo crate under `.voo-cache`. `@voyajs/core` ships the Rust runtime source used
+Cargo crate under `.voo-cache`. `@vooya/core` ships the Rust runtime source used
 by that crate. Each application has isolated Cargo targets and wasm-bindgen
 output; no build writes component exports into a shared package directory.
 
@@ -40,7 +40,7 @@ framework adapters before publication.
 The Rust export names, generated bindgen module shape, and adapter binding
 interfaces form one ABI. A core release is compatible only with adapters from
 the same alpha version. The Vite plugin builds an application-specific WASM
-module against the Rust runtime source shipped by `@voyajs/core`.
+module against the Rust runtime source shipped by `@vooya/core`.
 
 Generated WASM exports `voo_abi_version()`. The virtual component module checks
 that value against the compiler runtime before returning mount bindings. A
@@ -81,14 +81,14 @@ npm run typecheck
 npm run typecheck:react
 npm run build:vue
 npm run build:react
-npm pack --dry-run --workspace @voyajs/core
-npm pack --dry-run --workspace @voyajs/vite-plugin
-npm pack --dry-run --workspace @voyajs/vue
-npm pack --dry-run --workspace @voyajs/react
+npm pack --dry-run --workspace @vooya/core
+npm pack --dry-run --workspace @vooya/vite-plugin
+npm pack --dry-run --workspace @vooya/vue
+npm pack --dry-run --workspace @vooya/react
 ```
 
 The packed archives must contain the compiler JavaScript, adapter JavaScript and
-declarations, baseline WASM where required, and the `@voyajs/core` Rust runtime
+declarations, baseline WASM where required, and the `@vooya/core` Rust runtime
 source. They must not contain examples, generated application caches, or paths
 that point back to the Voya checkout.
 

@@ -21,12 +21,12 @@
     "typecheck:react": "node packages/vite-plugin/src/generate-declarations.mjs examples/react-counter react && tsc --noEmit -p examples/react-counter/tsconfig.json",
     "format:voo": "node packages/vite-plugin/bin/voo-format.mjs examples tests/fixtures",
     "format:voo:check": "node packages/vite-plugin/bin/voo-format.mjs --check examples tests/fixtures",
-    "test:voo": "npm test --workspace @voyajs/vite-plugin",
+    "test:voo": "npm test --workspace @vooya/vite-plugin",
     "test:portable": "node tests/portable-build.mjs",
     "test:hmr": "node tests/hmr.mjs",
     "test:e2e": "node tests/e2e/run.mjs",
-    "build:packages": "npm run build --workspace @voyajs/core && npm run build --workspace @voyajs/vue && npm run build --workspace @voyajs/react",
-    "pack:check": "npm run build:packages && npm pack --dry-run --workspace @voyajs/core && npm pack --dry-run --workspace @voyajs/vite-plugin && npm pack --dry-run --workspace @voyajs/vue && npm pack --dry-run --workspace @voyajs/react"
+    "build:packages": "npm run build --workspace @vooya/core && npm run build --workspace @vooya/vue && npm run build --workspace @vooya/react",
+    "pack:check": "npm run build:packages && npm pack --dry-run --workspace @vooya/core && npm pack --dry-run --workspace @vooya/vite-plugin && npm pack --dry-run --workspace @vooya/vue && npm pack --dry-run --workspace @vooya/react"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",

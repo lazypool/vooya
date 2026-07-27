@@ -1,9 +1,17 @@
 {
-  "name": "@voyajs/vite-plugin",
-  "version": "0.0.0",
+  "name": "@vooya/vite-plugin",
+  "version": "0.1.0-alpha.0",
   "description": "Vite integration for Voya component islands.",
   "type": "module",
-  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voyajs/voya.git",
+    "directory": "packages/vite-plugin"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "voo-format": "./bin/voo-format.mjs"
   },
@@ -19,7 +27,7 @@
     "vite": "^7.0.0"
   },
   "dependencies": {
-    "@voyajs/core": "0.0.0",
+    "@vooya/core": "0.1.0-alpha.0",
     "postcss": "^8.5.23"
   }
 }

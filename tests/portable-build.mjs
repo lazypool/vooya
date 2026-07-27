@@ -13,12 +13,12 @@ const project = resolve(temporaryRoot, "app");
 try {
   mkdirSync(packageDirectory, { recursive: true });
   run("npm", ["run", "build:core"], repositoryRoot);
-  run("npm", ["run", "build", "--workspace", "@voyajs/vue"], repositoryRoot);
+  run("npm", ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
 
   const packages = [
-    pack("@voyajs/core", packageDirectory),
-    pack("@voyajs/vite-plugin", packageDirectory),
-    pack("@voyajs/vue", packageDirectory),
+    pack("@vooya/core", packageDirectory),
+    pack("@vooya/vite-plugin", packageDirectory),
+    pack("@vooya/vue", packageDirectory),
   ];
 
   cpSync(fixture, project, { recursive: true });

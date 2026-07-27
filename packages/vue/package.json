@@ -1,9 +1,17 @@
 {
-  "name": "@voyajs/vue",
-  "version": "0.0.0",
+  "name": "@vooya/vue",
+  "version": "0.1.0-alpha.0",
   "description": "Vue host adapter for Voya component islands.",
   "type": "module",
-  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voyajs/voya.git",
+    "directory": "packages/vue"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": ["dist"],
   "exports": {
     ".": {

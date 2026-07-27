@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 export const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
 export function resolveRuntimeCrateRoot() {
-  return dirname(require.resolve("@voyajs/core/rust/Cargo.toml"));
+  return dirname(require.resolve("@vooya/core/rust/Cargo.toml"));
 }
 
 export function resolveRustDependencyRoots(rust = {}, applicationRoot) {
@@ -91,7 +91,7 @@ export function buildApplication({
   };
 }
 
-// Builds the empty runtime artifact shipped by @voyajs/core.
+// Builds the empty runtime artifact shipped by @vooya/core.
 export function buildCore(root = repositoryRoot) {
   return buildApplication({
     applicationRoot: root,

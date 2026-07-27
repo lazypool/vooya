@@ -9,7 +9,7 @@ import {
   resolveRuntimeCrateRoot,
 } from "./build-core.mjs";
 
-test("resolves the Rust runtime shipped by @voyajs/core", () => {
+test("resolves the Rust runtime shipped by @vooya/core", () => {
   const runtime = resolveRuntimeCrateRoot();
 
   assert.equal(existsSync(`${runtime}/Cargo.toml`), true);
@@ -19,14 +19,14 @@ test("resolves the Rust runtime shipped by @voyajs/core", () => {
 test("generates a standalone application crate", () => {
   const manifest = generatedCargoManifest({
     applicationRoot: "/consumer",
-    runtimeCrateRoot: "/consumer/node_modules/@voyajs/core/rust",
+    runtimeCrateRoot: "/consumer/node_modules/@vooya/core/rust",
   });
 
   assert.match(manifest, /name = "voya-app"/);
   assert.match(manifest, /^\[workspace\]$/m);
   assert.match(
     manifest,
-    /voya-core = \{ path = "\/consumer\/node_modules\/@voyajs\/core\/rust" \}/,
+    /voya-core = \{ path = "\/consumer\/node_modules\/@vooya\/core\/rust" \}/,
   );
   assert.match(manifest, /crate-type = \["cdylib"\]/);
 });
