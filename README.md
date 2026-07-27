@@ -1,4 +1,4 @@
-# Voya
+# Vooya
 
 Voya is an experimental Rust-to-WASM component runtime for JavaScript frontends.
 It is designed for incremental adoption: a Vue or React application retains its
