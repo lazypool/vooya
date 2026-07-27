@@ -4,6 +4,8 @@
 examples/*/dist
 /.vite
 /.playwright-cli
+/playwright-report
+/test-results
 packages/*/dist
 *.wasm
 *.wasm.d.ts
