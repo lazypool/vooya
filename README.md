@@ -74,27 +74,37 @@ events:
 <rust>
 use wasm_bindgen::JsValue;
 
+use crate::{EventListener, View, ViewElement};
+
 pub struct Component {
-    // Rust-owned state and browser resources
+    root: ViewElement,
+    _click: EventListener,
 }
 
 impl Component {
     pub fn update_initial(&self, value: i32) {
-        // Apply a generated prop update.
+        self.root.set_text(&format!("Count: {value}"));
     }
 
     pub fn dispose(&mut self) {
-        // Release listeners and owned DOM.
+        self.root.remove();
     }
 }
 
 pub fn mount(context: Context) -> Result<Component, JsValue> {
     let host = context.host;
     let initial = context.props.initial;
-
-    // Event handlers can call context.events.change(next_value).
-    // Build the component below host and retain its browser resources.
-    todo!()
+    let events = context.events;
+    let view = View::from_host(&host)?;
+    let root = view
+        .element("button")?
+        .class("counter")
+        .text(&format!("Count: {initial}"));
+    let click = root.on("click", move |_event| {
+        let _ = events.change(initial + 1);
+    })?;
+    root.mount(&host)?;
+    Ok(Component { root, _click: click })
 }
 </rust>
 
@@ -113,9 +123,11 @@ Authors do not write `wasm_bindgen` exports, `CustomEvent` plumbing, WASM
 initialization, Vue/React adapter factories, TypeScript declarations, or CSS
 scope attributes.
 
-The lower-level Rust DOM implementation is temporary. A higher-level Voya view
-and event API is the next authoring milestone; it must compile to the same
-component contract rather than replace the working boundary.
+`voya-core` provides an initial `View` and `ViewElement` API for structured DOM
+creation plus an `EventListener` that unregisters its callback when dropped.
+`ViewElement::as_element()` remains available when a component needs a browser
+API that the small Voya layer does not expose yet. This is a deliberately small
+foundation, not a template language or virtual DOM.
 
 ## Current Status
 
@@ -130,13 +142,15 @@ The repository now has:
 - per-component `.d.voo.ts` declarations for props and events;
 - Rust diagnostics mapped back to original `.voo` line numbers;
 - PostCSS-based scoped styles shared by Vue and React;
+- structured Rust DOM creation and owned browser event listeners;
 - warm Cargo builds that preserve generated-file timestamps when unchanged;
 - browser E2E coverage for Counter, TaskList, and DataGrid components;
 - an honest 100,000-row benchmark currently showing approximate parity with
   its Vue baseline.
 
-The compiler is still tied to this repository layout and component Rust code
-uses low-level `web_sys` DOM APIs. Voya is not yet a published or stable tool.
+The compiler is still tied to this repository layout, and non-trivial component
+Rust code still needs some low-level `web_sys` DOM APIs. Voya is not yet a
+published or stable tool.
 
 ## Development
 
@@ -177,7 +191,8 @@ npm run build:benchmark
 
 The next milestones move the working compiler toward a developer preview:
 
-1. Add a higher-level Rust view, event, and cleanup API above `web_sys`.
+1. Grow the Rust view layer into declarative trees, reactive bindings, and
+   explicit effect cleanup without hiding the underlying browser APIs.
 2. Make the compiler portable outside the Voya repository checkout.
 3. Provide `.voo` formatting, syntax highlighting, and Rust editor integration.
 4. Make rapid rebuilds queued and reliable, then define state-preserving HMR.

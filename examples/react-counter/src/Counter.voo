@@ -9,18 +9,20 @@ events:
 <rust>
 use std::{cell::Cell, rc::Rc};
 
-use wasm_bindgen::{JsCast, JsValue, closure::Closure};
-use web_sys::{Element, Event, HtmlElement};
+use wasm_bindgen::JsValue;
+
+use crate::{EventListener, View, ViewElement};
 
 pub struct Component {
-    root: Element,
+    root: ViewElement,
+    label: ViewElement,
     count: Rc<Cell<i32>>,
-    _click_handler: Closure<dyn FnMut(Event)>,
+    _click: EventListener,
 }
 
 impl Component {
     pub fn update_initial(&self, initial: i32) {
-        render_count(&self.root, &self.count, initial);
+        render_count(&self.label, &self.count, initial);
     }
 
     pub fn dispose(&mut self) {
@@ -32,47 +34,40 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     let host = context.host;
     let initial = context.props.initial;
     let events = context.events;
-    let document = host
-        .owner_document()
-        .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;
-    let root = document.create_element("section")?;
-    root.set_class_name("voya-counter");
-    root.set_attribute("data-voya-island", "counter")?;
-
-    let label = document.create_element("output")?;
-    label.set_attribute("data-voya-count", "")?;
-    let button: HtmlElement = document.create_element("button")?.dyn_into()?;
-    button.set_text_content(Some("Increment"));
-
-    root.append_child(&label)?;
-    root.append_child(&button)?;
-    host.append_child(&root)?;
+    let view = View::from_host(&host)?;
+    let root = view
+        .element("section")?
+        .class("voya-counter")
+        .attribute("data-voya-island", "counter")?;
+    let label = view.element("output")?.attribute("data-voya-count", "")?;
+    let button = view.element("button")?.text("Increment");
+    root.append(&label)?;
+    root.append(&button)?;
+    root.mount(&host)?;
 
     let count = Rc::new(Cell::new(initial));
-    render_count(&root, &count, initial);
+    render_count(&label, &count, initial);
 
-    let callback_root = root.clone();
+    let callback_label = label.clone();
     let callback_count = count.clone();
-    let click_handler = Closure::new(move |_event: Event| {
+    let click = button.on("click", move |_event| {
         let next = callback_count.get() + 1;
-        render_count(&callback_root, &callback_count, next);
+        render_count(&callback_label, &callback_count, next);
 
         let _ = events.change(next);
-    });
-    button.add_event_listener_with_callback("click", click_handler.as_ref().unchecked_ref())?;
+    })?;
 
     Ok(Component {
         root,
+        label,
         count,
-        _click_handler: click_handler,
+        _click: click,
     })
 }
 
-fn render_count(root: &Element, count: &Cell<i32>, value: i32) {
+fn render_count(label: &ViewElement, count: &Cell<i32>, value: i32) {
     count.set(value);
-    if let Ok(Some(label)) = root.query_selector("[data-voya-count]") {
-        label.set_text_content(Some(&value.to_string()));
-    }
+    label.set_text(&value.to_string());
 }
 </rust>
 
