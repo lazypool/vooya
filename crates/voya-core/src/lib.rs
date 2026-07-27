@@ -8,9 +8,7 @@ use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::{JsCast, JsValue, closure::Closure, prelude::wasm_bindgen};
 use web_sys::{CustomEvent, CustomEventInit, Element, Event, HtmlElement};
 
-mod data_grid;
 mod reactive;
-pub use data_grid::{DataGridHandle, mount_data_grid};
 pub use reactive::{Effect, Signal, effect, signal};
 
 include!(concat!(env!("OUT_DIR"), "/voya_generated.rs"));

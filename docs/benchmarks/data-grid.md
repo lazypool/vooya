@@ -6,10 +6,9 @@ microbenchmark.
 
 ## Workload
 
-- 100,000 generated rows and ten columns.
+- 100,000 generated rows with name and numeric score columns.
 - Virtual scrolling with a fixed visible window.
 - Client-side text filtering and numeric sorting.
-- Row selection and a derived selected-row summary.
 - Repeated filter and scroll interactions after initial load.
 
 ## Measurements

@@ -16,6 +16,11 @@ const targets = {
     test: "task-list.spec.js",
     url: "http://127.0.0.1:4176",
   },
+  benchmark: {
+    command: "npm run dev:benchmark -- --host 127.0.0.1 --port 4177",
+    test: "data-grid.spec.js",
+    url: "http://127.0.0.1:4177",
+  },
 };
 
 const targetName = process.env.VOYA_E2E_TARGET ?? "vue";

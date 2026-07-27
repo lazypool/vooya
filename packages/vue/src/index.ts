@@ -5,7 +5,6 @@ import {
   onMounted,
   ref,
   watch,
-  type PropType,
 } from "vue";
 
 export interface VoyaMountError {
@@ -38,19 +37,6 @@ export interface VoyaComponentBindings {
 
 export type VoyaComponentBindingsLoader = () => Promise<VoyaComponentBindings>;
 
-export interface DataGridHandle {
-  update_filter(query: string): void;
-  toggle_sort(): void;
-  scroll_to(row: number): void;
-  dispose(): void;
-}
-
-export interface DataGridBindings {
-  mount_data_grid(host: Element, rows: number): DataGridHandle;
-}
-
-export type DataGridBindingsLoader = () => Promise<DataGridBindings>;
-
 export function defineVoyaComponent(
   definition: VoyaComponentDefinition,
   loadBindings: VoyaComponentBindingsLoader,
@@ -72,7 +58,7 @@ export function defineVoyaComponent(
   ]);
 
   return defineComponent({
-    name: `Voya${definition.name}`,
+    name: definition.name.startsWith("Voya") ? definition.name : `Voya${definition.name}`,
     inheritAttrs: false,
     props: componentProps,
     emits: componentEvents,
@@ -131,38 +117,6 @@ export function defineVoyaComponent(
         for (const listener of listeners) {
           host.value?.removeEventListener(listener.name, listener.receive);
         }
-        handle?.dispose();
-        handle = undefined;
-      });
-
-      return () => h("div", { ...attrs, ref: host, "data-voya-host": "" });
-    },
-  });
-}
-
-export function defineVoyaDataGrid(loadBindings: DataGridBindingsLoader) {
-  return defineComponent({
-    name: "VoyaDataGrid",
-    inheritAttrs: false,
-    props: {
-      rows: {
-        type: Number as PropType<number>,
-        default: 100_000,
-      },
-    },
-    setup(props, { attrs }) {
-      const host = ref<Element>();
-      let mounted = true;
-      let handle: DataGridHandle | undefined;
-
-      onMounted(async () => {
-        const bindings = await loadBindings();
-        if (!mounted || !host.value) return;
-        handle = bindings.mount_data_grid(host.value, props.rows);
-      });
-
-      onBeforeUnmount(() => {
-        mounted = false;
         handle?.dispose();
         handle = undefined;
       });

@@ -52,7 +52,7 @@ async function runBenchmark() {
       <output>
         {{ matching.length }} matching
         <template v-if="benchmark">
-          | 20 filter/sort ops x20: median {{ benchmark.median.toFixed(1) }} ms,
+          | 20 filter/sort/render ops x20: median {{ benchmark.median.toFixed(1) }} ms,
           p95 {{ benchmark.p95.toFixed(1) }} ms
         </template>
       </output>
