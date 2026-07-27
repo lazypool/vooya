@@ -148,6 +148,8 @@ The repository now has:
   outside the Voya checkout;
 - debounced development rebuilds that survive Rust errors, coalesce rapid
   saves, and reload only after a successful WASM build;
+- structured Cargo dependency configuration, application-relative path crates,
+  and opt-in `web-sys` browser features;
 - warm Cargo builds that preserve generated-file timestamps when unchanged;
 - browser E2E coverage for Counter, TaskList, and DataGrid components;
 - an honest 100,000-row benchmark currently showing approximate parity with
@@ -169,6 +171,25 @@ npm install
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli
 ```
+
+Configure application Rust dependencies in the Vite plugin. Path dependencies
+are resolved from the Vite application root and watched during development:
+
+```js
+voya({
+  rust: {
+    dependencies: {
+      serde: { version: "1", features: ["derive"] },
+      "shared-engine": { path: "rust/shared-engine" },
+    },
+    webSysFeatures: ["HtmlCanvasElement", "CanvasRenderingContext2d"],
+  },
+});
+```
+
+Voya owns the `voya-core`, `wasm-bindgen`, `js-sys`, and `web-sys` dependency
+versions in the generated application crate. Additional `web-sys` APIs are
+enabled through `webSysFeatures` rather than overriding that dependency.
 
 Run the examples:
 

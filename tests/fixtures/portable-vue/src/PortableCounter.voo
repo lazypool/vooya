@@ -7,6 +7,7 @@ props:
 use wasm_bindgen::JsValue;
 
 use crate::{View, ViewElement};
+use portable_math::display_value;
 
 pub struct Component {
     root: ViewElement,
@@ -14,7 +15,7 @@ pub struct Component {
 
 impl Component {
     pub fn update_initial(&self, initial: i32) {
-        self.root.set_text(&initial.to_string());
+        self.root.set_text(&display_value(initial).to_string());
     }
 
     pub fn dispose(&mut self) {
@@ -28,7 +29,7 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     let root = view
         .element("output")?
         .class("portable-counter")
-        .text(&context.props.initial.to_string());
+        .text(&display_value(context.props.initial).to_string());
     root.mount(&host)?;
     Ok(Component { root })
 }

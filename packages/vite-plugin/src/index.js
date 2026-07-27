@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { buildApplication, resolveRuntimeCrateRoot } from "./build-core.mjs";
+import { isAbsolute, relative, resolve } from "node:path";
+import {
+  buildApplication,
+  resolveRuntimeCrateRoot,
+  resolveRustDependencyRoots,
+} from "./build-core.mjs";
 import { createBuildScheduler } from "./build-scheduler.js";
 import { generatedAdapterDefinition, generatedComponentBinding } from "./voo-codegen.js";
 import { writeVooDeclarations } from "./voo-declarations.js";
@@ -12,11 +16,12 @@ const componentExtension = ".voo";
 const runtimeId = "virtual:voya-runtime";
 const stylePrefix = "virtual:voya-style:";
 
-export function voya({ framework = "vue" } = {}) {
+export function voya({ framework = "vue", rust = {} } = {}) {
   let applicationRoot;
   let buildScheduler;
   let runtimeModule;
   let sourceComponents = [];
+  let watchedRustRoots = [];
 
   const compile = () => {
     const components = applicationRoot ? readVooComponents(applicationRoot) : [];
@@ -25,6 +30,7 @@ export function voya({ framework = "vue" } = {}) {
     ({ runtimeModule } = buildApplication({
       applicationRoot,
       components: sourceComponents,
+      rust,
     }));
   };
 
@@ -107,8 +113,11 @@ export function voya({ framework = "vue" } = {}) {
       `;
     },
     configureServer(server) {
-      const source = resolve(resolveRuntimeCrateRoot(), "src");
-      server.watcher.add(source);
+      watchedRustRoots = [
+        resolve(resolveRuntimeCrateRoot(), "src"),
+        ...resolveRustDependencyRoots(rust, applicationRoot),
+      ];
+      server.watcher.add(watchedRustRoots);
       buildScheduler = createBuildScheduler({
         build: compile,
         onSuccess() {
@@ -126,12 +135,21 @@ export function voya({ framework = "vue" } = {}) {
       server.httpServer?.once("close", () => buildScheduler?.dispose());
     },
     handleHotUpdate({ file }) {
-      const source = resolve(resolveRuntimeCrateRoot(), "src");
-      if (!file.startsWith(source) && !file.endsWith(componentExtension)) return;
+      if (
+        !file.endsWith(componentExtension) &&
+        !watchedRustRoots.some((root) => isPathInside(file, root))
+      ) {
+        return;
+      }
       buildScheduler?.schedule();
       return [];
     },
   };
+}
+
+function isPathInside(file, directory) {
+  const path = relative(directory, file);
+  return path === "" || (!path.startsWith("..") && !isAbsolute(path));
 }
 
 function componentMetadata(component) {

@@ -39,12 +39,17 @@ try {
   browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${port}`);
-  await expectText(page, "3");
+  await expectText(page, "6");
+
+  const dependencyPath = resolve(project, "rust/portable-math/src/lib.rs");
+  const dependency = readFileSync(dependencyPath, "utf8");
+  writeFileSync(dependencyPath, dependency.replace("value * 2", "value * 3"));
+  await expectText(page, "9");
 
   const componentPath = resolve(project, "src/PortableCounter.voo");
   const source = readFileSync(componentPath, "utf8");
   const invalid = source.replace(
-    ".text(&context.props.initial.to_string())",
+    ".text(&display_value(context.props.initial).to_string())",
     ".text(&missing_value.to_string())",
   );
   writeFileSync(componentPath, invalid);
@@ -52,22 +57,22 @@ try {
   if (server.exitCode !== null) throw new Error("Vite exited after a failed Rust rebuild.");
 
   const recovered = source.replace(
-    ".text(&context.props.initial.to_string())",
-    ".text(&(context.props.initial + 4).to_string())",
+    ".text(&display_value(context.props.initial).to_string())",
+    ".text(&(display_value(context.props.initial) + 4).to_string())",
   );
   writeFileSync(componentPath, recovered);
-  await expectText(page, "7");
+  await expectText(page, "13");
 
   const failuresBeforeRapidSave = occurrences(output, "Cargo build failed with exit code");
   writeFileSync(componentPath, invalid);
   writeFileSync(
     componentPath,
     source.replace(
-      ".text(&context.props.initial.to_string())",
-      ".text(&(context.props.initial + 5).to_string())",
+      ".text(&display_value(context.props.initial).to_string())",
+      ".text(&(display_value(context.props.initial) + 5).to_string())",
     ),
   );
-  await expectText(page, "8");
+  await expectText(page, "14");
   const failuresAfterRapidSave = occurrences(output, "Cargo build failed with exit code");
   if (failuresAfterRapidSave !== failuresBeforeRapidSave) {
     throw new Error("A superseded rapid save was compiled instead of being coalesced.");

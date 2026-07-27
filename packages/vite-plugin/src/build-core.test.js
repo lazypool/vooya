@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   generatedCargoManifest,
   remapRustDiagnostic,
+  resolveRustDependencyRoots,
   resolveRuntimeCrateRoot,
 } from "./build-core.mjs";
 
@@ -16,7 +17,10 @@ test("resolves the Rust runtime shipped by @voyajs/core", () => {
 });
 
 test("generates a standalone application crate", () => {
-  const manifest = generatedCargoManifest("/consumer/node_modules/@voyajs/core/rust");
+  const manifest = generatedCargoManifest({
+    applicationRoot: "/consumer",
+    runtimeCrateRoot: "/consumer/node_modules/@voyajs/core/rust",
+  });
 
   assert.match(manifest, /name = "voya-app"/);
   assert.match(manifest, /^\[workspace\]$/m);
@@ -25,6 +29,54 @@ test("generates a standalone application crate", () => {
     /voya-core = \{ path = "\/consumer\/node_modules\/@voyajs\/core\/rust" \}/,
   );
   assert.match(manifest, /crate-type = \["cdylib"\]/);
+});
+
+test("generates structured application dependencies and browser features", () => {
+  const manifest = generatedCargoManifest({
+    applicationRoot: "/consumer",
+    runtimeCrateRoot: "/runtime",
+    rust: {
+      dependencies: {
+        serde: { version: "1", features: ["derive"], defaultFeatures: false },
+        "shared-math": { path: "rust/shared-math" },
+      },
+      webSysFeatures: ["HtmlCanvasElement"],
+    },
+  });
+
+  assert.match(
+    manifest,
+    /"serde" = \{ version = "1", default-features = false, features = \["derive"\] \}/,
+  );
+  assert.match(manifest, /"shared-math" = \{ path = "\/consumer\/rust\/shared-math" \}/);
+  assert.match(manifest, /"HtmlCanvasElement"/);
+});
+
+test("rejects overrides of compiler-managed Rust dependencies", () => {
+  assert.throws(
+    () =>
+      generatedCargoManifest({
+        applicationRoot: "/consumer",
+        runtimeCrateRoot: "/runtime",
+        rust: { dependencies: { "web-sys": "1" } },
+      }),
+    /managed by Voya/,
+  );
+});
+
+test("resolves path dependencies from the application root", () => {
+  assert.deepEqual(
+    resolveRustDependencyRoots(
+      {
+        dependencies: {
+          serde: "1",
+          shared: { path: "rust/shared" },
+        },
+      },
+      "/consumer",
+    ),
+    ["/consumer/rust/shared"],
+  );
 });
 
 test("maps extracted Rust diagnostics back to the voo source", () => {

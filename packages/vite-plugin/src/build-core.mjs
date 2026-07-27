@@ -14,9 +14,17 @@ export function resolveRuntimeCrateRoot() {
   return dirname(require.resolve("@voyajs/core/rust/Cargo.toml"));
 }
 
+export function resolveRustDependencyRoots(rust = {}, applicationRoot) {
+  if (!isPlainObject(rust.dependencies)) return [];
+  return Object.values(rust.dependencies)
+    .filter((specification) => isPlainObject(specification) && specification.path)
+    .map((specification) => resolve(applicationRoot, specification.path));
+}
+
 export function buildApplication({
   applicationRoot,
   components = [],
+  rust = {},
   runtimeCrateRoot = resolveRuntimeCrateRoot(),
   cacheRoot = resolve(applicationRoot, ".voo-cache"),
   outputDir = resolve(cacheRoot, "dist"),
@@ -39,7 +47,10 @@ export function buildApplication({
     });
   }
 
-  writeIfChanged(resolve(cacheRoot, "Cargo.toml"), generatedCargoManifest(runtimeCrateRoot));
+  writeIfChanged(
+    resolve(cacheRoot, "Cargo.toml"),
+    generatedCargoManifest({ applicationRoot, runtimeCrateRoot, rust }),
+  );
   writeIfChanged(
     resolve(cacheRoot, "src/lib.rs"),
     `pub use voya_core::*;\n\n${generateRustComponents(components, sourcePaths)}`,
@@ -89,7 +100,9 @@ export function buildCore(root = repositoryRoot) {
   });
 }
 
-export function generatedCargoManifest(runtimeCrateRoot) {
+export function generatedCargoManifest({ applicationRoot, runtimeCrateRoot, rust = {} }) {
+  const webSysFeatures = mergedWebSysFeatures(rust.webSysFeatures);
+  const dependencies = generatedUserDependencies(rust.dependencies, applicationRoot);
   return `[package]
 name = "voya-app"
 version = "0.0.0"
@@ -105,6 +118,13 @@ voya-core = { path = ${JSON.stringify(runtimeCrateRoot)} }
 js-sys = "=0.3.92"
 wasm-bindgen = "=0.2.115"
 web-sys = { version = "=0.3.92", features = [
+${webSysFeatures.map((feature) => `  ${JSON.stringify(feature)},`).join("\n")}
+] }
+${dependencies}
+`;
+}
+
+const builtInWebSysFeatures = [
   "CustomEvent",
   "CustomEventInit",
   "Document",
@@ -116,8 +136,124 @@ web-sys = { version = "=0.3.92", features = [
   "HtmlInputElement",
   "Node",
   "Window",
-] }
-`;
+];
+
+const reservedDependencies = new Set(["js-sys", "voya-core", "wasm-bindgen", "web-sys"]);
+const dependencyKeys = new Set([
+  "branch",
+  "defaultFeatures",
+  "features",
+  "git",
+  "package",
+  "path",
+  "rev",
+  "tag",
+  "version",
+]);
+
+function mergedWebSysFeatures(features = []) {
+  if (!Array.isArray(features)) throw new Error("Voya rust.webSysFeatures must be an array.");
+  for (const feature of features) {
+    if (typeof feature !== "string" || !/^[A-Za-z][A-Za-z0-9]*$/.test(feature)) {
+      throw new Error(`Invalid web-sys feature ${JSON.stringify(feature)}.`);
+    }
+  }
+  return [...new Set([...builtInWebSysFeatures, ...features])].sort();
+}
+
+function generatedUserDependencies(dependencies = {}, applicationRoot) {
+  if (!isPlainObject(dependencies)) {
+    throw new Error("Voya rust.dependencies must be an object.");
+  }
+  return Object.entries(dependencies)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, specification]) => {
+      if (!/^[A-Za-z0-9_-]+$/.test(name)) {
+        throw new Error(`Invalid Rust dependency name ${JSON.stringify(name)}.`);
+      }
+      if (reservedDependencies.has(name)) {
+        throw new Error(
+          `Rust dependency ${JSON.stringify(name)} is managed by Voya and cannot be overridden.`,
+        );
+      }
+      return `${JSON.stringify(name)} = ${generatedDependencySpecification(
+        name,
+        specification,
+        applicationRoot,
+      )}`;
+    })
+    .join("\n");
+}
+
+function generatedDependencySpecification(name, specification, applicationRoot) {
+  if (typeof specification === "string" && specification) {
+    return JSON.stringify(specification);
+  }
+  if (!isPlainObject(specification)) {
+    throw new Error(`Rust dependency ${JSON.stringify(name)} must be a version or an object.`);
+  }
+  const unknown = Object.keys(specification).filter((key) => !dependencyKeys.has(key));
+  if (unknown.length > 0) {
+    throw new Error(
+      `Rust dependency ${JSON.stringify(name)} has unsupported option ${JSON.stringify(unknown[0])}.`,
+    );
+  }
+  if (!specification.version && !specification.path && !specification.git) {
+    throw new Error(
+      `Rust dependency ${JSON.stringify(name)} requires version, path, or git.`,
+    );
+  }
+  if (specification.path && specification.git) {
+    throw new Error(`Rust dependency ${JSON.stringify(name)} cannot combine path and git.`);
+  }
+  const gitReferences = ["branch", "tag", "rev"].filter((key) => specification[key]);
+  if (gitReferences.length > 0 && !specification.git) {
+    throw new Error(
+      `Rust dependency ${JSON.stringify(name)} option ${gitReferences[0]} requires git.`,
+    );
+  }
+  if (gitReferences.length > 1) {
+    throw new Error(
+      `Rust dependency ${JSON.stringify(name)} can use only one of branch, tag, or rev.`,
+    );
+  }
+
+  const values = [];
+  for (const key of ["version", "path", "git", "branch", "tag", "rev", "package"]) {
+    const value = specification[key];
+    if (value === undefined) continue;
+    if (typeof value !== "string" || !value) {
+      throw new Error(`Rust dependency ${JSON.stringify(name)} option ${key} must be a string.`);
+    }
+    const rendered = key === "path" ? resolve(applicationRoot, value) : value;
+    values.push(`${key} = ${JSON.stringify(rendered)}`);
+  }
+  if (specification.defaultFeatures !== undefined) {
+    if (typeof specification.defaultFeatures !== "boolean") {
+      throw new Error(
+        `Rust dependency ${JSON.stringify(name)} option defaultFeatures must be a boolean.`,
+      );
+    }
+    values.push(`default-features = ${specification.defaultFeatures}`);
+  }
+  if (specification.features !== undefined) {
+    if (
+      !Array.isArray(specification.features) ||
+      specification.features.some((feature) => typeof feature !== "string" || !feature)
+    ) {
+      throw new Error(
+        `Rust dependency ${JSON.stringify(name)} option features must be a string array.`,
+      );
+    }
+    values.push(
+      `features = [${specification.features.map((feature) => JSON.stringify(feature)).join(", ")}]`,
+    );
+  }
+  return `{ ${values.join(", ")} }`;
+}
+
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 export function remapRustDiagnostic(message, mappings) {
