@@ -8,7 +8,7 @@ const playwright = fileURLToPath(
 for (const target of ["vue", "react", "tasks", "benchmark"]) {
   const result = spawnSync(process.execPath, [playwright, "test"], {
     stdio: "inherit",
-    env: { ...process.env, VOYA_E2E_TARGET: target },
+    env: { ...process.env, VOOYA_E2E_TARGET: target },
   });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);

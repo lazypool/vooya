@@ -1,6 +1,6 @@
-import VoyaGrid from "./VoyaGrid.voo";
+import VooyaGrid from "./VooyaGrid.voo";
 
-type GridProps = InstanceType<typeof VoyaGrid>["$props"];
+type GridProps = InstanceType<typeof VooyaGrid>["$props"];
 
 const defaultRows: GridProps = {};
 const explicitRows: GridProps = { rows: 10_000 };

@@ -1,4 +1,4 @@
-//! Runtime primitives for Voya components.
+//! Runtime primitives for Vooya components.
 
 mod reactive;
 mod view;

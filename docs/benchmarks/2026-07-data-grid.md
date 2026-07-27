@@ -2,7 +2,7 @@
 
 ## Decision
 
-**Inconclusive parity.** The Voya island and Vue baseline were effectively tied
+**Inconclusive parity.** The Vooya island and Vue baseline were effectively tied
 for this local, filter-sort-and-render workload. The measured median differed by
 about one percent, which is not enough to claim a winner. The result validates
 that the generated `.voo` component boundary remains competitive on this case;
@@ -17,7 +17,7 @@ twenty rounds of those twenty filter/sort operations. Each query also renders
 the 24-row virtual window before the next query. The page reports median and p95
 wall time for the twenty-query rounds.
 
-The Voya pane keeps the row data, filtering, sorting, and DOM window renderer
+The Vooya pane keeps the row data, filtering, sorting, and DOM window renderer
 in Rust/WASM. The Vue pane keeps the equivalent data and computed list in Vue.
 Both render the final matching 1,000-row result after the same final query.
 
@@ -32,7 +32,7 @@ Both render the final matching 1,000-row result after the same final query.
 
 | Implementation | Median | p95 | Relative median |
 | --- | ---: | ---: | ---: |
-| Voya WASM island | 36.0 ms | 38.0 ms | 1.01x slower |
+| Vooya WASM island | 36.0 ms | 38.0 ms | 1.01x slower |
 | Vue baseline | 35.6 ms | 38.1 ms | 1.00x |
 
 The production Vite build emitted a 115.20 KB WASM file, 46.00 KB gzip. The

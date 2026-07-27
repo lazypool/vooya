@@ -1,9 +1,9 @@
-# Voya
+# Vooya
 
 **Write frontend components in Rust. Use them from Vue and React.**
 
-Voya is an experimental Rust-to-WASM component compiler for JavaScript
-applications. A Voya component owns an isolated DOM subtree, while the host
+Vooya is an experimental Rust-to-WASM component compiler for JavaScript
+applications. A Vooya component owns an isolated DOM subtree, while the host
 framework keeps control of the surrounding application, routing, and state.
 
 ```vue
@@ -17,13 +17,13 @@ import Counter from "./Counter.voo";
 ```
 
 The implementation, public props, events, and scoped styles live in one `.voo`
-component file. Voya compiles its Rust code to WASM and generates the framework
+component file. Vooya compiles its Rust code to WASM and generates the framework
 adapter and TypeScript declarations automatically.
 
-## Why Voya
+## Why Vooya
 
 Rust already has excellent tools for data processing, parsers, editors,
-graphics, simulation, and other demanding workloads. Voya is an attempt to
+graphics, simulation, and other demanding workloads. Vooya is an attempt to
 bring that code all the way to the component boundary without asking teams to
 replace their existing frontend framework.
 
@@ -35,7 +35,7 @@ components such as:
 - Canvas, WebGL, and application-specific rendering surfaces;
 - components backed by an existing Rust library.
 
-Voya does not assume that WASM makes ordinary DOM work faster. Crossing the
+Vooya does not assume that WASM makes ordinary DOM work faster. Crossing the
 JavaScript/WASM boundary and manipulating the DOM both have costs. Early
 versions may lose to a mature JavaScript implementation in some workloads. The
 project is exploring the larger design space: typed component contracts,
@@ -45,7 +45,7 @@ can improve without changing application code.
 ## Component Model
 
 The host framework owns the mount element and its position in the application.
-Voya owns every node below it.
+Vooya owns every node below it.
 
 ```text
 Vue / React props -> generated adapter -> WASM component -> owned DOM subtree
@@ -53,7 +53,7 @@ Vue / React events <- generated adapter <- component events
 unmount            -> dispose           -> release state and listeners
 ```
 
-This boundary allows a Voya component to behave like a normal Vue or React
+This boundary allows a Vooya component to behave like a normal Vue or React
 component while keeping its state, update logic, and rendering implementation
 in Rust.
 
@@ -123,15 +123,15 @@ Authors do not write `wasm_bindgen` exports, `CustomEvent` plumbing, WASM
 initialization, Vue/React adapter factories, TypeScript declarations, or CSS
 scope attributes.
 
-`voya-core` provides an initial `View` and `ViewElement` API for structured DOM
+`vooya-core` provides an initial `View` and `ViewElement` API for structured DOM
 creation plus an `EventListener` that unregisters its callback when dropped.
 `ViewElement::as_element()` remains available when a component needs a browser
-API that the small Voya layer does not expose yet. This is a deliberately small
+API that the small Vooya layer does not expose yet. This is a deliberately small
 foundation, not a template language or virtual DOM.
 
 ## Current Status
 
-Voya is currently an architecture-validation prototype, not a published stable
+Vooya is currently an architecture-validation prototype, not a published stable
 compiler.
 
 The repository now has:
@@ -145,7 +145,7 @@ The repository now has:
 - structured Rust DOM creation and owned browser event listeners;
 - application-isolated Cargo crates, build caches, and WASM output;
 - an npm-tarball portability test that builds `.voo` in a temporary project
-  outside the Voya checkout;
+  outside the Vooya checkout;
 - debounced development rebuilds that survive Rust errors, coalesce rapid
   saves, and reload only after a successful WASM build;
 - structured Cargo dependency configuration, application-relative path crates,
@@ -157,7 +157,7 @@ The repository now has:
 
 Source `.voo` compilation still requires Cargo, the WASM Rust target, and the
 `wasm-bindgen` CLI on the author's machine. Non-trivial component code still
-needs some low-level `web_sys` DOM APIs. Voya is not yet published or stable,
+needs some low-level `web_sys` DOM APIs. Vooya is not yet published or stable,
 and precompiled component packages that remove the Rust requirement for
 consumers remain future work.
 
@@ -176,7 +176,7 @@ Configure application Rust dependencies in the Vite plugin. Path dependencies
 are resolved from the Vite application root and watched during development:
 
 ```js
-voya({
+vooya({
   rust: {
     dependencies: {
       serde: { version: "1", features: ["derive"] },
@@ -187,7 +187,7 @@ voya({
 });
 ```
 
-Voya owns the `voya-core`, `wasm-bindgen`, `js-sys`, and `web-sys` dependency
+Vooya owns the `vooya-core`, `wasm-bindgen`, `js-sys`, and `web-sys` dependency
 versions in the generated application crate. Additional `web-sys` APIs are
 enabled through `webSysFeatures` rather than overriding that dependency.
 
@@ -269,7 +269,7 @@ The next milestones move the working compiler toward a developer preview:
 
 ## Scope
 
-Voya is not trying to replace Vue, React, routing, application state management,
+Vooya is not trying to replace Vue, React, routing, application state management,
 or the JavaScript ecosystem. It is a way to introduce Rust at a component
 boundary where Rust provides enough value to justify the WASM cost.
 

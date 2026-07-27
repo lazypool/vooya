@@ -10,7 +10,7 @@ export function writeVooDeclarations(components, framework) {
 
 export function generateVooDeclaration(component, framework) {
   if (framework === "react") return generateReactDeclaration(component);
-  if (framework !== "vue") throw new Error(`Unknown Voya framework "${framework}".`);
+  if (framework !== "vue") throw new Error(`Unknown Vooya framework "${framework}".`);
   return generateVueDeclaration(component);
 }
 

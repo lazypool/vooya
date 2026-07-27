@@ -22,11 +22,11 @@ test("generates a standalone application crate", () => {
     runtimeCrateRoot: "/consumer/node_modules/@vooya/core/rust",
   });
 
-  assert.match(manifest, /name = "voya-app"/);
+  assert.match(manifest, /name = "vooya-app"/);
   assert.match(manifest, /^\[workspace\]$/m);
   assert.match(
     manifest,
-    /voya-core = \{ path = "\/consumer\/node_modules\/@vooya\/core\/rust" \}/,
+    /vooya-core = \{ path = "\/consumer\/node_modules\/@vooya\/core\/rust" \}/,
   );
   assert.match(manifest, /crate-type = \["cdylib"\]/);
 });
@@ -60,7 +60,7 @@ test("rejects overrides of compiler-managed Rust dependencies", () => {
         runtimeCrateRoot: "/runtime",
         rust: { dependencies: { "web-sys": "1" } },
       }),
-    /managed by Voya/,
+    /managed by Vooya/,
   );
 });
 
@@ -80,7 +80,7 @@ test("resolves path dependencies from the application root", () => {
 });
 
 test("maps extracted Rust diagnostics back to the voo source", () => {
-  const generated = "/project/target/voya/components/0-Counter.rs";
+  const generated = "/project/target/vooya/components/0-Counter.rs";
   const diagnostic = remapRustDiagnostic(
     {
       level: "error",

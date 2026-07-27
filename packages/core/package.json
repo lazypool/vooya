@@ -1,7 +1,7 @@
 {
   "name": "@vooya/core",
   "version": "0.1.0-alpha.1",
-  "description": "Voya's browser WASM runtime.",
+  "description": "Vooya's browser WASM runtime.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
   "repository": {
@@ -17,7 +17,7 @@
     "rust"
   ],
   "exports": {
-    ".": "./dist/voya_app.js",
+    ".": "./dist/vooya_app.js",
     "./rust/Cargo.toml": "./rust/Cargo.toml"
   },
   "scripts": {

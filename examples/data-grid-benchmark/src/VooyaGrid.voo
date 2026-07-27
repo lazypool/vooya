@@ -1,4 +1,4 @@
-<component name="VoyaGrid">
+<component name="VooyaGrid">
 props:
   rows: usize = 100000
 </component>
@@ -95,21 +95,21 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     let row_count = context.props.rows;
     let document = host
         .owner_document()
-        .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;
+        .ok_or_else(|| JsValue::from_str("Vooya mount host has no document"))?;
     let root = document.create_element("section")?;
-    root.set_class_name("voya-data-grid");
-    root.set_attribute("data-voya-island", "data-grid")?;
+    root.set_class_name("vooya-data-grid");
+    root.set_attribute("data-vooya-island", "data-grid")?;
     root.set_inner_html(
         r#"
-        <div class="voya-grid-toolbar">
-          <input aria-label="Filter Voya rows" data-voya-filter placeholder="Filter rows">
-          <button data-voya-sort>Sort score</button>
-          <button data-voya-benchmark>Run filter benchmark</button>
-          <output data-voya-summary></output>
+        <div class="vooya-grid-toolbar">
+          <input aria-label="Filter Vooya rows" data-vooya-filter placeholder="Filter rows">
+          <button data-vooya-sort>Sort score</button>
+          <button data-vooya-benchmark>Run filter benchmark</button>
+          <output data-vooya-summary></output>
         </div>
-        <div class="voya-grid-viewport" data-voya-viewport>
-          <div class="voya-grid-spacer" data-voya-spacer></div>
-          <div class="voya-grid-rows" data-voya-rows></div>
+        <div class="vooya-grid-viewport" data-vooya-viewport>
+          <div class="vooya-grid-spacer" data-vooya-spacer></div>
+          <div class="vooya-grid-rows" data-vooya-rows></div>
         </div>
         "#,
     );
@@ -119,8 +119,8 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     render(&root, &state.borrow());
 
     let filter: HtmlInputElement = root
-        .query_selector("[data-voya-filter]")?
-        .ok_or_else(|| JsValue::from_str("Voya grid filter is missing"))?
+        .query_selector("[data-vooya-filter]")?
+        .ok_or_else(|| JsValue::from_str("Vooya grid filter is missing"))?
         .dyn_into()?;
     let input_root = root.clone();
     let input_state = state.clone();
@@ -139,8 +139,8 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     filter.add_event_listener_with_callback("input", input_handler.as_ref().unchecked_ref())?;
 
     let sort: HtmlElement = root
-        .query_selector("[data-voya-sort]")?
-        .ok_or_else(|| JsValue::from_str("Voya grid sort button is missing"))?
+        .query_selector("[data-vooya-sort]")?
+        .ok_or_else(|| JsValue::from_str("Vooya grid sort button is missing"))?
         .dyn_into()?;
     let sort_root = root.clone();
     let sort_state = state.clone();
@@ -153,8 +153,8 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     sort.add_event_listener_with_callback("click", sort_handler.as_ref().unchecked_ref())?;
 
     let benchmark: HtmlElement = root
-        .query_selector("[data-voya-benchmark]")?
-        .ok_or_else(|| JsValue::from_str("Voya grid benchmark button is missing"))?
+        .query_selector("[data-vooya-benchmark]")?
+        .ok_or_else(|| JsValue::from_str("Vooya grid benchmark button is missing"))?
         .dyn_into()?;
     let benchmark_root = root.clone();
     let benchmark_state = state.clone();
@@ -182,8 +182,8 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
         .add_event_listener_with_callback("click", benchmark_handler.as_ref().unchecked_ref())?;
 
     let viewport: HtmlElement = root
-        .query_selector("[data-voya-viewport]")?
-        .ok_or_else(|| JsValue::from_str("Voya grid viewport is missing"))?
+        .query_selector("[data-vooya-viewport]")?
+        .ok_or_else(|| JsValue::from_str("Vooya grid viewport is missing"))?
         .dyn_into()?;
     let scroll_root = root.clone();
     let scroll_state = state.clone();
@@ -224,13 +224,13 @@ fn render(root: &Element, state: &GridState) {
                 .then_some(" data-selected")
                 .unwrap_or("");
             format!(
-                "<div class=\"voya-grid-row\"{selected}><span>{}</span><span>{}</span></div>",
+                "<div class=\"vooya-grid-row\"{selected}><span>{}</span><span>{}</span></div>",
                 row.name, row.score
             )
         })
         .collect::<String>();
 
-    if let Ok(Some(summary)) = root.query_selector("[data-voya-summary]") {
+    if let Ok(Some(summary)) = root.query_selector("[data-vooya-summary]") {
         let text = match state.benchmark {
             Some((median, p95)) => format!(
                 "{total} matching | 20 filter/sort/render ops x{BENCHMARK_ROUNDS}: median {median:.1} ms, p95 {p95:.1} ms"
@@ -239,10 +239,10 @@ fn render(root: &Element, state: &GridState) {
         };
         summary.set_text_content(Some(&text));
     }
-    if let Ok(Some(spacer)) = root.query_selector("[data-voya-spacer]") {
+    if let Ok(Some(spacer)) = root.query_selector("[data-vooya-spacer]") {
         let _ = spacer.set_attribute("style", &format!("height: {}px", total as i32 * ROW_HEIGHT));
     }
-    if let Ok(Some(container)) = root.query_selector("[data-voya-rows]") {
+    if let Ok(Some(container)) = root.query_selector("[data-vooya-rows]") {
         let _ = container.set_attribute(
             "style",
             &format!("transform: translateY({}px)", start as i32 * ROW_HEIGHT),

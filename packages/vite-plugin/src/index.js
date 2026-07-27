@@ -13,10 +13,10 @@ import { readVooComponents } from "./voo-project.js";
 import { compileVooStyle } from "./voo-style.js";
 
 const componentExtension = ".voo";
-const runtimeId = "virtual:voya-runtime";
-const stylePrefix = "virtual:voya-style:";
+const runtimeId = "virtual:vooya-runtime";
+const stylePrefix = "virtual:vooya-style:";
 
-export function voya({ framework = "vue", rust = {} } = {}) {
+export function vooya({ framework = "vue", rust = {} } = {}) {
   let applicationRoot;
   let buildScheduler;
   let runtimeModule;
@@ -35,7 +35,7 @@ export function voya({ framework = "vue", rust = {} } = {}) {
   };
 
   return {
-    name: "voya",
+    name: "vooya",
     enforce: "pre",
     configResolved(config) {
       applicationRoot = config.root;
@@ -65,7 +65,7 @@ export function voya({ framework = "vue", rust = {} } = {}) {
         return `
           ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
           import init, { ${exportName}, voo_abi_version } from "${runtimeId}";
-          import { defineVoyaComponent } from "${adapter}";
+          import { defineVooyaComponent } from "${adapter}";
           import { assertVooAbiVersion } from "@vooya/vite-plugin/runtime";
 
           let bindings;
@@ -80,7 +80,7 @@ export function voya({ framework = "vue", rust = {} } = {}) {
           }
 
           export const metadata = ${JSON.stringify(componentMetadata(component))};
-          export default defineVoyaComponent(${JSON.stringify(definition)}, loadBindings);
+          export default defineVooyaComponent(${JSON.stringify(definition)}, loadBindings);
         `;
       }
       const adapter = framework === "react" ? "@vooya/react" : "@vooya/vue";

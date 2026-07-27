@@ -7,12 +7,12 @@ import {
   watch,
 } from "vue";
 
-export interface VoyaMountError {
+export interface VooyaMountError {
   stage: "load" | "mount";
   cause: unknown;
 }
 
-export interface VoyaComponentDefinition {
+export interface VooyaComponentDefinition {
   abiVersion: number;
   name: string;
   scopeId?: string;
@@ -28,20 +28,20 @@ export interface VoyaComponentDefinition {
   }>;
 }
 
-export interface VoyaComponentHandle {
+export interface VooyaComponentHandle {
   dispose(): void;
   [method: string]: unknown;
 }
 
-export interface VoyaComponentBindings {
-  mount(host: Element, ...props: unknown[]): VoyaComponentHandle;
+export interface VooyaComponentBindings {
+  mount(host: Element, ...props: unknown[]): VooyaComponentHandle;
 }
 
-export type VoyaComponentBindingsLoader = () => Promise<VoyaComponentBindings>;
+export type VooyaComponentBindingsLoader = () => Promise<VooyaComponentBindings>;
 
-export function defineVoyaComponent(
-  definition: VoyaComponentDefinition,
-  loadBindings: VoyaComponentBindingsLoader,
+export function defineVooyaComponent(
+  definition: VooyaComponentDefinition,
+  loadBindings: VooyaComponentBindingsLoader,
 ) {
   const constructors = { number: Number, boolean: Boolean, string: String };
   const componentProps = Object.fromEntries(
@@ -56,18 +56,18 @@ export function defineVoyaComponent(
   );
   const componentEvents = Object.fromEntries([
     ...definition.events.map((event) => [event.name, () => true] as const),
-    ["error", (error: VoyaMountError) => error instanceof Object],
+    ["error", (error: VooyaMountError) => error instanceof Object],
   ]);
 
   return defineComponent({
-    name: definition.name.startsWith("Voya") ? definition.name : `Voya${definition.name}`,
+    name: definition.name.startsWith("Vooya") ? definition.name : `Vooya${definition.name}`,
     inheritAttrs: false,
     props: componentProps,
     emits: componentEvents,
     setup(props, { attrs, emit }) {
       const host = ref<Element>();
       let mounted = true;
-      let handle: VoyaComponentHandle | undefined;
+      let handle: VooyaComponentHandle | undefined;
 
       const listeners = definition.events.map((event) => {
         const receive = (browserEvent: Event) => {
@@ -76,7 +76,7 @@ export function defineVoyaComponent(
           else if (event.parameters.length === 0) emit(event.name);
           else emit(event.name, detail);
         };
-        return { name: `voya-${event.name}`, receive };
+        return { name: `vooya-${event.name}`, receive };
       });
 
       onMounted(async () => {
@@ -127,7 +127,7 @@ export function defineVoyaComponent(
         h("div", {
           ...attrs,
           ref: host,
-          "data-voya-host": "",
+          "data-vooya-host": "",
           ...(definition.scopeId ? { "data-voo-scope": definition.scopeId } : {}),
         });
     },

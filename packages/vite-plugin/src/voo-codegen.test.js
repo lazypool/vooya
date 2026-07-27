@@ -46,7 +46,7 @@ test("generates typed event dispatch and a component source prelude", () => {
   assert.equal(generatedComponentPrelude(component), "use super::VooCounterContext as Context;\n");
   assert.match(generated, /pub fn change\(&self, value: i32\)/);
   assert.match(generated, /JsValue::from_f64\(value as f64\)/);
-  assert.match(generated, /new_with_event_init_dict\("voya-change"/);
+  assert.match(generated, /new_with_event_init_dict\("vooya-change"/);
 });
 
 test("references extracted Rust sources for compiler diagnostics", () => {

@@ -9,13 +9,13 @@ test("runs a Rust .voo component through the Vue lifecycle", async ({ page }) =>
 
   await page.goto("/");
 
-  const host = page.locator("[data-voya-host]");
+  const host = page.locator("[data-vooya-host]");
   await expect(host).toHaveAttribute("data-voo-scope", /^voo-[a-f0-9]+$/);
-  await expect(page.locator(".voya-counter")).toHaveCSS("display", "flex");
-  await expect(page.locator(".voya-counter")).toHaveCSS("gap", "12px");
+  await expect(page.locator(".vooya-counter")).toHaveCSS("display", "flex");
+  await expect(page.locator(".vooya-counter")).toHaveCSS("gap", "12px");
   const outsideDisplay = await page.evaluate(() => {
     const outside = document.createElement("section");
-    outside.className = "voya-counter";
+    outside.className = "vooya-counter";
     document.body.append(outside);
     return getComputedStyle(outside).display;
   });
@@ -29,9 +29,9 @@ test("runs a Rust .voo component through the Vue lifecycle", async ({ page }) =>
   await page.getByRole("button", { name: "Set Vue prop to 10" }).click();
   await expect(page.getByRole("status")).toHaveText("10");
 
-  await page.getByRole("button", { name: "Toggle Voya island" }).click();
+  await page.getByRole("button", { name: "Toggle Vooya island" }).click();
   await expect(page.getByRole("button", { name: "Increment" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Toggle Voya island" }).click();
+  await page.getByRole("button", { name: "Toggle Vooya island" }).click();
   await expect(page.getByRole("status")).toHaveText("10");
 
   expect(browserErrors).toEqual([]);

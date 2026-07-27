@@ -10,7 +10,7 @@ impl View {
     pub fn from_host(host: &Element) -> Result<Self, JsValue> {
         let document = host
             .owner_document()
-            .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;
+            .ok_or_else(|| JsValue::from_str("Vooya mount host has no document"))?;
         Ok(Self { document })
     }
 
@@ -19,7 +19,7 @@ impl View {
     }
 }
 
-/// A small, cloneable handle to an element owned by a Voya component.
+/// A small, cloneable handle to an element owned by a Vooya component.
 #[derive(Clone)]
 pub struct ViewElement {
     element: Element,

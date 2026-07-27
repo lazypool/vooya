@@ -53,7 +53,7 @@ export function buildApplication({
   );
   writeIfChanged(
     resolve(cacheRoot, "src/lib.rs"),
-    `pub use voya_core::*;\n\n${generateRustComponents(components, sourcePaths)}`,
+    `pub use vooya_core::*;\n\n${generateRustComponents(components, sourcePaths)}`,
   );
 
   runCargo(
@@ -76,7 +76,7 @@ export function buildApplication({
   execFileSync(
     "wasm-bindgen",
     [
-      resolve(targetDir, "wasm32-unknown-unknown/release/voya_app.wasm"),
+      resolve(targetDir, "wasm32-unknown-unknown/release/vooya_app.wasm"),
       "--target",
       "web",
       "--out-dir",
@@ -87,7 +87,7 @@ export function buildApplication({
 
   return {
     cacheRoot,
-    runtimeModule: resolve(outputDir, "voya_app.js"),
+    runtimeModule: resolve(outputDir, "vooya_app.js"),
   };
 }
 
@@ -95,7 +95,7 @@ export function buildApplication({
 export function buildCore(root = repositoryRoot) {
   return buildApplication({
     applicationRoot: root,
-    cacheRoot: resolve(root, "target/voya-package"),
+    cacheRoot: resolve(root, "target/vooya-package"),
     outputDir: resolve(root, "packages/core/dist"),
   });
 }
@@ -104,7 +104,7 @@ export function generatedCargoManifest({ applicationRoot, runtimeCrateRoot, rust
   const webSysFeatures = mergedWebSysFeatures(rust.webSysFeatures);
   const dependencies = generatedUserDependencies(rust.dependencies, applicationRoot);
   return `[package]
-name = "voya-app"
+name = "vooya-app"
 version = "0.0.0"
 edition = "2024"
 
@@ -114,7 +114,7 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
-voya-core = { path = ${JSON.stringify(runtimeCrateRoot)} }
+vooya-core = { path = ${JSON.stringify(runtimeCrateRoot)} }
 js-sys = "=0.3.92"
 wasm-bindgen = "=0.2.115"
 web-sys = { version = "=0.3.92", features = [
@@ -138,7 +138,7 @@ const builtInWebSysFeatures = [
   "Window",
 ];
 
-const reservedDependencies = new Set(["js-sys", "voya-core", "wasm-bindgen", "web-sys"]);
+const reservedDependencies = new Set(["js-sys", "vooya-core", "wasm-bindgen", "web-sys"]);
 const dependencyKeys = new Set([
   "branch",
   "defaultFeatures",
@@ -152,7 +152,7 @@ const dependencyKeys = new Set([
 ]);
 
 function mergedWebSysFeatures(features = []) {
-  if (!Array.isArray(features)) throw new Error("Voya rust.webSysFeatures must be an array.");
+  if (!Array.isArray(features)) throw new Error("Vooya rust.webSysFeatures must be an array.");
   for (const feature of features) {
     if (typeof feature !== "string" || !/^[A-Za-z][A-Za-z0-9]*$/.test(feature)) {
       throw new Error(`Invalid web-sys feature ${JSON.stringify(feature)}.`);
@@ -163,7 +163,7 @@ function mergedWebSysFeatures(features = []) {
 
 function generatedUserDependencies(dependencies = {}, applicationRoot) {
   if (!isPlainObject(dependencies)) {
-    throw new Error("Voya rust.dependencies must be an object.");
+    throw new Error("Vooya rust.dependencies must be an object.");
   }
   return Object.entries(dependencies)
     .sort(([left], [right]) => left.localeCompare(right))
@@ -173,7 +173,7 @@ function generatedUserDependencies(dependencies = {}, applicationRoot) {
       }
       if (reservedDependencies.has(name)) {
         throw new Error(
-          `Rust dependency ${JSON.stringify(name)} is managed by Voya and cannot be overridden.`,
+          `Rust dependency ${JSON.stringify(name)} is managed by Vooya and cannot be overridden.`,
         );
       }
       return `${JSON.stringify(name)} = ${generatedDependencySpecification(

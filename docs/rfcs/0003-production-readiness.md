@@ -63,7 +63,7 @@ an event listener or handle alive.
 
 ## Development instrumentation
 
-Voya dispatches non-bubbling development events from the host element for mount,
+Vooya dispatches non-bubbling development events from the host element for mount,
 mount failure, update, and dispose. A future DevTools package can observe these
 events without becoming part of the runtime dependency graph.
 
@@ -72,7 +72,7 @@ events without becoming part of the runtime dependency graph.
 Before changing package visibility or publishing an alpha, CI must pass:
 
 ```bash
-cargo test -p voya-core
+cargo test -p vooya-core
 npm run test:voo
 npm run test:portable
 npm run test:hmr
@@ -90,7 +90,7 @@ npm pack --dry-run --workspace @vooya/react
 The packed archives must contain the compiler JavaScript, adapter JavaScript and
 declarations, baseline WASM where required, and the `@vooya/core` Rust runtime
 source. They must not contain examples, generated application caches, or paths
-that point back to the Voya checkout.
+that point back to the Vooya checkout.
 
 ## Non-goals
 

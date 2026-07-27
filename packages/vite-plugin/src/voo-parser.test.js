@@ -8,7 +8,7 @@ test("parses transitional manifests", () => {
 component Counter
 export: mount_counter
 adapter:
-vue: defineVoyaCounter
+vue: defineVooyaCounter
 props:
 initial: number required
 events:
@@ -18,7 +18,7 @@ change: number
   assert.equal(component.format, "manifest");
   assert.equal(component.name, "Counter");
   assert.equal(component.exportName, "mount_counter");
-  assert.deepEqual(component.adapters, { vue: "defineVoyaCounter" });
+  assert.deepEqual(component.adapters, { vue: "defineVooyaCounter" });
   assert.deepEqual(component.props, [{ name: "initial", type: "number", required: true }]);
   assert.deepEqual(component.events, [{ name: "change", type: "number" }]);
 });

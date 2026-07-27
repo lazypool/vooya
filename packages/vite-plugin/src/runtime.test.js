@@ -10,6 +10,6 @@ test("accepts the compiler ABI version", () => {
 test("reports mismatched WASM bindings before mount", () => {
   assert.throws(
     () => assertVooAbiVersion(VOO_ABI_VERSION + 1),
-    /Voya ABI mismatch: compiler expects 1, but WASM provides 2/,
+    /Vooya ABI mismatch: compiler expects 1, but WASM provides 2/,
   );
 });

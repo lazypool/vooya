@@ -7,7 +7,7 @@ import test from "node:test";
 import { readVooComponents } from "./voo-project.js";
 
 test("does not scan generated build caches for components", () => {
-  const root = mkdtempSync(resolve(tmpdir(), "voya-project-"));
+  const root = mkdtempSync(resolve(tmpdir(), "vooya-project-"));
   try {
     mkdirSync(resolve(root, "src"));
     mkdirSync(resolve(root, ".voo-cache"));

@@ -1,6 +1,6 @@
 # `@vooya/core`
 
-Rust and browser runtime used by the Voya component compiler.
+Rust and browser runtime used by the Vooya component compiler.
 
 The package contains the Rust runtime source consumed by `@vooya/vite-plugin`
 and baseline wasm-bindgen output. Application code normally imports `.voo`

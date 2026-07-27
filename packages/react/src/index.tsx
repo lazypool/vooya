@@ -1,11 +1,11 @@
 import { createElement, useEffect, useRef } from "react";
 
-export interface VoyaMountError {
+export interface VooyaMountError {
   stage: "load" | "mount";
   cause: unknown;
 }
 
-export interface VoyaComponentDefinition {
+export interface VooyaComponentDefinition {
   abiVersion: number;
   name: string;
   scopeId?: string;
@@ -21,29 +21,29 @@ export interface VoyaComponentDefinition {
   }>;
 }
 
-export interface VoyaComponentHandle {
+export interface VooyaComponentHandle {
   dispose(): void;
   [method: string]: unknown;
 }
 
-export interface VoyaComponentBindings {
-  mount(host: Element, ...props: unknown[]): VoyaComponentHandle;
+export interface VooyaComponentBindings {
+  mount(host: Element, ...props: unknown[]): VooyaComponentHandle;
 }
 
-export type VoyaComponentBindingsLoader = () => Promise<VoyaComponentBindings>;
+export type VooyaComponentBindingsLoader = () => Promise<VooyaComponentBindings>;
 
 type RuntimeProps = Record<string, unknown> & {
   className?: string;
-  onError?: (error: VoyaMountError) => void;
+  onError?: (error: VooyaMountError) => void;
 };
 
-export function defineVoyaComponent(
-  definition: VoyaComponentDefinition,
-  loadBindings: VoyaComponentBindingsLoader,
+export function defineVooyaComponent(
+  definition: VooyaComponentDefinition,
+  loadBindings: VooyaComponentBindingsLoader,
 ) {
-  return function VoyaComponent(componentProps: RuntimeProps) {
+  return function VooyaComponent(componentProps: RuntimeProps) {
     const host = useRef<HTMLDivElement>(null);
-    const handle = useRef<VoyaComponentHandle | undefined>(undefined);
+    const handle = useRef<VooyaComponentHandle | undefined>(undefined);
     const props = useRef(componentProps);
     const previousProps = useRef<Record<string, unknown> | undefined>(undefined);
     props.current = componentProps;
@@ -62,8 +62,8 @@ export function defineVoyaComponent(
           else if (event.parameters.length === 0) callback();
           else callback(detail);
         };
-        element.addEventListener(`voya-${event.name}`, receive);
-        return { name: `voya-${event.name}`, receive };
+        element.addEventListener(`vooya-${event.name}`, receive);
+        return { name: `vooya-${event.name}`, receive };
       });
 
       void loadBindings()
@@ -108,7 +108,7 @@ export function defineVoyaComponent(
     return createElement("div", {
       ref: host,
       className: componentProps.className,
-      "data-voya-host": "",
+      "data-vooya-host": "",
       ...(definition.scopeId ? { "data-voo-scope": definition.scopeId } : {}),
     });
   };

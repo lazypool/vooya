@@ -7,7 +7,7 @@ export function App() {
 
   return (
     <main>
-      <h1>Voya inside React</h1>
+      <h1>Vooya inside React</h1>
       <Counter
         initial={initial}
         className="counter-host"

@@ -15,7 +15,7 @@ import { chromium } from "playwright";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 const fixture = resolve(repositoryRoot, "tests/fixtures/portable-vue");
-const temporaryRoot = mkdtempSync(resolve(tmpdir(), "voya-hmr-"));
+const temporaryRoot = mkdtempSync(resolve(tmpdir(), "vooya-hmr-"));
 const project = resolve(temporaryRoot, "app");
 const port = await availablePort();
 const vite = resolve(repositoryRoot, "node_modules/vite/bin/vite.js");
@@ -78,7 +78,7 @@ try {
     throw new Error("A superseded rapid save was compiled instead of being coalesced.");
   }
 
-  console.log("Voya dev rebuild recovered from errors and coalesced rapid saves.");
+  console.log("Vooya dev rebuild recovered from errors and coalesced rapid saves.");
 } finally {
   await browser?.close();
   if (server && server.exitCode === null) {
@@ -114,7 +114,7 @@ async function waitFor(predicate, timeout = 20_000) {
     if (await predicate()) return;
     await new Promise((resolveWait) => setTimeout(resolveWait, 50));
   }
-  throw new Error(`Timed out waiting for Voya dev server.\n${output}`);
+  throw new Error(`Timed out waiting for Vooya dev server.\n${output}`);
 }
 
 function occurrences(source, value) {

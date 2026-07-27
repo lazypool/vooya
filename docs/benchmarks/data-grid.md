@@ -1,6 +1,6 @@
 # Data Grid Benchmark Plan
 
-The first product-validation benchmark is a Vue data grid with a Voya island
+The first product-validation benchmark is a Vue data grid with a Vooya island
 implementation and a Vue-only baseline. It is not a synthetic Rust-versus-JS
 microbenchmark.
 
@@ -21,7 +21,7 @@ microbenchmark.
 
 ## Decision rule
 
-Continue Stage 4 only when the Voya implementation improves at least one
+Continue Stage 4 only when the Vooya implementation improves at least one
 user-visible interaction under the target workload without introducing an
 unacceptable first-load regression. The report must present both wins and
 regressions; a faster isolated compute loop is insufficient evidence.

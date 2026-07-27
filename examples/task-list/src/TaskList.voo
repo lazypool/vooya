@@ -49,25 +49,25 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     let host = context.host;
     let document = host
         .owner_document()
-        .ok_or_else(|| JsValue::from_str("Voya mount host has no document"))?;
+        .ok_or_else(|| JsValue::from_str("Vooya mount host has no document"))?;
     let root = document.create_element("section")?;
-    root.set_class_name("voya-task-list");
-    root.set_attribute("data-voya-island", "task-list")?;
+    root.set_class_name("vooya-task-list");
+    root.set_attribute("data-vooya-island", "task-list")?;
     root.set_inner_html(
         r#"
-        <div class="voya-task-compose">
-          <input data-voya-task-input aria-label="New task" placeholder="Add a task">
-          <button data-voya-add>Add task</button>
+        <div class="vooya-task-compose">
+          <input data-vooya-task-input aria-label="New task" placeholder="Add a task">
+          <button data-vooya-add>Add task</button>
         </div>
-        <p data-voya-error role="alert"></p>
-        <div class="voya-task-filters">
-          <button data-voya-filter="all">All</button>
-          <button data-voya-filter="active">Active</button>
-          <button data-voya-filter="done">Done</button>
+        <p data-vooya-error role="alert"></p>
+        <div class="vooya-task-filters">
+          <button data-vooya-filter="all">All</button>
+          <button data-vooya-filter="active">Active</button>
+          <button data-vooya-filter="done">Done</button>
         </div>
-        <p data-voya-summary></p>
-        <p data-voya-empty hidden>No tasks in this view.</p>
-        <div data-voya-task-rows></div>
+        <p data-vooya-summary></p>
+        <p data-vooya-empty hidden>No tasks in this view.</p>
+        <div data-vooya-task-rows></div>
         "#,
     );
     host.append_child(&root)?;
@@ -111,12 +111,12 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
     render();
 
     let input: HtmlInputElement = root
-        .query_selector("[data-voya-task-input]")?
-        .ok_or_else(|| JsValue::from_str("Voya task input is missing"))?
+        .query_selector("[data-vooya-task-input]")?
+        .ok_or_else(|| JsValue::from_str("Vooya task input is missing"))?
         .dyn_into()?;
     let add: HtmlElement = root
-        .query_selector("[data-voya-add]")?
-        .ok_or_else(|| JsValue::from_str("Voya add task button is missing"))?
+        .query_selector("[data-vooya-add]")?
+        .ok_or_else(|| JsValue::from_str("Vooya add task button is missing"))?
         .dyn_into()?;
     let add_input = input.clone();
     let add_tasks = tasks.clone();
@@ -151,7 +151,7 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
         else {
             return;
         };
-        if let Some(value) = target.get_attribute("data-voya-filter") {
+        if let Some(value) = target.get_attribute("data-vooya-filter") {
             let next = match value.as_str() {
                 "active" => Filter::Active,
                 "done" => Filter::Done,
@@ -160,11 +160,11 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
             click_filter.set(next);
             return;
         }
-        let Some(action) = target.get_attribute("data-voya-task-action") else {
+        let Some(action) = target.get_attribute("data-vooya-task-action") else {
             return;
         };
         let Some(id) = target
-            .get_attribute("data-voya-task-id")
+            .get_attribute("data-vooya-task-id")
             .and_then(|value| value.parse::<u32>().ok())
         else {
             return;
@@ -194,24 +194,24 @@ fn render_task_list(root: &Element, tasks: &[Task], filter: Filter, error: Optio
         .filter(|task| filter.matches(task))
         .cloned()
         .collect::<Vec<_>>();
-    if let Ok(Some(summary)) = root.query_selector("[data-voya-summary]") {
+    if let Ok(Some(summary)) = root.query_selector("[data-vooya-summary]") {
         summary.set_text_content(Some(&format!(
             "{} of {} tasks shown",
             visible.len(),
             tasks.len()
         )));
     }
-    if let Ok(Some(error_node)) = root.query_selector("[data-voya-error]") {
+    if let Ok(Some(error_node)) = root.query_selector("[data-vooya-error]") {
         error_node.set_text_content(error);
     }
-    if let Ok(Some(empty)) = root.query_selector("[data-voya-empty]") {
+    if let Ok(Some(empty)) = root.query_selector("[data-vooya-empty]") {
         if visible.is_empty() {
             let _ = empty.remove_attribute("hidden");
         } else {
             let _ = empty.set_attribute("hidden", "");
         }
     }
-    let Ok(Some(rows)) = root.query_selector("[data-voya-task-rows]") else {
+    let Ok(Some(rows)) = root.query_selector("[data-vooya-task-rows]") else {
         return;
     };
     let Some(document) = root.owner_document() else {
@@ -219,32 +219,32 @@ fn render_task_list(root: &Element, tasks: &[Task], filter: Filter, error: Optio
     };
     let visible_ids = visible.iter().map(|task| task.id).collect::<HashSet<_>>();
     for task in &visible {
-        let selector = format!("[data-voya-key=\"{}\"]", task.id);
+        let selector = format!("[data-vooya-key=\"{}\"]", task.id);
         let row = rows
             .query_selector(&selector)
             .ok()
             .flatten()
             .unwrap_or_else(|| {
                 let row = document.create_element("div").unwrap();
-                row.set_class_name("voya-task-row");
-                let _ = row.set_attribute("data-voya-key", &task.id.to_string());
+                row.set_class_name("vooya-task-row");
+                let _ = row.set_attribute("data-vooya-key", &task.id.to_string());
                 row
             });
         row.set_class_name(if task.done {
-            "voya-task-row is-done"
+            "vooya-task-row is-done"
         } else {
-            "voya-task-row"
+            "vooya-task-row"
         });
         row.set_text_content(None);
         let label = document.create_element("span").unwrap();
         label.set_text_content(Some(&task.label));
         let toggle = document.create_element("button").unwrap();
-        let _ = toggle.set_attribute("data-voya-task-action", "toggle");
-        let _ = toggle.set_attribute("data-voya-task-id", &task.id.to_string());
+        let _ = toggle.set_attribute("data-vooya-task-action", "toggle");
+        let _ = toggle.set_attribute("data-vooya-task-id", &task.id.to_string());
         toggle.set_text_content(Some(if task.done { "Undo" } else { "Done" }));
         let remove = document.create_element("button").unwrap();
-        let _ = remove.set_attribute("data-voya-task-action", "remove");
-        let _ = remove.set_attribute("data-voya-task-id", &task.id.to_string());
+        let _ = remove.set_attribute("data-vooya-task-action", "remove");
+        let _ = remove.set_attribute("data-vooya-task-id", &task.id.to_string());
         remove.set_text_content(Some("Remove"));
         let _ = row.append_child(&label);
         let _ = row.append_child(&toggle);
@@ -255,7 +255,7 @@ fn render_task_list(root: &Element, tasks: &[Task], filter: Filter, error: Optio
     for index in (0..existing.length()).rev() {
         if let Some(row) = existing.item(index) {
             let keep = row
-                .get_attribute("data-voya-key")
+                .get_attribute("data-vooya-key")
                 .and_then(|id| id.parse::<u32>().ok())
                 .is_some_and(|id| visible_ids.contains(&id));
             if !keep {

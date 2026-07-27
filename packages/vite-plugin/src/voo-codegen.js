@@ -159,7 +159,7 @@ ${indent(detail, 8)}
         let init = web_sys::CustomEventInit::new();
         init.set_bubbles(true);
         init.set_detail(&detail);
-        let event = web_sys::CustomEvent::new_with_event_init_dict("voya-${event.name}", &init)?;
+        let event = web_sys::CustomEvent::new_with_event_init_dict("vooya-${event.name}", &init)?;
         self.target.dispatch_event(&event)?;
         Ok(())
     }`;

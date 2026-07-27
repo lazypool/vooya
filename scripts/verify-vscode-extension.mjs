@@ -18,7 +18,7 @@ const manifestFixture = `component LegacyCounter
 runtime: @vooya/core
 export: mount_counter
 adapter:
-  vue: createVoyaComponent
+  vue: createVooyaComponent
 props:
   initial: number required
 events:
@@ -61,7 +61,7 @@ assert(
   "The <rust> block is not tokenized as embedded Rust.",
 );
 assert(
-  hasScope(tokens, ".voya-counter", "entity.other.attribute-name.class.css", "meta.embedded.block.css"),
+  hasScope(tokens, ".vooya-counter", "entity.other.attribute-name.class.css", "meta.embedded.block.css"),
   "The <style> block is not tokenized as embedded CSS.",
 );
 assert(

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 const fixture = resolve(repositoryRoot, "tests/fixtures/portable-vue");
-const temporaryRoot = mkdtempSync(resolve(tmpdir(), "voya-portable-"));
+const temporaryRoot = mkdtempSync(resolve(tmpdir(), "vooya-portable-"));
 const packageDirectory = resolve(temporaryRoot, "packages");
 const project = resolve(temporaryRoot, "app");
 
@@ -30,12 +30,12 @@ try {
   run("npm", ["run", "build"], project);
 
   const assets = readdirSync(resolve(project, "dist/assets"));
-  if (!assets.some((asset) => /^voya_app_bg-.*\.wasm$/.test(asset))) {
+  if (!assets.some((asset) => /^vooya_app_bg-.*\.wasm$/.test(asset))) {
     throw new Error("Portable build did not emit the application WASM asset.");
   }
-  console.log(`Portable Voya build passed outside the checkout: ${project}`);
+  console.log(`Portable Vooya build passed outside the checkout: ${project}`);
 } finally {
-  if (!process.env.VOYA_KEEP_PORTABLE_FIXTURE) {
+  if (!process.env.VOOYA_KEEP_PORTABLE_FIXTURE) {
     rmSync(temporaryRoot, { force: true, recursive: true });
   }
 }

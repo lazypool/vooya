@@ -23,9 +23,9 @@ const targets = {
   },
 };
 
-const targetName = process.env.VOYA_E2E_TARGET ?? "vue";
+const targetName = process.env.VOOYA_E2E_TARGET ?? "vue";
 const target = targets[targetName];
-if (!target) throw new Error(`Unknown VOYA_E2E_TARGET "${targetName}".`);
+if (!target) throw new Error(`Unknown VOOYA_E2E_TARGET "${targetName}".`);
 
 export default defineConfig({
   testDir: "tests/e2e",

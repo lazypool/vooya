@@ -9,7 +9,7 @@ const visible = ref(true);
 
 <template>
   <main>
-    <h1>Voya inside Vue</h1>
+    <h1>Vooya inside Vue</h1>
     <Counter
       v-if="visible"
       :initial="initial"
@@ -18,7 +18,7 @@ const visible = ref(true);
     />
     <p>Vue received: {{ lastChange ?? "no event" }}</p>
     <button @click="initial = 10">Set Vue prop to 10</button>
-    <button @click="visible = !visible">Toggle Voya island</button>
+    <button @click="visible = !visible">Toggle Vooya island</button>
   </main>
 </template>
 
