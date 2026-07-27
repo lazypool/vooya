@@ -12,7 +12,7 @@ The first alpha is a coordinated package set:
 | Package | Responsibility | Peer dependency |
 | --- | --- | --- |
 | `@voyajs/core` | Browser WASM and generated JavaScript bindings | none |
-| `@voyajs/vite-plugin` | Rust build, `.voya` transform, development reload | Vite |
+| `@voyajs/vite-plugin` | Rust build, `.voo` transform, development reload | Vite |
 | `@voyajs/vue` | Vue host lifecycle bridge | Vue 3 |
 | `@voyajs/react` | React host lifecycle bridge | React 19 |
 
