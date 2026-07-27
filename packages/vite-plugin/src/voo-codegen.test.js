@@ -29,6 +29,17 @@ test("generates a stable WASM component binding", () => {
   assert.match(generated, /voo_counter_component::mount\(host, initial\)/);
 });
 
+test("references extracted Rust sources for compiler diagnostics", () => {
+  const component = { ...counter, id: "/app/Counter.voo" };
+  const generated = generateRustComponents(
+    [component],
+    new Map([[component.id, "/build/Counter.rs"]]),
+  );
+
+  assert.match(generated, /#\[path = "\/build\/Counter.rs"\]/);
+  assert.doesNotMatch(generated, /pub struct Component;/);
+});
+
 test("emits an empty generated module when an app has no source components", () => {
   assert.equal(
     generateRustComponents([]),

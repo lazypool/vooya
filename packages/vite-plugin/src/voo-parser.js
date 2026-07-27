@@ -133,7 +133,8 @@ function readBlock(source, tag, id, required) {
     attributes: parseAttributes(opening[1], id, lineAt(source, opening.index)),
     content: source.slice(contentStart, contentEnd),
     openLine: lineAt(source, opening.index),
-    contentLine: lineAt(source, contentStart),
+    contentLine:
+      lineAt(source, contentStart) + (/^\r?\n/.test(source.slice(contentStart, contentEnd)) ? 1 : 0),
   };
 }
 

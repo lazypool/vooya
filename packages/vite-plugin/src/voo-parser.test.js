@@ -58,11 +58,11 @@ fn counter() {}
       ],
     },
   ]);
-  assert.deepEqual(component.rust, { content: "fn counter() {}", startLine: 10 });
+  assert.deepEqual(component.rust, { content: "fn counter() {}", startLine: 11 });
   assert.deepEqual(component.style, {
     content: ".counter { display: flex; }",
     scoped: true,
-    startLine: 14,
+    startLine: 15,
   });
 });
 
