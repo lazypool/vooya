@@ -1,14 +1,22 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { generateRustComponents } from "./voo-codegen.js";
 
 export const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
-export function buildCore(root = repositoryRoot) {
+export function buildCore(root = repositoryRoot, components = []) {
   const run = (command, args) => {
     execFileSync(command, args, { cwd: root, stdio: "inherit" });
   };
   const outDir = "packages/core/dist";
+  const generatedDir = new URL("../../../target/voya/", import.meta.url);
+
+  mkdirSync(generatedDir, { recursive: true });
+  writeFileSync(
+    new URL("generated_components.rs", generatedDir),
+    generateRustComponents(components),
+  );
 
   run("cargo", [
     "build",

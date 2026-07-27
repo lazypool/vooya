@@ -1,16 +1,28 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { buildCore, repositoryRoot } from "./build-core.mjs";
+import { generatedComponentBinding } from "./voo-codegen.js";
 import { parseVooComponent } from "./voo-parser.js";
 
 const componentExtension = ".voo";
 
 export function voya({ framework = "vue" } = {}) {
+  let applicationRoot;
+  let sourceComponents = [];
+
+  const compile = () => {
+    sourceComponents = applicationRoot ? readSourceComponents(applicationRoot) : [];
+    buildCore(repositoryRoot, sourceComponents);
+  };
+
   return {
     name: "voya",
     enforce: "pre",
+    configResolved(config) {
+      applicationRoot = config.root;
+    },
     buildStart() {
-      buildCore();
+      compile();
     },
     resolveId(source, importer) {
       if (!source.endsWith(componentExtension) || !importer) return null;
@@ -19,8 +31,26 @@ export function voya({ framework = "vue" } = {}) {
     load(id) {
       if (!id.endsWith(componentExtension)) return null;
       const component = parseVooComponent(readFileSync(id, "utf8"), id);
-      if (component.format !== "manifest") {
-        this.error(`Source component compilation is not available yet for ${id}.`);
+      if (component.format === "source") {
+        if (framework !== "vue") {
+          this.error(`Source components currently support Vue only: ${id}.`);
+        }
+        const { exportName } = generatedComponentBinding(component);
+        return `
+          import init, { ${exportName} } from "@voyajs/core";
+          import { defineVoyaCounter } from "@voyajs/vue";
+
+          let bindings;
+          async function loadBindings() {
+            if (!bindings) {
+              bindings = init().then(() => ({ mount_counter: ${exportName} }));
+            }
+            return bindings;
+          }
+
+          export const metadata = ${JSON.stringify(componentMetadata(component))};
+          export default defineVoyaCounter(loadBindings);
+        `;
       }
       const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";
       const factory = component.adapters[framework];
@@ -55,10 +85,35 @@ export function voya({ framework = "vue" } = {}) {
       const source = resolve(repositoryRoot, "crates/voya-core/src");
       server.watcher.add(source);
       server.watcher.on("change", (file) => {
-        if (!file.startsWith(source)) return;
-        buildCore();
+        if (!file.startsWith(source) && !file.endsWith(componentExtension)) return;
+        compile();
         server.ws.send({ type: "full-reload" });
       });
     },
+  };
+}
+
+function readSourceComponents(root) {
+  return readVooFiles(root)
+    .map((id) => parseVooComponent(readFileSync(id, "utf8"), id))
+    .filter((component) => component.format === "source");
+}
+
+function readVooFiles(directory) {
+  const files = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.name === "dist" || entry.name === "node_modules") continue;
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...readVooFiles(path));
+    else if (entry.isFile() && entry.name.endsWith(componentExtension)) files.push(path);
+  }
+  return files;
+}
+
+function componentMetadata(component) {
+  return {
+    name: component.name,
+    props: component.props,
+    events: component.events,
   };
 }

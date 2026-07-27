@@ -15,6 +15,8 @@ pub use data_grid::{DataGridHandle, mount_data_grid};
 pub use reactive::{Effect, Signal, effect, signal};
 pub use task_list::{TaskListHandle, mount_task_list};
 
+include!(concat!(env!("OUT_DIR"), "/voya_generated.rs"));
+
 #[wasm_bindgen]
 pub struct CounterHandle {
     root: Element,
