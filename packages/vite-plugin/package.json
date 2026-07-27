@@ -7,6 +7,9 @@
   "exports": {
     ".": "./src/index.js"
   },
+  "scripts": {
+    "test": "node --test src/*.test.js"
+  },
   "peerDependencies": {
     "vite": "^7.0.0"
   }
