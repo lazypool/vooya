@@ -1,6 +1,6 @@
 {
   "name": "@vooya/vite-plugin",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Vite integration for Voya component islands.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
@@ -15,6 +15,12 @@
   "bin": {
     "voo-format": "./bin/voo-format.mjs"
   },
+  "files": [
+    "bin",
+    "src/*.js",
+    "src/*.mjs",
+    "!src/*.test.js"
+  ],
   "exports": {
     ".": "./src/index.js",
     "./format": "./src/voo-format.js",
@@ -27,7 +33,7 @@
     "vite": "^7.0.0"
   },
   "dependencies": {
-    "@vooya/core": "0.1.0-alpha.0",
+    "@vooya/core": "0.1.0-alpha.1",
     "postcss": "^8.5.23"
   }
 }

@@ -1,0 +1,13 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "@vooya/core": "0.1.0-alpha.0",
+    "@vooya/react": "0.1.0-alpha.0",
+    "@vooya/vite-plugin": "0.1.0-alpha.0",
+    "@vooya/vue": "0.1.0-alpha.0"
+  },
+  "changesets": [
+    "vooya-alpha"
+  ]
+}

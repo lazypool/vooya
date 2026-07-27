@@ -1,6 +1,6 @@
 {
   "name": "@vooya/react",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "React host adapter for Voya component islands.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
@@ -12,7 +12,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
