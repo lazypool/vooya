@@ -5,8 +5,10 @@ import { generatedAdapterDefinition, generatedComponentBinding } from "./voo-cod
 import { writeVooDeclarations } from "./voo-declarations.js";
 import { parseVooComponent } from "./voo-parser.js";
 import { readVooComponents } from "./voo-project.js";
+import { compileVooStyle } from "./voo-style.js";
 
 const componentExtension = ".voo";
+const stylePrefix = "virtual:voya-style:";
 
 export function voya({ framework = "vue" } = {}) {
   let applicationRoot;
@@ -29,17 +31,25 @@ export function voya({ framework = "vue" } = {}) {
       compile();
     },
     resolveId(source, importer) {
+      if (source.startsWith(stylePrefix)) return `\0${source}`;
       if (!source.endsWith(componentExtension) || !importer) return null;
       return resolve(importer, "..", source);
     },
     load(id) {
+      if (id.startsWith(`\0${stylePrefix}`)) {
+        const componentId = decodeURIComponent(id.slice(stylePrefix.length + 1, -4));
+        const component = parseVooComponent(readFileSync(componentId, "utf8"), componentId);
+        return compileVooStyle({ ...component, id: componentId });
+      }
       if (!id.endsWith(componentExtension)) return null;
       const component = parseVooComponent(readFileSync(id, "utf8"), id);
       if (component.format === "source") {
+        component.id = id;
         const { exportName } = generatedComponentBinding(component);
         const definition = generatedAdapterDefinition(component);
         const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";
         return `
+          ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
           import init, { ${exportName} } from "@voyajs/core";
           import { defineVoyaComponent } from "${adapter}";
 

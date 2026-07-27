@@ -9,6 +9,18 @@ test("runs a Rust .voo component through the Vue lifecycle", async ({ page }) =>
 
   await page.goto("/");
 
+  const host = page.locator("[data-voya-host]");
+  await expect(host).toHaveAttribute("data-voo-scope", /^voo-[a-f0-9]+$/);
+  await expect(page.locator(".voya-counter")).toHaveCSS("display", "flex");
+  await expect(page.locator(".voya-counter")).toHaveCSS("gap", "12px");
+  const outsideDisplay = await page.evaluate(() => {
+    const outside = document.createElement("section");
+    outside.className = "voya-counter";
+    document.body.append(outside);
+    return getComputedStyle(outside).display;
+  });
+  expect(outsideDisplay).not.toBe("flex");
+
   await expect(page.getByRole("status")).toHaveText("1");
   await page.getByRole("button", { name: "Increment" }).click();
   await expect(page.getByRole("status")).toHaveText("2");

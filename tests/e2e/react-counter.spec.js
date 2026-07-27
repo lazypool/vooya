@@ -9,6 +9,12 @@ test("runs the Rust .voo component through the React lifecycle", async ({ page }
 
   await page.goto("/");
 
+  await expect(page.locator("[data-voya-host]")).toHaveAttribute(
+    "data-voo-scope",
+    /^voo-[a-f0-9]+$/,
+  );
+  await expect(page.locator(".voya-counter")).toHaveCSS("display", "flex");
+
   await expect(page.getByRole("status")).toHaveText("1");
   await page.getByRole("button", { name: "Increment" }).click();
   await expect(page.getByRole("status")).toHaveText("2");

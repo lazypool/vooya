@@ -12,5 +12,8 @@
   },
   "peerDependencies": {
     "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "postcss": "^8.5.23"
   }
 }

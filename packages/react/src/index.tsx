@@ -7,6 +7,7 @@ export interface VoyaMountError {
 
 export interface VoyaComponentDefinition {
   name: string;
+  scopeId?: string;
   props: Array<{
     name: string;
     type: "number" | "boolean" | "string";
@@ -107,6 +108,7 @@ export function defineVoyaComponent(
       ref: host,
       className: componentProps.className,
       "data-voya-host": "",
+      ...(definition.scopeId ? { "data-voo-scope": definition.scopeId } : {}),
     });
   };
 }

@@ -5,6 +5,7 @@ import {
   generateRustComponents,
   generatedAdapterDefinition,
   generatedComponentBinding,
+  generatedScopeId,
 } from "./voo-codegen.js";
 
 const counter = {
@@ -78,4 +79,18 @@ test("rejects prop types that cannot cross the generated ABI", () => {
       }),
     /Unsupported Voo prop type/,
   );
+});
+
+test("generates a stable style scope from the component path", () => {
+  const component = {
+    ...counter,
+    id: "/app/Counter.voo",
+    style: { content: ".counter {}", scoped: true },
+    events: [],
+  };
+  const definition = generatedAdapterDefinition(component);
+
+  assert.equal(definition.scopeId, generatedScopeId(component));
+  assert.match(definition.scopeId, /^voo-[a-f0-9]+$/);
+  assert.notEqual(generatedScopeId(component), generatedScopeId({ ...component, id: "/other.voo" }));
 });

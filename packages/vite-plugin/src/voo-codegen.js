@@ -16,6 +16,7 @@ export function generatedComponentBinding(component) {
 export function generatedAdapterDefinition(component) {
   return {
     name: component.name,
+    ...(component.style?.scoped ? { scopeId: generatedScopeId(component) } : {}),
     props: component.props.map((prop) => ({
       name: prop.name,
       type: javascriptType(prop.rustType),
@@ -29,6 +30,16 @@ export function generatedAdapterDefinition(component) {
       parameters: event.parameters.map((parameter) => parameter.name),
     })),
   };
+}
+
+export function generatedScopeId(component) {
+  const source = component.id ?? component.name;
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `voo-${(hash >>> 0).toString(16)}`;
 }
 
 function generateRustComponent(component, sourcePath) {
