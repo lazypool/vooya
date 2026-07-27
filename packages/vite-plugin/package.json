@@ -4,8 +4,12 @@
   "description": "Vite integration for Voya component islands.",
   "type": "module",
   "private": true,
+  "bin": {
+    "voo-format": "./bin/voo-format.mjs"
+  },
   "exports": {
     ".": "./src/index.js",
+    "./format": "./src/voo-format.js",
     "./runtime": "./src/runtime.js"
   },
   "scripts": {

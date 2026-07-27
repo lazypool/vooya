@@ -12,7 +12,7 @@ export function readVooComponents(root) {
   }));
 }
 
-function readVooFiles(directory) {
+export function readVooFiles(directory) {
   const files = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     if (ignoredDirectories.has(entry.name)) continue;

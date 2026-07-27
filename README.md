@@ -217,6 +217,13 @@ npm run build:tasks
 npm run build:benchmark
 ```
 
+Format source components, or check formatting in CI:
+
+```sh
+npx voo-format src
+npx voo-format --check src
+```
+
 ## Roadmap
 
 The next milestones move the working compiler toward a developer preview:
