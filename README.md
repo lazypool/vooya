@@ -16,9 +16,9 @@ import Counter from "./Counter.voo";
 </template>
 ```
 
-The goal is for the implementation, public props, events, and scoped styles to
-live in one `.voo` component file. Voya will compile its Rust code to WASM and
-generate the framework adapter and TypeScript declarations automatically.
+The implementation, public props, events, and scoped styles live in one `.voo`
+component file. Voya compiles its Rust code to WASM and generates the framework
+adapter and TypeScript declarations automatically.
 
 ## Why Voya
 
@@ -57,38 +57,41 @@ This boundary allows a Voya component to behave like a normal Vue or React
 component while keeping its state, update logic, and rendering implementation
 in Rust.
 
-## Target `.voo` Format
+## `.voo` Components
 
-The single-file component syntax is still being designed. The intended authoring
-model looks like this:
+The current compiler accepts a component contract, a Rust module, and an
+optional style block:
 
 ```voo
 <component name="Counter">
 props:
-  initial: i32 = 0
+  initial: i32
 
 events:
   change(value: i32)
 </component>
 
 <rust>
-use voo::prelude::*;
+use wasm_bindgen::JsValue;
+use web_sys::Element;
 
-#[voo::component]
-fn counter(ctx: Context<Props, Events>) -> impl View {
-    let count = signal(ctx.props.initial.get());
+pub struct Component {
+    // Rust-owned state and browser resources
+}
 
-    view! {
-        <section class="counter">
-            <output>{count}</output>
-            <button on:click=move |_| {
-                let next = count.update(|value| *value += 1);
-                ctx.events.change(next);
-            }>
-                "Increment"
-            </button>
-        </section>
+impl Component {
+    pub fn update_initial(&self, value: i32) {
+        // Apply a generated prop update.
     }
+
+    pub fn dispose(&mut self) {
+        // Release listeners and owned DOM.
+    }
+}
+
+pub fn mount(host: Element, initial: i32) -> Result<Component, JsValue> {
+    // Build the component below the framework-owned host.
+    todo!()
 }
 </rust>
 
@@ -101,27 +104,34 @@ fn counter(ctx: Context<Props, Events>) -> impl View {
 </style>
 ```
 
-`mount`, prop updates, event forwarding, disposal, framework adapters, and
-TypeScript declarations are compiler responsibilities. Component authors
-should not have to hand-write WASM export names or Vue/React adapter factories.
+The compiler turns `mount`, `update_<prop>`, and `dispose` into the public WASM
+ABI. Authors do not write `wasm_bindgen` exports, WASM initialization,
+Vue/React adapter factories, TypeScript declarations, or CSS scope attributes.
+
+The lower-level Rust DOM implementation is temporary. A higher-level Voya view
+and event API is the next authoring milestone; it must compile to the same
+component contract rather than replace the working boundary.
 
 ## Current Status
 
 Voya is currently an architecture-validation prototype, not a published stable
 compiler.
 
-The repository already has:
+The repository now has:
 
-- a Rust core compiled for `wasm32-unknown-unknown`;
-- a Vite plugin that resolves `.voo` imports and initializes WASM;
-- working Vue and React lifecycle bridges;
-- props flowing into a Rust counter and events flowing back to the host;
-- Rust implementations of a task list and a virtualized data-grid experiment.
+- Rust source compiled directly from `<rust>` blocks to application-level WASM;
+- generated mount, prop-update, dispose, and ABI-version bindings;
+- contract-generated Vue and React lifecycle adapters;
+- per-component `.d.voo.ts` declarations for props and events;
+- Rust diagnostics mapped back to original `.voo` line numbers;
+- PostCSS-based scoped styles shared by Vue and React;
+- warm Cargo builds that preserve generated-file timestamps when unchanged;
+- browser E2E coverage for Counter, TaskList, and DataGrid components;
+- an honest 100,000-row benchmark currently showing approximate parity with
+  its Vue baseline.
 
-The current `.voo` files are transitional manifests. They select an existing
-Rust/WASM export and framework adapter; their Rust implementation does not live
-inside the file yet. Props and events are parsed as metadata but do not yet
-generate adapters or TypeScript declarations.
+The compiler is still tied to this repository layout and component Rust code
+uses low-level `web_sys` DOM APIs. Voya is not yet a published or stable tool.
 
 ## Development
 
@@ -150,6 +160,8 @@ npm run typecheck
 npm run typecheck:react
 npm run typecheck:tasks
 npm run typecheck:benchmark
+npm run test:voo
+npm run test:e2e
 npm run build:vue
 npm run build:react
 npm run build:tasks
@@ -158,18 +170,14 @@ npm run build:benchmark
 
 ## Roadmap
 
-The next milestone is one complete Counter component pipeline:
+The next milestones move the working compiler toward a developer preview:
 
-1. Parse a `.voo` file containing its Rust implementation.
-2. Generate a Rust module and compile it into an application-level WASM binary.
-3. Generate the Vue adapter from the declared props and events.
-4. Generate TypeScript declarations for the imported component.
-5. Map Rust compiler diagnostics back to the original `.voo` source.
-6. Remove the hand-written Counter export and adapter.
-
-After that foundation is real, the task list will validate reactive state and
-keyed rendering, the data grid will validate performance on a meaningful
-workload, and the generated component contract can be shared by Vue and React.
+1. Add a higher-level Rust view, event, and cleanup API above `web_sys`.
+2. Make the compiler portable outside the Voya repository checkout.
+3. Provide `.voo` formatting, syntax highlighting, and Rust editor integration.
+4. Make rapid rebuilds queued and reliable, then define state-preserving HMR.
+5. Expand the generated contract beyond primitive props and event payloads.
+6. Package precompiled components so consumers do not need a Rust toolchain.
 
 ## Scope
 
