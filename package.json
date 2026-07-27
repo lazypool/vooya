@@ -21,6 +21,7 @@
     "typecheck:react": "node packages/vite-plugin/src/generate-declarations.mjs examples/react-counter react && tsc --noEmit -p examples/react-counter/tsconfig.json",
     "test:voo": "npm test --workspace @voyajs/vite-plugin",
     "test:portable": "node tests/portable-build.mjs",
+    "test:hmr": "node tests/hmr.mjs",
     "test:e2e": "node tests/e2e/run.mjs",
     "build:packages": "npm run build --workspace @voyajs/core && npm run build --workspace @voyajs/vue && npm run build --workspace @voyajs/react",
     "pack:check": "npm run build:packages && npm pack --dry-run --workspace @voyajs/core && npm pack --dry-run --workspace @voyajs/vite-plugin && npm pack --dry-run --workspace @voyajs/vue && npm pack --dry-run --workspace @voyajs/react"

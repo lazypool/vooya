@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildApplication, resolveRuntimeCrateRoot } from "./build-core.mjs";
+import { createBuildScheduler } from "./build-scheduler.js";
 import { generatedAdapterDefinition, generatedComponentBinding } from "./voo-codegen.js";
 import { writeVooDeclarations } from "./voo-declarations.js";
 import { parseVooComponent } from "./voo-parser.js";
@@ -13,6 +14,7 @@ const stylePrefix = "virtual:voya-style:";
 
 export function voya({ framework = "vue" } = {}) {
   let applicationRoot;
+  let buildScheduler;
   let runtimeModule;
   let sourceComponents = [];
 
@@ -107,11 +109,27 @@ export function voya({ framework = "vue" } = {}) {
     configureServer(server) {
       const source = resolve(resolveRuntimeCrateRoot(), "src");
       server.watcher.add(source);
-      server.watcher.on("change", (file) => {
-        if (!file.startsWith(source) && !file.endsWith(componentExtension)) return;
-        compile();
-        server.ws.send({ type: "full-reload" });
+      buildScheduler = createBuildScheduler({
+        build: compile,
+        onSuccess() {
+          server.ws.send({ type: "full-reload" });
+        },
+        onError(cause) {
+          const error = cause instanceof Error ? cause : new Error(String(cause));
+          server.config.logger.error(error.stack ?? error.message);
+          server.ws.send({
+            type: "error",
+            err: { message: error.message, stack: error.stack ?? "" },
+          });
+        },
       });
+      server.httpServer?.once("close", () => buildScheduler?.dispose());
+    },
+    handleHotUpdate({ file }) {
+      const source = resolve(resolveRuntimeCrateRoot(), "src");
+      if (!file.startsWith(source) && !file.endsWith(componentExtension)) return;
+      buildScheduler?.schedule();
+      return [];
     },
   };
 }

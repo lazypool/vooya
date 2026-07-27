@@ -146,6 +146,8 @@ The repository now has:
 - application-isolated Cargo crates, build caches, and WASM output;
 - an npm-tarball portability test that builds `.voo` in a temporary project
   outside the Voya checkout;
+- debounced development rebuilds that survive Rust errors, coalesce rapid
+  saves, and reload only after a successful WASM build;
 - warm Cargo builds that preserve generated-file timestamps when unchanged;
 - browser E2E coverage for Counter, TaskList, and DataGrid components;
 - an honest 100,000-row benchmark currently showing approximate parity with
@@ -186,6 +188,7 @@ npm run typecheck:tasks
 npm run typecheck:benchmark
 npm run test:voo
 npm run test:portable
+npm run test:hmr
 npm run test:e2e
 npm run build:vue
 npm run build:react
@@ -202,9 +205,11 @@ The next milestones move the working compiler toward a developer preview:
 2. Define and package precompiled component artifacts so application consumers
    do not need Cargo or `wasm-bindgen`.
 3. Provide `.voo` formatting, syntax highlighting, and Rust editor integration.
-4. Make rapid rebuilds queued and reliable, then define state-preserving HMR.
+4. Define state-preserving HMR semantics; successful Rust rebuilds currently
+   perform a reliable full reload.
 5. Expand the generated contract beyond primitive props and event payloads.
-6. Package precompiled components so consumers do not need a Rust toolchain.
+6. Establish the browser/framework compatibility matrix and public alpha
+   release automation.
 
 ## Scope
 

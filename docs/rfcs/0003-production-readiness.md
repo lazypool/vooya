@@ -75,6 +75,7 @@ Before changing package visibility or publishing an alpha, CI must pass:
 cargo test -p voya-core
 npm run test:voo
 npm run test:portable
+npm run test:hmr
 npm run test:e2e
 npm run typecheck
 npm run typecheck:react
