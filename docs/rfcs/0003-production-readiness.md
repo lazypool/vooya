@@ -39,9 +39,12 @@ interfaces form one ABI. A core release is compatible only with adapters from
 the same alpha version. The Vite plugin builds `@voyajs/core` from the checked-out
 source during development; installed packages consume prebuilt artifacts.
 
-The initial public release will use exact internal dependency versions. A
-mismatch must fail during component loading with an actionable message, not
-silently mount an incompatible module.
+Generated WASM exports `voo_abi_version()`. The virtual component module checks
+that value against the compiler runtime before returning mount bindings. A
+mismatch fails during component loading with both expected and actual versions
+in the error; it never reaches the component mount function.
+
+The initial public release will also use exact internal dependency versions.
 
 ## Error model
 
@@ -67,6 +70,8 @@ Before changing package visibility or publishing an alpha, CI must pass:
 
 ```bash
 cargo test -p voya-core
+npm run test:voo
+npm run test:e2e
 npm run typecheck
 npm run typecheck:react
 npm run build:vue

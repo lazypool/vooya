@@ -5,7 +5,8 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./runtime": "./src/runtime.js"
   },
   "scripts": {
     "test": "node --test src/*.test.js"

@@ -50,13 +50,17 @@ export function voya({ framework = "vue" } = {}) {
         const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";
         return `
           ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
-          import init, { ${exportName} } from "@voyajs/core";
+          import init, { ${exportName}, voo_abi_version } from "@voyajs/core";
           import { defineVoyaComponent } from "${adapter}";
+          import { assertVooAbiVersion } from "@voyajs/vite-plugin/runtime";
 
           let bindings;
           async function loadBindings() {
             if (!bindings) {
-              bindings = init().then(() => ({ mount: ${exportName} }));
+              bindings = init().then(() => {
+                assertVooAbiVersion(voo_abi_version());
+                return { mount: ${exportName} };
+              });
             }
             return bindings;
           }
@@ -108,6 +112,7 @@ export function voya({ framework = "vue" } = {}) {
 
 function componentMetadata(component) {
   return {
+    abiVersion: generatedAdapterDefinition(component).abiVersion,
     name: component.name,
     props: component.props,
     events: component.events,

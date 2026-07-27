@@ -13,6 +13,7 @@ export interface VoyaMountError {
 }
 
 export interface VoyaComponentDefinition {
+  abiVersion: number;
   name: string;
   scopeId?: string;
   props: Array<{
