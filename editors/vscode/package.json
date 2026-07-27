@@ -1,0 +1,51 @@
+{
+  "name": "voya",
+  "displayName": "Voya",
+  "description": "Language support for Voya .voo Rust components.",
+  "version": "0.1.0",
+  "publisher": "vooya",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyajs/voya.git",
+    "directory": "editors/vscode"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "voya",
+    "voo",
+    "rust",
+    "wasm"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "voo",
+        "aliases": [
+          "Voo",
+          "voo"
+        ],
+        "extensions": [
+          ".voo"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "voo",
+        "scopeName": "source.voo",
+        "path": "./syntaxes/voo.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.rust": "rust",
+          "meta.embedded.block.css": "css"
+        }
+      }
+    ]
+  }
+}

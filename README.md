@@ -224,6 +224,14 @@ npx voo-format src
 npx voo-format --check src
 ```
 
+Build and install the repository's VS Code extension for `.voo` contract,
+embedded Rust, and scoped CSS highlighting:
+
+```sh
+npm run package:editor
+code --install-extension dist/voya-vscode.vsix
+```
+
 ## Versioning and alpha releases
 
 The four `@vooya` packages use one fixed version while the compiler ABI and
@@ -251,7 +259,8 @@ The next milestones move the working compiler toward a developer preview:
    explicit effect cleanup without hiding the underlying browser APIs.
 2. Define and package precompiled component artifacts so application consumers
    do not need Cargo or `wasm-bindgen`.
-3. Provide `.voo` formatting, syntax highlighting, and Rust editor integration.
+3. Complete Rust editor integration; `.voo` formatting and syntax highlighting
+   are available now.
 4. Define state-preserving HMR semantics; successful Rust rebuilds currently
    perform a reliable full reload.
 5. Expand the generated contract beyond primitive props and event payloads.
