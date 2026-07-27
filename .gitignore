@@ -7,5 +7,6 @@ examples/*/dist
 packages/*/dist
 *.wasm
 *.wasm.d.ts
+*.d.voo.ts
 *.tsbuildinfo
 .DS_Store

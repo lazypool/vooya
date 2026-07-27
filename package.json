@@ -10,7 +10,7 @@
     "demo:runtime": "npm run build:core && python3 -m http.server 4173",
     "dev:vue": "vite --config examples/vue-counter/vite.config.js",
     "build:vue": "vite build --config examples/vue-counter/vite.config.js",
-    "typecheck": "vue-tsc --noEmit -p examples/vue-counter/tsconfig.json",
+    "typecheck": "node packages/vite-plugin/src/generate-declarations.mjs examples/vue-counter vue && vue-tsc --noEmit -p examples/vue-counter/tsconfig.json",
     "dev:benchmark": "vite --config examples/data-grid-benchmark/vite.config.js",
     "build:benchmark": "vite build --config examples/data-grid-benchmark/vite.config.js",
     "typecheck:benchmark": "vue-tsc --noEmit -p examples/data-grid-benchmark/tsconfig.json",

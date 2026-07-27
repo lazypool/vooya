@@ -1,8 +1,10 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { buildCore, repositoryRoot } from "./build-core.mjs";
 import { generatedAdapterDefinition, generatedComponentBinding } from "./voo-codegen.js";
+import { writeVooDeclarations } from "./voo-declarations.js";
 import { parseVooComponent } from "./voo-parser.js";
+import { readVooComponents } from "./voo-project.js";
 
 const componentExtension = ".voo";
 
@@ -11,7 +13,9 @@ export function voya({ framework = "vue" } = {}) {
   let sourceComponents = [];
 
   const compile = () => {
-    sourceComponents = applicationRoot ? readSourceComponents(applicationRoot) : [];
+    const components = applicationRoot ? readVooComponents(applicationRoot) : [];
+    sourceComponents = components.filter((component) => component.format === "source");
+    writeVooDeclarations(components, framework);
     buildCore(repositoryRoot, sourceComponents);
   };
 
@@ -92,23 +96,6 @@ export function voya({ framework = "vue" } = {}) {
       });
     },
   };
-}
-
-function readSourceComponents(root) {
-  return readVooFiles(root)
-    .map((id) => parseVooComponent(readFileSync(id, "utf8"), id))
-    .filter((component) => component.format === "source");
-}
-
-function readVooFiles(directory) {
-  const files = [];
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === "dist" || entry.name === "node_modules") continue;
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...readVooFiles(path));
-    else if (entry.isFile() && entry.name.endsWith(componentExtension)) files.push(path);
-  }
-  return files;
 }
 
 function componentMetadata(component) {
