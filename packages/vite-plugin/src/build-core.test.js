@@ -1,7 +1,31 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import test from "node:test";
 
-import { remapRustDiagnostic } from "./build-core.mjs";
+import {
+  generatedCargoManifest,
+  remapRustDiagnostic,
+  resolveRuntimeCrateRoot,
+} from "./build-core.mjs";
+
+test("resolves the Rust runtime shipped by @voyajs/core", () => {
+  const runtime = resolveRuntimeCrateRoot();
+
+  assert.equal(existsSync(`${runtime}/Cargo.toml`), true);
+  assert.equal(existsSync(`${runtime}/src/lib.rs`), true);
+});
+
+test("generates a standalone application crate", () => {
+  const manifest = generatedCargoManifest("/consumer/node_modules/@voyajs/core/rust");
+
+  assert.match(manifest, /name = "voya-app"/);
+  assert.match(manifest, /^\[workspace\]$/m);
+  assert.match(
+    manifest,
+    /voya-core = \{ path = "\/consumer\/node_modules\/@voyajs\/core\/rust" \}/,
+  );
+  assert.match(manifest, /crate-type = \["cdylib"\]/);
+});
 
 test("maps extracted Rust diagnostics back to the voo source", () => {
   const generated = "/project/target/voya/components/0-Counter.rs";

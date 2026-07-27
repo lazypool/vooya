@@ -2,27 +2,18 @@
 name = "voya-core"
 version = "0.0.0"
 description = "Core runtime for Voya components."
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/voyajs/voya"
 
 [lib]
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-js-sys = "=0.3.92"
 wasm-bindgen = "=0.2.115"
 web-sys = { version = "=0.3.92", features = [
-  "CustomEvent",
-  "CustomEventInit",
   "Document",
   "Element",
   "Event",
   "EventTarget",
-  "HtmlElement",
-  "HtmlCollection",
-  "HtmlInputElement",
-  "Node",
-  "Window",
 ] }

@@ -5,10 +5,12 @@
   "type": "module",
   "private": true,
   "files": [
-    "dist"
+    "dist",
+    "rust"
   ],
   "exports": {
-    ".": "./dist/voya_core.js"
+    ".": "./dist/voya_app.js",
+    "./rust/Cargo.toml": "./rust/Cargo.toml"
   },
   "scripts": {
     "build": "node ../../scripts/build-core.mjs"

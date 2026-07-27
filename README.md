@@ -143,14 +143,19 @@ The repository now has:
 - Rust diagnostics mapped back to original `.voo` line numbers;
 - PostCSS-based scoped styles shared by Vue and React;
 - structured Rust DOM creation and owned browser event listeners;
+- application-isolated Cargo crates, build caches, and WASM output;
+- an npm-tarball portability test that builds `.voo` in a temporary project
+  outside the Voya checkout;
 - warm Cargo builds that preserve generated-file timestamps when unchanged;
 - browser E2E coverage for Counter, TaskList, and DataGrid components;
 - an honest 100,000-row benchmark currently showing approximate parity with
   its Vue baseline.
 
-The compiler is still tied to this repository layout, and non-trivial component
-Rust code still needs some low-level `web_sys` DOM APIs. Voya is not yet a
-published or stable tool.
+Source `.voo` compilation still requires Cargo, the WASM Rust target, and the
+`wasm-bindgen` CLI on the author's machine. Non-trivial component code still
+needs some low-level `web_sys` DOM APIs. Voya is not yet published or stable,
+and precompiled component packages that remove the Rust requirement for
+consumers remain future work.
 
 ## Development
 
@@ -180,6 +185,7 @@ npm run typecheck:react
 npm run typecheck:tasks
 npm run typecheck:benchmark
 npm run test:voo
+npm run test:portable
 npm run test:e2e
 npm run build:vue
 npm run build:react
@@ -193,7 +199,8 @@ The next milestones move the working compiler toward a developer preview:
 
 1. Grow the Rust view layer into declarative trees, reactive bindings, and
    explicit effect cleanup without hiding the underlying browser APIs.
-2. Make the compiler portable outside the Voya repository checkout.
+2. Define and package precompiled component artifacts so application consumers
+   do not need Cargo or `wasm-bindgen`.
 3. Provide `.voo` formatting, syntax highlighting, and Rust editor integration.
 4. Make rapid rebuilds queued and reliable, then define state-preserving HMR.
 5. Expand the generated contract beyond primitive props and event payloads.

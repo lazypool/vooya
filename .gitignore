@@ -3,6 +3,7 @@
 /dist
 examples/*/dist
 /.vite
+**/.voo-cache
 /.playwright-cli
 /playwright-report
 /test-results

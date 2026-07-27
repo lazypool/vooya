@@ -1,18 +1,28 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
+
 import { generateRustComponents, generatedComponentPrelude } from "./voo-codegen.js";
+
+const require = createRequire(import.meta.url);
 
 export const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
-export function buildCore(root = repositoryRoot, components = []) {
-  const run = (command, args) => {
-    execFileSync(command, args, { cwd: root, stdio: "inherit" });
-  };
-  const outDir = "packages/core/dist";
-  const generatedDir = resolve(root, "target/voya");
-  const sourceDir = resolve(generatedDir, "components");
+export function resolveRuntimeCrateRoot() {
+  return dirname(require.resolve("@voyajs/core/rust/Cargo.toml"));
+}
+
+export function buildApplication({
+  applicationRoot,
+  components = [],
+  runtimeCrateRoot = resolveRuntimeCrateRoot(),
+  cacheRoot = resolve(applicationRoot, ".voo-cache"),
+  outputDir = resolve(cacheRoot, "dist"),
+}) {
+  const sourceDir = resolve(cacheRoot, "src/components");
+  const targetDir = resolve(cacheRoot, "target");
   const sourcePaths = new Map();
   const diagnosticMappings = new Map();
 
@@ -28,28 +38,86 @@ export function buildCore(root = repositoryRoot, components = []) {
       generatedLineOffset: prelude.split(/\r?\n/).length - 1,
     });
   }
+
+  writeIfChanged(resolve(cacheRoot, "Cargo.toml"), generatedCargoManifest(runtimeCrateRoot));
   writeIfChanged(
-    resolve(generatedDir, "generated_components.rs"),
-    generateRustComponents(components, sourcePaths),
+    resolve(cacheRoot, "src/lib.rs"),
+    `pub use voya_core::*;\n\n${generateRustComponents(components, sourcePaths)}`,
   );
 
-  runCargo(root, [
-    "build",
-    "--release",
-    "--target",
-    "wasm32-unknown-unknown",
-    "-p",
-    "voya-core",
-  ], diagnosticMappings);
-  rmSync(new URL(`../../../${outDir}`, import.meta.url), { force: true, recursive: true });
-  mkdirSync(new URL(`../../../${outDir}`, import.meta.url), { recursive: true });
-  run("wasm-bindgen", [
-    "target/wasm32-unknown-unknown/release/voya_core.wasm",
-    "--target",
-    "web",
-    "--out-dir",
-    outDir,
-  ]);
+  runCargo(
+    applicationRoot,
+    [
+      "build",
+      "--manifest-path",
+      resolve(cacheRoot, "Cargo.toml"),
+      "--release",
+      "--target",
+      "wasm32-unknown-unknown",
+      "--target-dir",
+      targetDir,
+    ],
+    diagnosticMappings,
+  );
+
+  rmSync(outputDir, { force: true, recursive: true });
+  mkdirSync(outputDir, { recursive: true });
+  execFileSync(
+    "wasm-bindgen",
+    [
+      resolve(targetDir, "wasm32-unknown-unknown/release/voya_app.wasm"),
+      "--target",
+      "web",
+      "--out-dir",
+      outputDir,
+    ],
+    { cwd: applicationRoot, stdio: "inherit" },
+  );
+
+  return {
+    cacheRoot,
+    runtimeModule: resolve(outputDir, "voya_app.js"),
+  };
+}
+
+// Builds the empty runtime artifact shipped by @voyajs/core.
+export function buildCore(root = repositoryRoot) {
+  return buildApplication({
+    applicationRoot: root,
+    cacheRoot: resolve(root, "target/voya-package"),
+    outputDir: resolve(root, "packages/core/dist"),
+  });
+}
+
+export function generatedCargoManifest(runtimeCrateRoot) {
+  return `[package]
+name = "voya-app"
+version = "0.0.0"
+edition = "2024"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+voya-core = { path = ${JSON.stringify(runtimeCrateRoot)} }
+js-sys = "=0.3.92"
+wasm-bindgen = "=0.2.115"
+web-sys = { version = "=0.3.92", features = [
+  "CustomEvent",
+  "CustomEventInit",
+  "Document",
+  "Element",
+  "Event",
+  "EventTarget",
+  "HtmlCollection",
+  "HtmlElement",
+  "HtmlInputElement",
+  "Node",
+  "Window",
+] }
+`;
 }
 
 export function remapRustDiagnostic(message, mappings) {
@@ -96,6 +164,7 @@ function runCargo(root, args, mappings) {
 }
 
 function writeIfChanged(path, content) {
+  mkdirSync(dirname(path), { recursive: true });
   try {
     if (readFileSync(path, "utf8") === content) return;
   } catch (error) {

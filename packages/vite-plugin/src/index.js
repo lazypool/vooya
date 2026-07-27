@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildCore, repositoryRoot } from "./build-core.mjs";
+import { buildApplication, resolveRuntimeCrateRoot } from "./build-core.mjs";
 import { generatedAdapterDefinition, generatedComponentBinding } from "./voo-codegen.js";
 import { writeVooDeclarations } from "./voo-declarations.js";
 import { parseVooComponent } from "./voo-parser.js";
@@ -8,17 +8,22 @@ import { readVooComponents } from "./voo-project.js";
 import { compileVooStyle } from "./voo-style.js";
 
 const componentExtension = ".voo";
+const runtimeId = "virtual:voya-runtime";
 const stylePrefix = "virtual:voya-style:";
 
 export function voya({ framework = "vue" } = {}) {
   let applicationRoot;
+  let runtimeModule;
   let sourceComponents = [];
 
   const compile = () => {
     const components = applicationRoot ? readVooComponents(applicationRoot) : [];
     sourceComponents = components.filter((component) => component.format === "source");
     writeVooDeclarations(components, framework);
-    buildCore(repositoryRoot, sourceComponents);
+    ({ runtimeModule } = buildApplication({
+      applicationRoot,
+      components: sourceComponents,
+    }));
   };
 
   return {
@@ -31,6 +36,7 @@ export function voya({ framework = "vue" } = {}) {
       compile();
     },
     resolveId(source, importer) {
+      if (source === runtimeId) return runtimeModule;
       if (source.startsWith(stylePrefix)) return `\0${source}`;
       if (!source.endsWith(componentExtension) || !importer) return null;
       return resolve(importer, "..", source);
@@ -50,7 +56,7 @@ export function voya({ framework = "vue" } = {}) {
         const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";
         return `
           ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
-          import init, { ${exportName}, voo_abi_version } from "@voyajs/core";
+          import init, { ${exportName}, voo_abi_version } from "${runtimeId}";
           import { defineVoyaComponent } from "${adapter}";
           import { assertVooAbiVersion } from "@voyajs/vite-plugin/runtime";
 
@@ -99,7 +105,7 @@ export function voya({ framework = "vue" } = {}) {
       `;
     },
     configureServer(server) {
-      const source = resolve(repositoryRoot, "crates/voya-core/src");
+      const source = resolve(resolveRuntimeCrateRoot(), "src");
       server.watcher.add(source);
       server.watcher.on("change", (file) => {
         if (!file.startsWith(source) && !file.endsWith(componentExtension)) return;
