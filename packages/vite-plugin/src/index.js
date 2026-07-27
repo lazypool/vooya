@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { buildCore, repositoryRoot } from "./build-core.mjs";
-import { generatedComponentBinding } from "./voo-codegen.js";
+import { generatedAdapterDefinition, generatedComponentBinding } from "./voo-codegen.js";
 import { parseVooComponent } from "./voo-parser.js";
 
 const componentExtension = ".voo";
@@ -36,20 +36,21 @@ export function voya({ framework = "vue" } = {}) {
           this.error(`Source components currently support Vue only: ${id}.`);
         }
         const { exportName } = generatedComponentBinding(component);
+        const definition = generatedAdapterDefinition(component);
         return `
           import init, { ${exportName} } from "@voyajs/core";
-          import { defineVoyaCounter } from "@voyajs/vue";
+          import { defineVoyaComponent } from "@voyajs/vue";
 
           let bindings;
           async function loadBindings() {
             if (!bindings) {
-              bindings = init().then(() => ({ mount_counter: ${exportName} }));
+              bindings = init().then(() => ({ mount: ${exportName} }));
             }
             return bindings;
           }
 
           export const metadata = ${JSON.stringify(componentMetadata(component))};
-          export default defineVoyaCounter(loadBindings);
+          export default defineVoyaComponent(${JSON.stringify(definition)}, loadBindings);
         `;
       }
       const adapter = framework === "react" ? "@voyajs/react" : "@voyajs/vue";

@@ -11,6 +11,24 @@ export function generatedComponentBinding(component) {
   };
 }
 
+export function generatedAdapterDefinition(component) {
+  return {
+    name: component.name,
+    props: component.props.map((prop) => ({
+      name: prop.name,
+      type: javascriptType(prop.rustType),
+      required: prop.required,
+      ...(prop.defaultValue === undefined
+        ? {}
+        : { defaultValue: parseDefaultValue(prop.defaultValue, prop.rustType) }),
+    })),
+    events: component.events.map((event) => ({
+      name: event.name,
+      parameters: event.parameters.map((parameter) => parameter.name),
+    })),
+  };
+}
+
 function generateRustComponent(component) {
   const stem = rustStem(component.name);
   const moduleName = `voo_${stem}_component`;
@@ -56,6 +74,21 @@ function rustStem(name) {
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
     .replace(/[^A-Za-z0-9_]/g, "_")
     .toLowerCase();
+}
+
+function javascriptType(rustType) {
+  if (/^(?:[iu](?:8|16|32|64|128|size)|f(?:32|64))$/.test(rustType)) return "number";
+  if (rustType === "bool") return "boolean";
+  if (rustType === "String" || rustType === "str" || rustType === "&str") return "string";
+  throw new Error(`Unsupported Voo prop type "${rustType}".`);
+}
+
+function parseDefaultValue(source, rustType) {
+  const type = javascriptType(rustType);
+  if (type === "number" && /^-?(?:\d+\.?\d*|\.\d+)$/.test(source)) return Number(source);
+  if (type === "boolean" && /^(?:true|false)$/.test(source)) return source === "true";
+  if (type === "string" && /^"(?:[^"\\]|\\.)*"$/.test(source)) return JSON.parse(source);
+  throw new Error(`Invalid default value "${source}" for Rust type "${rustType}".`);
 }
 
 function indent(source, spaces) {

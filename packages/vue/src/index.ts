@@ -8,21 +8,35 @@ import {
   type PropType,
 } from "vue";
 
-export interface CounterHandle {
-  update_initial(initial: number): void;
-  dispose(): void;
-}
-
-export interface CounterBindings {
-  mount_counter(host: Element, initial: number): CounterHandle;
-}
-
-export type CounterBindingsLoader = () => Promise<CounterBindings>;
-
 export interface VoyaMountError {
   stage: "load" | "mount";
   cause: unknown;
 }
+
+export interface VoyaComponentDefinition {
+  name: string;
+  props: Array<{
+    name: string;
+    type: "number" | "boolean" | "string";
+    required: boolean;
+    defaultValue?: unknown;
+  }>;
+  events: Array<{
+    name: string;
+    parameters: string[];
+  }>;
+}
+
+export interface VoyaComponentHandle {
+  dispose(): void;
+  [method: string]: unknown;
+}
+
+export interface VoyaComponentBindings {
+  mount(host: Element, ...props: unknown[]): VoyaComponentHandle;
+}
+
+export type VoyaComponentBindingsLoader = () => Promise<VoyaComponentBindings>;
 
 export interface DataGridHandle {
   update_filter(query: string): void;
@@ -47,44 +61,64 @@ export interface TaskListBindings {
 
 export type TaskListBindingsLoader = () => Promise<TaskListBindings>;
 
-/**
- * Adapts the first Voya WASM runtime spike to Vue's component contract.
- * Vue owns the host element; Voya owns everything mounted beneath it.
- */
-export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
-  return defineComponent({
-    name: "VoyaCounter",
-    inheritAttrs: false,
-    props: {
-      initial: {
-        type: Number as PropType<number>,
-        required: true,
+export function defineVoyaComponent(
+  definition: VoyaComponentDefinition,
+  loadBindings: VoyaComponentBindingsLoader,
+) {
+  const constructors = { number: Number, boolean: Boolean, string: String };
+  const componentProps = Object.fromEntries(
+    definition.props.map((prop) => [
+      prop.name,
+      {
+        type: constructors[prop.type],
+        required: prop.required,
+        ...(Object.hasOwn(prop, "defaultValue") ? { default: prop.defaultValue } : {}),
       },
-    },
-    emits: {
-      change: (value: number) => typeof value === "number",
-      error: (error: VoyaMountError) => error instanceof Object,
-    },
+    ]),
+  );
+  const componentEvents = Object.fromEntries([
+    ...definition.events.map((event) => [event.name, () => true] as const),
+    ["error", (error: VoyaMountError) => error instanceof Object],
+  ]);
+
+  return defineComponent({
+    name: `Voya${definition.name}`,
+    inheritAttrs: false,
+    props: componentProps,
+    emits: componentEvents,
     setup(props, { attrs, emit }) {
       const host = ref<Element>();
       let mounted = true;
-      let handle: CounterHandle | undefined;
+      let handle: VoyaComponentHandle | undefined;
 
-      const onChange = (event: Event) => {
-        const value = (event as CustomEvent<unknown>).detail;
-        if (typeof value === "number") emit("change", value);
-      };
+      const listeners = definition.events.map((event) => {
+        const receive = (browserEvent: Event) => {
+          const detail = (browserEvent as CustomEvent<unknown>).detail;
+          if (event.parameters.length > 1 && Array.isArray(detail)) emit(event.name, ...detail);
+          else if (event.parameters.length === 0) emit(event.name);
+          else emit(event.name, detail);
+        };
+        return { name: `voya-${event.name}`, receive };
+      });
 
       onMounted(async () => {
         try {
           const bindings = await loadBindings();
           if (!mounted || !host.value) return;
 
-          host.value.addEventListener("voya-change", onChange);
+          for (const listener of listeners) {
+            host.value.addEventListener(listener.name, listener.receive);
+          }
           try {
-            handle = bindings.mount_counter(host.value, props.initial);
+            const values = props as Record<string, unknown>;
+            handle = bindings.mount(
+              host.value,
+              ...definition.props.map((prop) => values[prop.name]),
+            );
           } catch (cause) {
-            host.value.removeEventListener("voya-change", onChange);
+            for (const listener of listeners) {
+              host.value.removeEventListener(listener.name, listener.receive);
+            }
             emit("error", { stage: "mount", cause });
           }
         } catch (cause) {
@@ -92,14 +126,21 @@ export function defineVoyaCounter(loadBindings: CounterBindingsLoader) {
         }
       });
 
-      watch(
-        () => props.initial,
-        (value) => handle?.update_initial(value),
-      );
+      for (const prop of definition.props) {
+        watch(
+          () => (props as Record<string, unknown>)[prop.name],
+          (value) => {
+            const update = handle?.[`update_${prop.name}`];
+            if (typeof update === "function") update.call(handle, value);
+          },
+        );
+      }
 
       onBeforeUnmount(() => {
         mounted = false;
-        host.value?.removeEventListener("voya-change", onChange);
+        for (const listener of listeners) {
+          host.value?.removeEventListener(listener.name, listener.receive);
+        }
         handle?.dispose();
         handle = undefined;
       });
