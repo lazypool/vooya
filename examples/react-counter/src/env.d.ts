@@ -1,4 +1,4 @@
-declare module "*.voya" {
+declare module "*.voo" {
   import type { ComponentType } from "react";
 
   const component: ComponentType<{

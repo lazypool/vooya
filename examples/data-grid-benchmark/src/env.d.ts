@@ -1,4 +1,4 @@
-declare module "*.voya" {
+declare module "*.voo" {
   import type { Component } from "vue";
 
   const component: Component;

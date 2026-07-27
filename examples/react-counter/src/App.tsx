@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Counter from "./Counter.voya";
+import Counter from "./Counter.voo";
 
 export function App() {
   const [initial, setInitial] = useState(1);

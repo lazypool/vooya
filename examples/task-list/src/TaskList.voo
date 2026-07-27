@@ -1,0 +1,4 @@
+component TaskList
+export: mount_task_list
+adapter:
+vue: defineVoyaTaskList

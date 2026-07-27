@@ -1,0 +1,6 @@
+component VoyaGrid
+export: mount_data_grid
+adapter:
+vue: defineVoyaDataGrid
+props:
+rows: number

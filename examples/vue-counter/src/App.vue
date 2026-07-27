@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import Counter from "./Counter.voya";
+import Counter from "./Counter.voo";
 
 const initial = ref(1);
 const lastChange = ref<number>();

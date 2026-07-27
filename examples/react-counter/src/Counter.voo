@@ -1,0 +1,9 @@
+component Counter
+export: mount_counter
+adapter:
+vue: defineVoyaCounter
+react: defineVoyaCounter
+props:
+initial: number required
+events:
+change: number
