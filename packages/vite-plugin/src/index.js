@@ -23,6 +23,20 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
   let sourceComponents = [];
   let watchedRustRoots = [];
 
+  const handleVooyaHotUpdate = ({ file }) => {
+    if (
+      !file.endsWith(componentExtension) &&
+      !watchedRustRoots.some((root) => isPathInside(file, root))
+    ) {
+      return;
+    }
+    buildScheduler?.schedule();
+    // The generated WASM module owns live component handles. Letting the
+    // framework hot-replace a .voo importer first would run cleanup against a
+    // newly initialized WASM instance, so only send our post-build reload.
+    return [];
+  };
+
   const compile = () => {
     const components = applicationRoot ? readVooComponents(applicationRoot) : [];
     sourceComponents = components.filter((component) => component.format === "source");
@@ -134,16 +148,9 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
       });
       server.httpServer?.once("close", () => buildScheduler?.dispose());
     },
-    handleHotUpdate({ file }) {
-      if (
-        !file.endsWith(componentExtension) &&
-        !watchedRustRoots.some((root) => isPathInside(file, root))
-      ) {
-        return;
-      }
-      buildScheduler?.schedule();
-      return [];
-    },
+    // Vite 7 uses `hotUpdate`; keep the legacy hook for Vite 6 consumers.
+    hotUpdate: handleVooyaHotUpdate,
+    handleHotUpdate: handleVooyaHotUpdate,
   };
 }
 
