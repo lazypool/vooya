@@ -8,6 +8,7 @@
     "@vooya/vue": "0.1.0-alpha.0"
   },
   "changesets": [
+    "bright-dodos-smile",
     "vooya-alpha"
   ]
 }
