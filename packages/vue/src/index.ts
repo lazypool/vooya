@@ -3,6 +3,7 @@ import {
   h,
   onBeforeUnmount,
   onMounted,
+  onUnmounted,
   ref,
   watch,
 } from "vue";
@@ -119,6 +120,9 @@ export function defineVooyaComponent(
         for (const listener of listeners) {
           host.value?.removeEventListener(listener.name, listener.receive);
         }
+      });
+
+      onUnmounted(() => {
         handle?.dispose();
         handle = undefined;
       });

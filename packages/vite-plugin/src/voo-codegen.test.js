@@ -21,7 +21,8 @@ const counter = {
 test("generates a stable WASM component binding", () => {
   assert.deepEqual(generatedComponentBinding(counter), {
     exportName: "voo_counter_mount",
-    handleName: "VooCounterHandle",
+    disposeName: "voo_counter_dispose",
+    updateNames: { initial: "voo_counter_update_initial" },
     propsName: "VooCounterProps",
     eventsName: "VooCounterEvents",
     contextName: "VooCounterContext",
@@ -29,10 +30,11 @@ test("generates a stable WASM component binding", () => {
 
   const generated = generateRustComponents([counter]);
   assert.match(generated, /mod voo_counter_component/);
-  assert.match(generated, /pub struct VooCounterHandle\(voo_counter_component::Component\)/);
-  assert.match(generated, /pub fn update_initial\(&self, value: i32\)/);
+  assert.match(generated, /static VOO_COUNTER_HANDLES: std::cell::RefCell<Vec<Option<voo_counter_component::Component>>>/);
+  assert.match(generated, /pub fn voo_counter_update_initial\(handle: u32, value: i32\)/);
   assert.match(generated, /pub struct VooCounterContext/);
   assert.match(generated, /pub fn voo_counter_mount\(/);
+  assert.match(generated, /pub fn voo_counter_dispose\(handle: u32\)/);
   assert.match(generated, /voo_counter_component::mount\(context\)/);
 });
 

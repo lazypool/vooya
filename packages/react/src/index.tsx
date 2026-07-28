@@ -85,6 +85,8 @@ export function defineVooyaComponent(
         for (const listener of listeners) {
           element.removeEventListener(listener.name, listener.receive);
         }
+        // See the Vue adapter: freeing synchronously can race wasm-bindgen's
+        // temporary borrow during framework teardown.
         handle.current?.dispose();
         handle.current = undefined;
       };

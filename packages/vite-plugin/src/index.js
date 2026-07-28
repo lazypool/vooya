@@ -73,12 +73,12 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
       const component = parseVooComponent(readFileSync(id, "utf8"), id);
       if (component.format === "source") {
         component.id = id;
-        const { exportName } = generatedComponentBinding(component);
+        const { exportName, disposeName, updateNames } = generatedComponentBinding(component);
         const definition = generatedAdapterDefinition(component);
         const adapter = framework === "react" ? "@vooya/react" : "@vooya/vue";
         return `
           ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
-          import init, { ${exportName}, voo_abi_version } from "${runtimeId}";
+          import init, { ${exportName}, ${disposeName}, ${Object.values(updateNames).join(", ")}${Object.keys(updateNames).length ? ", " : ""}voo_abi_version } from "${runtimeId}";
           import { defineVooyaComponent } from "${adapter}";
           import { assertVooAbiVersion } from "@vooya/vite-plugin/runtime";
 
@@ -87,7 +87,15 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
             if (!bindings) {
               bindings = init().then(() => {
                 assertVooAbiVersion(voo_abi_version());
-                return { mount: ${exportName} };
+                return {
+                  mount(host, ...props) {
+                    const handle = ${exportName}(host, ...props);
+                    return {
+                      dispose() { ${disposeName}(handle); },
+                      ${Object.entries(updateNames).map(([prop, name]) => `update_${prop}(value) { ${name}(handle, value); }`).join(",\n                      ")}
+                    };
+                  }
+                };
               });
             }
             return bindings;

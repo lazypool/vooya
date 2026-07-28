@@ -18,7 +18,10 @@ export function generatedComponentBinding(component) {
   const stem = rustStem(component.name);
   return {
     exportName: `voo_${stem}_mount`,
-    handleName: `Voo${component.name}Handle`,
+    disposeName: `voo_${stem}_dispose`,
+    updateNames: Object.fromEntries(
+      component.props.map((prop) => [prop.name, `voo_${stem}_update_${prop.name}`]),
+    ),
     propsName: `Voo${component.name}Props`,
     eventsName: `Voo${component.name}Events`,
     contextName: `Voo${component.name}Context`,
@@ -63,24 +66,29 @@ export function generatedScopeId(component) {
 function generateRustComponent(component, sourcePath) {
   const stem = rustStem(component.name);
   const moduleName = `voo_${stem}_component`;
-  const { exportName, handleName, propsName, eventsName, contextName } =
+  const handlesName = `VOO_${stem.toUpperCase()}_HANDLES`;
+  const { exportName, disposeName, updateNames, propsName, eventsName, contextName } =
     generatedComponentBinding(component);
   const mountParameters = component.props
     .map((prop) => `, ${prop.name}: ${prop.rustType}`)
     .join("");
-  const updateMethods = component.props
+  const updateFunctions = component.props
     .map(
       (prop) => `
-    pub fn update_${prop.name}(&self, value: ${prop.rustType}) {
-        self.0.update_${prop.name}(value);
-    }`,
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn ${updateNames[prop.name]}(handle: u32, value: ${prop.rustType}) {
+    ${handlesName}.with(|handles| {
+        if let Some(Some(component)) = handles.borrow().get(handle as usize) {
+            component.update_${prop.name}(value);
+        }
+    });
+}`,
     )
     .join("\n");
 
   const module = sourcePath
     ? `#[path = ${JSON.stringify(sourcePath)}]\nmod ${moduleName};`
     : `mod ${moduleName} {\n${indent(component.rust.content, 4)}\n}`;
-
   const propFields = component.props
     .map((prop) => `    pub ${prop.name}: ${prop.rustType},`)
     .join("\n");
@@ -122,21 +130,14 @@ pub struct ${contextName} {
 
 ${module}
 
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub struct ${handleName}(${moduleName}::Component);
-
-#[wasm_bindgen::prelude::wasm_bindgen]
-impl ${handleName} {${updateMethods}
-
-    pub fn dispose(&mut self) {
-        self.0.dispose();
-    }
+thread_local! {
+    static ${handlesName}: std::cell::RefCell<Vec<Option<${moduleName}::Component>>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn ${exportName}(
     host: web_sys::Element${mountParameters}
-) -> Result<${handleName}, wasm_bindgen::JsValue> {
+) -> Result<u32, wasm_bindgen::JsValue> {
     let context = ${contextName} {
         host: host.clone(),
         props: ${propsName} {
@@ -144,8 +145,26 @@ ${propValues}
         },
         events: ${eventsName}::new(host),
     };
-    ${moduleName}::mount(context).map(${handleName})
-}`;
+    let component = ${moduleName}::mount(context)?;
+    ${handlesName}.with(|handles| {
+        let mut handles = handles.borrow_mut();
+        handles.push(Some(component));
+        Ok((handles.len() - 1) as u32)
+    })
+}
+
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn ${disposeName}(handle: u32) {
+    let component = ${handlesName}.with(|handles| {
+        handles
+            .borrow_mut()
+            .get_mut(handle as usize)
+            .and_then(Option::take)
+    });
+    if let Some(mut component) = component {
+        component.dispose();
+    }
+}${updateFunctions}`;
 }
 
 function generateEventMethod(event) {
