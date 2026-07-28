@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Core runtime for Vooya components."
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/voyajs/voya"
+repository = "https://github.com/vooyajs/vooya"
 
 [lib]
 path = "src/lib.rs"

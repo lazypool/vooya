@@ -44,5 +44,4 @@ Performance work is recorded separately:
 - File-format tooling uses the `voo` prefix, such as `voo-format` and
   `VooParseError`.
 
-The current GitHub repository URL predates this naming rule. It is an external
-repository location, not a second product name.
+The GitHub repository follows the same convention at `vooyajs/vooya`.

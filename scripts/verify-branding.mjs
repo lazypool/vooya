@@ -21,9 +21,7 @@ for (const file of files) {
   if (!existsSync(path)) continue;
   const buffer = readFileSync(path);
   if (buffer.includes(0)) continue;
-  const source = buffer
-    .toString("utf8")
-    .replaceAll("github.com/voyajs/voya", "github.com/legacy-repository");
+  const source = buffer.toString("utf8");
 
   for (const match of source.matchAll(legacyPattern)) {
     const line = source.slice(0, match.index).split(/\r?\n/).length;
