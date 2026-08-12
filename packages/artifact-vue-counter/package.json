@@ -1,14 +1,23 @@
 {
   "name": "@vooya/artifact-vue-counter",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Precompiled Vue PortableCounter island for Vooya.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./manifest": "./dist/manifest.json"
   },
-  "scripts": { "build": "node scripts/build.mjs" },
-  "dependencies": { "@vooya/vue": "0.1.0-alpha.3" }
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "@vooya/vue": "0.1.0-alpha.4"
+  }
 }
