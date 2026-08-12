@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { generateRustComponents, generatedComponentPrelude } from "./voo-codegen.js";
+import { generateRustComponents, generatedComponentPrelude } from "@vooya/compiler";
 
 const require = createRequire(import.meta.url);
 

@@ -16,6 +16,7 @@ try {
   run("npm", ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
 
   const packages = [
+    pack("@vooya/compiler", packageDirectory),
     pack("@vooya/core", packageDirectory),
     pack("@vooya/vite-plugin", packageDirectory),
     pack("@vooya/vue", packageDirectory),

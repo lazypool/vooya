@@ -30,6 +30,11 @@ unmount -----------------> dispose --------------> release state/listeners
 events <------------------ CustomEvent <---------- component dispatch
 ```
 
+Component events are dispatched on the host element with a `vooya-` prefix and
+`bubbles: false`. The adapter listens directly on that element and forwards
+the payload through the framework's component-event mechanism. This prevents
+an ancestor DOM listener or another island from observing an island event.
+
 ## Non-goals for Stages 0-4
 
 - Reimplementing Vue, React, routing, or global state management.

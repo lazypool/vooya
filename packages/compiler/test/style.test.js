@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { compileVooStyle } from "./voo-style.js";
+import { compileVooStyle } from "../src/index.js";
 
 const component = {
   id: "/app/Counter.voo",

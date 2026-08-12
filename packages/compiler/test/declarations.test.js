@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { generateVooDeclaration } from "./voo-declarations.js";
+import { generateVooDeclaration } from "../src/index.js";
 
 test("generates Vue props and event declarations from a component contract", () => {
   const declaration = generateVooDeclaration(
@@ -23,7 +23,18 @@ test("generates Vue props and event declarations from a component contract", () 
   assert.match(declaration, /label\?: string;/);
   assert.match(declaration, /change: \(value: number\) => void;/);
   assert.match(declaration, /"reset-all": \(\) => void;/);
+  assert.match(declaration, /preserving these literal event names keeps \$emit type-safe/);
   assert.match(declaration, /DefineComponent</);
+});
+
+test("uses Vue's string-array emit form when a component has no custom events", () => {
+  const declaration = generateVooDeclaration(
+    { name: "StaticCanvas", props: [], events: [] },
+    "vue",
+  );
+
+  assert.match(declaration, /type StaticCanvasEvents = \["error"\];/);
+  assert.doesNotMatch(declaration, /@ts-expect-error/);
 });
 
 test("generates React callback props from component events", () => {

@@ -1,6 +1,6 @@
 import postcss from "postcss";
 
-import { generatedScopeId } from "./voo-codegen.js";
+import { generatedScopeId } from "./codegen.js";
 
 export function compileVooStyle(component) {
   if (!component.style) return "";

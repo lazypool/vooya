@@ -1,6 +1,33 @@
 use wasm_bindgen::{JsCast, JsValue, closure::Closure};
 use web_sys::{Document, Element, Event, EventTarget};
 
+/// Cleanup callbacks owned by one generated component mount attempt.
+///
+/// Generated bindings run this scope if `mount` returns an error and disarm it
+/// once the component handle has been stored. Component authors may register
+/// cleanup for resources which are not otherwise owned by their `Component`.
+#[derive(Clone, Default)]
+pub struct MountCleanup {
+    callbacks: std::rc::Rc<std::cell::RefCell<Vec<Box<dyn FnOnce()>>>>,
+}
+
+impl MountCleanup {
+    pub fn defer(&self, callback: impl FnOnce() + 'static) {
+        self.callbacks.borrow_mut().push(Box::new(callback));
+    }
+
+    pub fn run(&self) {
+        let callbacks = std::mem::take(&mut *self.callbacks.borrow_mut());
+        for callback in callbacks.into_iter().rev() {
+            callback();
+        }
+    }
+
+    pub fn disarm(&self) {
+        self.callbacks.borrow_mut().clear();
+    }
+}
+
 /// Creates and owns DOM nodes below a framework-provided component host.
 pub struct View {
     document: Document,
@@ -94,5 +121,25 @@ impl Drop for EventListener {
             &self.event_name,
             self.callback.as_ref().unchecked_ref(),
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{cell::RefCell, rc::Rc};
+
+    use super::MountCleanup;
+
+    #[test]
+    fn mount_cleanup_runs_deferred_callbacks_once_in_reverse_order() {
+        let cleanup = MountCleanup::default();
+        let calls = Rc::new(RefCell::new(Vec::new()));
+        for value in [1, 2] {
+            let calls = calls.clone();
+            cleanup.defer(move || calls.borrow_mut().push(value));
+        }
+        cleanup.run();
+        cleanup.run();
+        assert_eq!(*calls.borrow(), vec![2, 1]);
     }
 }

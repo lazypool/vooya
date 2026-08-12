@@ -144,22 +144,31 @@ The repository now has:
 - PostCSS-based scoped styles shared by Vue and React;
 - structured Rust DOM creation and owned browser event listeners;
 - application-isolated Cargo crates, build caches, and WASM output;
-- an npm-tarball portability test that builds `.voo` in a temporary project
-  outside the Vooya checkout;
+- an npm-tarball portability test that builds source `.voo` in a temporary
+  project outside the Vooya checkout;
+- a Vue-only precompiled artifact vertical slice whose packed consumer imports
+  shipped WASM without Rust tooling;
 - debounced development rebuilds that survive Rust errors, coalesce rapid
   saves, and reload only after a successful WASM build;
 - structured Cargo dependency configuration, application-relative path crates,
   and opt-in `web-sys` browser features;
 - warm Cargo builds that preserve generated-file timestamps when unchanged;
 - browser E2E coverage for Counter, TaskList, and DataGrid components;
+- a `vooya doctor` command that diagnoses the inherited Rust toolchain and
+  pinned wasm-bindgen CLI;
+- browser fixtures for loop-created listeners, cloned event dispatch, and
+  repeated lifecycle teardown in both Vue and React;
+- a Vue-hosted 150,000-point Canvas scatter-plot island;
 - an honest 100,000-row benchmark currently showing approximate parity with
   its Vue baseline.
 
 Source `.voo` compilation still requires Cargo, the WASM Rust target, and the
-`wasm-bindgen` CLI on the author's machine. Non-trivial component code still
-needs some low-level `web_sys` DOM APIs. The published packages can change
-between alpha versions, and precompiled component packages that remove the Rust
-requirement for consumers remain future work.
+`wasm-bindgen` CLI on the author's machine. The Vue-only
+`@vooya/artifact-vue-counter` precompiled artifact is the exception: consumers
+install its shipped bindings and WASM without a Rust toolchain. React artifact
+consumption is not implemented. Non-trivial component code still needs some
+low-level `web_sys` DOM APIs, and published packages can change between alpha
+versions.
 
 ## Documentation
 
@@ -175,7 +184,8 @@ Install the JavaScript dependencies and ensure the Rust WASM target and
 ```sh
 npm install
 rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli
+cargo install wasm-bindgen-cli --version 0.2.115 --locked
+npx vooya doctor
 ```
 
 Configure application Rust dependencies in the Vite plugin. Path dependencies
@@ -204,6 +214,7 @@ npm run dev:vue       # Vue counter
 npm run dev:react     # React counter
 npm run dev:tasks     # Rust task list inside Vue
 npm run dev:benchmark # Rust data grid and benchmark harness
+npm run dev:scatter   # 150,000 point Rust Canvas scatter plot
 ```
 
 Build and type-check all current examples:
@@ -213,6 +224,7 @@ npm run typecheck
 npm run typecheck:react
 npm run typecheck:tasks
 npm run typecheck:benchmark
+npm run typecheck:scatter
 npm run test:voo
 npm run test:portable
 npm run test:hmr
@@ -240,10 +252,12 @@ code --install-extension dist/voo-vscode.vsix
 
 ## Versioning and alpha releases
 
-The four `@vooya` packages use one fixed version while the compiler ABI and
-framework adapters are evolving together. Changesets owns version changes, and
-the release command synchronizes every published prerelease to the `alpha`
-dist-tag:
+Six coordinated `@vooya` packages use one fixed version while the compiler ABI,
+framework adapters, and first Vue precompiled artifact evolve together:
+`@vooya/compiler`, `@vooya/core`, `@vooya/vite-plugin`, `@vooya/vue`,
+`@vooya/react`, and `@vooya/artifact-vue-counter`. Changesets owns version
+changes, and the release command synchronizes every published prerelease to the
+`alpha` dist-tag:
 
 ```sh
 npm run changeset
@@ -263,8 +277,8 @@ The next milestones move the working compiler toward a developer preview:
 
 1. Grow the Rust view layer into declarative trees, reactive bindings, and
    explicit effect cleanup without hiding the underlying browser APIs.
-2. Define and package precompiled component artifacts so application consumers
-   do not need Cargo or `wasm-bindgen`.
+2. Extend the Vue-only precompiled artifact vertical slice; React artifact
+   consumption is not implemented.
 3. Complete Rust editor integration; `.voo` formatting and syntax highlighting
    are available now.
 4. Define state-preserving HMR semantics; successful Rust rebuilds currently

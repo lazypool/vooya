@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import {
   buildApplication,
@@ -6,11 +6,14 @@ import {
   resolveRustDependencyRoots,
 } from "./build-core.mjs";
 import { createBuildScheduler } from "./build-scheduler.js";
-import { generatedAdapterDefinition, generatedComponentBinding } from "./voo-codegen.js";
-import { writeVooDeclarations } from "./voo-declarations.js";
-import { parseVooComponent } from "./voo-parser.js";
+import {
+  compileVooStyle,
+  generateVooDeclaration,
+  generatedAdapterDefinition,
+  generatedComponentBinding,
+  parseVooComponent,
+} from "@vooya/compiler";
 import { readVooComponents } from "./voo-project.js";
-import { compileVooStyle } from "./voo-style.js";
 
 const componentExtension = ".voo";
 const runtimeId = "virtual:vooya-runtime";
@@ -80,12 +83,12 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
           ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
           import init, { ${exportName}, ${disposeName}, ${Object.values(updateNames).join(", ")}${Object.keys(updateNames).length ? ", " : ""}voo_abi_version } from "${runtimeId}";
           import { defineVooyaComponent } from "${adapter}";
-          import { assertVooAbiVersion } from "@vooya/vite-plugin/runtime";
+          import { assertVooAbiVersion, initializeWasm } from "@vooya/vite-plugin/runtime";
 
           let bindings;
           async function loadBindings() {
             if (!bindings) {
-              bindings = init().then(() => {
+              bindings = initializeWasm(init).then(() => {
                 assertVooAbiVersion(voo_abi_version());
                 return {
                   mount(host, ...props) {
@@ -160,6 +163,13 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
     hotUpdate: handleVooyaHotUpdate,
     handleHotUpdate: handleVooyaHotUpdate,
   };
+}
+
+function writeVooDeclarations(components, framework) {
+  for (const component of components) {
+    if (component.format !== "source") continue;
+    writeFileSync(component.id.replace(/\.voo$/, ".d.voo.ts"), generateVooDeclaration(component, framework));
+  }
 }
 
 function isPathInside(file, directory) {

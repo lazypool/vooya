@@ -3,12 +3,14 @@
 Vooya is a public alpha and an architecture-validation project. It is not a
 stable compiler or a production compatibility promise.
 
-The four packages form one coordinated release unit:
+The six packages form one coordinated release unit:
 
+- `@vooya/compiler`
 - `@vooya/core`
 - `@vooya/vite-plugin`
 - `@vooya/vue`
 - `@vooya/react`
+- `@vooya/artifact-vue-counter`
 
 Use the same exact version for every package. The npm `alpha` dist-tag identifies
 the latest published set, while `main` can contain changes queued for the next
@@ -27,16 +29,26 @@ prerelease.
 - Format `.voo` files and package a VS Code syntax extension.
 - Validate Vue Counter, React Counter, TaskList, and 100,000-row DataGrid flows
   in real browsers.
+- Validate loop-created Rust listeners, cloned event dispatch, and repeated
+  mount/unmount behavior in both Vue and React browser fixtures.
+- Ship `vooya doctor` for Rust target, CLI-version, and rustup-path diagnostics.
+- Demonstrate a Vue-hosted 150,000-point Rust/WASM Canvas scatter plot.
 - Build packed npm artifacts from a project outside the repository checkout.
+- Consume the Vue-only `@vooya/artifact-vue-counter` in a clean Vite project
+  without Cargo, Rust, a Rust target, or `wasm-bindgen`.
 
 ## Current limits
 
-- Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`.
+- Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`; the
+  Vue-only precompiled artifact consumer does not.
+- React artifact consumption is not implemented.
 - A non-trivial component still uses some direct `web_sys` APIs.
 - The contract is limited to primitive prop and event values.
 - Reactive dependencies and cleanup are explicit and minimal.
 - Successful Rust HMR performs a full reload and loses component state.
 - The VS Code extension does not bridge `.voo` Rust into rust-analyzer.
+- `vooya doctor` is a local diagnostic, not a toolchain installer or an
+  automatic Homebrew/rustup selector.
 - SSR, hydration, slots, and standalone application rendering are out of scope.
 - Alpha ABI revisions can be breaking.
 
@@ -44,8 +56,8 @@ prerelease.
 
 1. Grow the Rust view layer into declarative trees, reactive bindings, and
    explicit effect cleanup.
-2. Define precompiled component artifacts so application consumers do not need
-   a Rust toolchain.
+2. Extend the Vue-only precompiled artifact vertical slice to a broader
+   component set; React artifact consumption remains unimplemented.
 3. Bridge extracted Rust source to rust-analyzer for completion, navigation,
    and diagnostics.
 4. Define state-preserving HMR semantics.

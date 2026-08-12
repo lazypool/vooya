@@ -3,7 +3,6 @@ import {
   h,
   onBeforeUnmount,
   onMounted,
-  onUnmounted,
   ref,
   watch,
 } from "vue";
@@ -81,6 +80,7 @@ export function defineVooyaComponent(
       });
 
       onMounted(async () => {
+        const startedAt = performance.now();
         try {
           const bindings = await loadBindings();
           if (!mounted || !host.value) return;
@@ -94,13 +94,16 @@ export function defineVooyaComponent(
               host.value,
               ...definition.props.map((prop) => values[prop.name]),
             );
+            emitDiagnostic(host.value, definition, "mount", elapsedSince(startedAt));
           } catch (cause) {
             for (const listener of listeners) {
               host.value.removeEventListener(listener.name, listener.receive);
             }
+            emitDiagnostic(host.value, definition, "mount", elapsedSince(startedAt), cause);
             emit("error", { stage: "mount", cause });
           }
         } catch (cause) {
+          if (host.value) emitDiagnostic(host.value, definition, "load", elapsedSince(startedAt), cause);
           emit("error", { stage: "load", cause });
         }
       });
@@ -110,7 +113,14 @@ export function defineVooyaComponent(
           () => (props as Record<string, unknown>)[prop.name],
           (value) => {
             const update = handle?.[`update_${prop.name}`];
-            if (typeof update === "function") update.call(handle, value);
+            if (typeof update !== "function" || !host.value) return;
+            const startedAt = performance.now();
+            try {
+              update.call(handle, value);
+              emitDiagnostic(host.value, definition, "update", elapsedSince(startedAt));
+            } catch (cause) {
+              emitDiagnostic(host.value, definition, "update", elapsedSince(startedAt), cause);
+            }
           },
         );
       }
@@ -120,10 +130,15 @@ export function defineVooyaComponent(
         for (const listener of listeners) {
           host.value?.removeEventListener(listener.name, listener.receive);
         }
-      });
-
-      onUnmounted(() => {
-        handle?.dispose();
+        if (handle && host.value) {
+          const startedAt = performance.now();
+          try {
+            handle.dispose();
+            emitDiagnostic(host.value, definition, "dispose", elapsedSince(startedAt));
+          } catch (cause) {
+            emitDiagnostic(host.value, definition, "dispose", elapsedSince(startedAt), cause);
+          }
+        }
         handle = undefined;
       });
 
@@ -136,4 +151,47 @@ export function defineVooyaComponent(
         });
     },
   });
+}
+
+type LifecyclePhase = "load" | "mount" | "update" | "dispose";
+
+function emitDiagnostic(
+  host: Element,
+  definition: VooyaComponentDefinition,
+  phase: LifecyclePhase,
+  duration: number,
+  cause?: unknown,
+) {
+  if (!isDevelopment()) return;
+  const detail: Record<string, unknown> = {
+    component: definition.name,
+    abiVersion: definition.abiVersion,
+    phase,
+    duration,
+  };
+  if (cause !== undefined) detail.error = summarizeError(cause);
+  host.dispatchEvent(new CustomEvent(cause === undefined ? `vooya:${phase}` : "vooya:error", {
+    bubbles: false,
+    detail,
+  }));
+}
+
+function elapsedSince(startedAt: number) {
+  return Math.max(0, performance.now() - startedAt);
+}
+
+function summarizeError(cause: unknown) {
+  const error = cause instanceof Error ? cause : new Error(String(cause));
+  return {
+    name: truncate(error.name || "Error"),
+    message: truncate(error.message),
+  };
+}
+
+function truncate(value: string) {
+  return value.slice(0, 200);
+}
+
+function isDevelopment() {
+  return (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
 }

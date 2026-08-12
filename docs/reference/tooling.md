@@ -28,6 +28,19 @@ Vooya owns `vooya-core`, `wasm-bindgen`, `js-sys`, and `web-sys` in the
 generated crate. Add browser APIs through `rust.webSysFeatures` rather than
 overriding `web-sys`.
 
+## Doctor
+
+`vooya doctor` diagnoses the Rust programs visible to the Vite process:
+
+```sh
+npx vooya doctor
+```
+
+It exits unsuccessfully when Cargo, rustc, the WASM target, or the exact
+`wasm-bindgen-cli` version required by the alpha are absent. A non-rustup
+sysroot is a warning rather than an error, but the report explains how to put
+`$HOME/.cargo/bin` ahead of Homebrew when that causes a missing-target build.
+
 ## Generated application
 
 The plugin creates `.voo-cache` under the Vite root. It contains:

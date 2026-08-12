@@ -1,0 +1,27 @@
+{
+  "name": "@vooya/compiler",
+  "version": "0.1.0-alpha.3",
+  "description": "Pure .voo compiler pipeline for Vooya component islands.",
+  "type": "module",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vooyajs/vooya.git",
+    "directory": "packages/compiler"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/*.js"
+  ],
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "postcss": "^8.5.23"
+  }
+}

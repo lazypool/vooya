@@ -13,7 +13,8 @@
     "access": "public"
   },
   "bin": {
-    "voo-format": "./bin/voo-format.mjs"
+    "voo-format": "./bin/voo-format.mjs",
+    "vooya": "./bin/vooya.mjs"
   },
   "files": [
     "bin",
@@ -23,6 +24,7 @@
   ],
   "exports": {
     ".": "./src/index.js",
+    "./build": "./src/build-core.mjs",
     "./format": "./src/voo-format.js",
     "./runtime": "./src/runtime.js"
   },
@@ -34,6 +36,6 @@
   },
   "dependencies": {
     "@vooya/core": "0.1.0-alpha.3",
-    "postcss": "^8.5.23"
+    "@vooya/compiler": "0.1.0-alpha.3"
   }
 }

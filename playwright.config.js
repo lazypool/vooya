@@ -21,6 +21,11 @@ const targets = {
     test: "data-grid.spec.js",
     url: "http://127.0.0.1:4177",
   },
+  scatter: {
+    command: "npm run dev:scatter -- --host 127.0.0.1 --port 4178",
+    test: "scatter-plot.spec.js",
+    url: "http://127.0.0.1:4178",
+  },
 };
 
 const targetName = process.env.VOOYA_E2E_TARGET ?? "vue";

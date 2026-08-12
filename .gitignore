@@ -9,6 +9,7 @@ examples/*/dist
 /test-results
 /.vooya-lab/
 packages/*/dist
+packages/*/.artifact-build
 *.wasm
 *.wasm.d.ts
 *.d.voo.ts

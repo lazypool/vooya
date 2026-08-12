@@ -7,7 +7,7 @@ import {
   generatedComponentBinding,
   generatedComponentPrelude,
   generatedScopeId,
-} from "./voo-codegen.js";
+} from "../src/index.js";
 
 const counter = {
   name: "Counter",
@@ -36,6 +36,9 @@ test("generates a stable WASM component binding", () => {
   assert.match(generated, /pub fn voo_counter_mount\(/);
   assert.match(generated, /pub fn voo_counter_dispose\(handle: u32\)/);
   assert.match(generated, /voo_counter_component::mount\(context\)/);
+  assert.match(generated, /let cleanup = vooya_core::MountCleanup::default\(\)/);
+  assert.match(generated, /cleanup\.run\(\)/);
+  assert.match(generated, /cleanup\.disarm\(\)/);
 });
 
 test("generates typed event dispatch and a component source prelude", () => {
@@ -49,6 +52,8 @@ test("generates typed event dispatch and a component source prelude", () => {
   assert.match(generated, /pub fn change\(&self, value: i32\)/);
   assert.match(generated, /JsValue::from_f64\(value as f64\)/);
   assert.match(generated, /new_with_event_init_dict\("vooya-change"/);
+  assert.match(generated, /init\.set_bubbles\(false\)/);
+  assert.doesNotMatch(generated, /init\.set_bubbles\(true\)/);
 });
 
 test("references extracted Rust sources for compiler diagnostics", () => {

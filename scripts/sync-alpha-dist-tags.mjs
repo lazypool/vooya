@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dryRun = process.argv.includes("--dry-run");
-const directories = ["core", "vite-plugin", "vue", "react"];
+const directories = ["compiler", "core", "vite-plugin", "vue", "react", "artifact-vue-counter"];
 const packages = directories.map((directory) =>
   JSON.parse(readFileSync(resolve(root, `packages/${directory}/package.json`), "utf8")),
 );

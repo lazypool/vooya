@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { parseVooComponent } from "./voo-parser.js";
+import { parseVooComponent } from "@vooya/compiler";
 
 const ignoredDirectories = new Set([".git", ".voo-cache", "dist", "node_modules", "target"]);
 

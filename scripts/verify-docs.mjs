@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseVooComponent } from "../packages/vite-plugin/src/voo-parser.js";
+import { parseVooComponent } from "../packages/compiler/src/index.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const docsRoot = resolve(root, "docs");

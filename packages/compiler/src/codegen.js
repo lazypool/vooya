@@ -1,4 +1,4 @@
-import { VOO_ABI_VERSION } from "./runtime.js";
+export const VOO_ABI_VERSION = 1;
 
 export function generateRustComponents(components, sourcePaths = new Map()) {
   const modules = components
@@ -126,6 +126,7 @@ pub struct ${contextName} {
     pub host: web_sys::Element,
     pub props: ${propsName},
     pub events: ${eventsName},
+    pub cleanup: vooya_core::MountCleanup,
 }
 
 ${module}
@@ -138,14 +139,31 @@ thread_local! {
 pub fn ${exportName}(
     host: web_sys::Element${mountParameters}
 ) -> Result<u32, wasm_bindgen::JsValue> {
+    let mount_child_count = host.children().length();
+    let cleanup = vooya_core::MountCleanup::default();
     let context = ${contextName} {
         host: host.clone(),
         props: ${propsName} {
 ${propValues}
         },
-        events: ${eventsName}::new(host),
+        events: ${eventsName}::new(host.clone()),
+        cleanup: cleanup.clone(),
     };
-    let component = ${moduleName}::mount(context)?;
+    let component = match ${moduleName}::mount(context) {
+        Ok(component) => component,
+        Err(error) => {
+            cleanup.run();
+            while host.children().length() > mount_child_count {
+                if let Some(child) = host.children().item(host.children().length() - 1) {
+                    child.remove();
+                } else {
+                    break;
+                }
+            }
+            return Err(error);
+        }
+    };
+    cleanup.disarm();
     ${handlesName}.with(|handles| {
         let mut handles = handles.borrow_mut();
         handles.push(Some(component));
@@ -176,7 +194,9 @@ function generateEventMethod(event) {
   return `    pub fn ${methodName}(&self${parameters ? `, ${parameters}` : ""}) -> Result<(), wasm_bindgen::JsValue> {
 ${indent(detail, 8)}
         let init = web_sys::CustomEventInit::new();
-        init.set_bubbles(true);
+        // Component events cross only the island's adapter boundary; they are
+        // not ambient events for the host application's DOM tree.
+        init.set_bubbles(false);
         init.set_detail(&detail);
         let event = web_sys::CustomEvent::new_with_event_init_dict("vooya-${event.name}", &init)?;
         self.target.dispatch_event(&event)?;

@@ -18,6 +18,11 @@ function. Later prop changes call generated `update_<prop>` methods. Rust emits
 browser `CustomEvent` instances using the `vooya-<event>` prefix; the adapter
 turns those into Vue emits or React callbacks.
 
+Events are dispatched on that exact host and do **not** bubble. They are a
+narrow adapter transport, not an ambient application event bus: outer DOM
+listeners and nested islands cannot accidentally consume a component event.
+The adapter subscribes before mounting and removes its listener before disposal.
+
 Unmounting calls `dispose` and drops the WASM handle. The component must remove
 its owned root and release resources it created.
 

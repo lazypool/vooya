@@ -17,6 +17,18 @@ cargo install wasm-bindgen-cli --version 0.2.115 --locked
 wasm-bindgen --version
 ```
 
+After installing the Vite plugin, verify the exact programs that Vite will
+inherit from `PATH`:
+
+```sh
+npx vooya doctor
+```
+
+The command checks `cargo`, `rustc`, the `wasm32-unknown-unknown` target, and
+the pinned `wasm-bindgen` CLI. It reports the executable paths and warns when
+the active Rust sysroot is not managed by rustup, which commonly means a
+Homebrew toolchain is taking precedence.
+
 All `@vooya` packages must use the same alpha version. The repository `main`
 branch can lead the npm `alpha` tag while a breaking prerelease is being
 prepared; do not mix source from `main` with older published adapters.
@@ -139,4 +151,7 @@ the application-local Rust crate, WASM module, framework adapter, and adjacent
 TypeScript declaration.
 
 See the working [Vue counter](../../examples/vue-counter) and
-[React counter](../../examples/react-counter) for complete applications.
+[React counter](../../examples/react-counter) for complete applications. For a
+larger Rust-owned rendering surface, run the
+[150,000 point Vue scatter plot](../../examples/scatter-plot) with
+`npm run dev:scatter`.

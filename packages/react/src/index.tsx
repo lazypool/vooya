@@ -69,16 +69,25 @@ export function defineVooyaComponent(
       void loadBindings()
         .then((bindings) => {
           if (!active) return;
+          const startedAt = performance.now();
           try {
             handle.current = bindings.mount(
               element,
               ...definition.props.map((prop) => props.current[prop.name]),
             );
+            emitDiagnostic(element, definition, "mount", elapsedSince(startedAt));
           } catch (cause) {
+            for (const listener of listeners) {
+              element.removeEventListener(listener.name, listener.receive);
+            }
+            emitDiagnostic(element, definition, "mount", elapsedSince(startedAt), cause);
             props.current.onError?.({ stage: "mount", cause });
           }
         })
-        .catch((cause) => props.current.onError?.({ stage: "load", cause }));
+        .catch((cause) => {
+          emitDiagnostic(element, definition, "load", 0, cause);
+          props.current.onError?.({ stage: "load", cause });
+        });
 
       return () => {
         active = false;
@@ -87,7 +96,15 @@ export function defineVooyaComponent(
         }
         // See the Vue adapter: freeing synchronously can race wasm-bindgen's
         // temporary borrow during framework teardown.
-        handle.current?.dispose();
+        if (handle.current) {
+          const startedAt = performance.now();
+          try {
+            handle.current.dispose();
+            emitDiagnostic(element, definition, "dispose", elapsedSince(startedAt));
+          } catch (cause) {
+            emitDiagnostic(element, definition, "dispose", elapsedSince(startedAt), cause);
+          }
+        }
         handle.current = undefined;
       };
     }, [loadBindings]);
@@ -99,7 +116,14 @@ export function defineVooyaComponent(
           const value = componentProps[prop.name];
           if (Object.is(previous[prop.name], value)) continue;
           const update = handle.current?.[`update_${prop.name}`];
-          if (typeof update === "function") update.call(handle.current, value);
+          if (typeof update !== "function" || !host.current) continue;
+          const startedAt = performance.now();
+          try {
+            update.call(handle.current, value);
+            emitDiagnostic(host.current, definition, "update", elapsedSince(startedAt));
+          } catch (cause) {
+            emitDiagnostic(host.current, definition, "update", elapsedSince(startedAt), cause);
+          }
         }
       }
       previousProps.current = Object.fromEntries(
@@ -114,6 +138,46 @@ export function defineVooyaComponent(
       ...(definition.scopeId ? { "data-voo-scope": definition.scopeId } : {}),
     });
   };
+}
+
+type LifecyclePhase = "load" | "mount" | "update" | "dispose";
+
+function emitDiagnostic(
+  host: Element,
+  definition: VooyaComponentDefinition,
+  phase: LifecyclePhase,
+  duration: number,
+  cause?: unknown,
+) {
+  if (!isDevelopment()) return;
+  const detail: Record<string, unknown> = {
+    component: definition.name,
+    abiVersion: definition.abiVersion,
+    phase,
+    duration,
+  };
+  if (cause !== undefined) detail.error = summarizeError(cause);
+  host.dispatchEvent(new CustomEvent(cause === undefined ? `vooya:${phase}` : "vooya:error", {
+    bubbles: false,
+    detail,
+  }));
+}
+
+function elapsedSince(startedAt: number) {
+  return Math.max(0, performance.now() - startedAt);
+}
+
+function summarizeError(cause: unknown) {
+  const error = cause instanceof Error ? cause : new Error(String(cause));
+  return { name: truncate(error.name || "Error"), message: truncate(error.message) };
+}
+
+function truncate(value: string) {
+  return value.slice(0, 200);
+}
+
+function isDevelopment() {
+  return (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
 }
 
 function reactEventName(name: string) {

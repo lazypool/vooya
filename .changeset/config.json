@@ -3,7 +3,7 @@
   "changelog": false,
   "commit": false,
   "fixed": [
-    ["@vooya/core", "@vooya/vite-plugin", "@vooya/vue", "@vooya/react"]
+    ["@vooya/compiler", "@vooya/core", "@vooya/vite-plugin", "@vooya/vue", "@vooya/react", "@vooya/artifact-vue-counter"]
   ],
   "linked": [],
   "access": "public",
