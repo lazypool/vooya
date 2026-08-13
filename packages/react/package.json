@@ -13,7 +13,9 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
   ],
   "exports": {
     ".": {

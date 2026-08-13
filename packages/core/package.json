@@ -14,7 +14,9 @@
   },
   "files": [
     "dist",
-    "rust"
+    "rust",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
   ],
   "exports": {
     ".": "./dist/vooya_app.js",

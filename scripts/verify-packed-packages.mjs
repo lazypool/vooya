@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -13,45 +15,57 @@ const expectedPackages = [
 ];
 const license = "MIT OR Apache-2.0";
 const repositoryUrl = "git+https://github.com/vooyajs/vooya.git";
+const mitLicense = readFileSync(new URL("../LICENSE-MIT", import.meta.url), "utf8");
+const apacheLicense = readFileSync(new URL("../LICENSE-APACHE", import.meta.url), "utf8");
 
-assert(readFileSync(new URL("../LICENSE-MIT", import.meta.url), "utf8").includes("MIT License"), "repository", "LICENSE-MIT must contain the MIT license text");
-assert(readFileSync(new URL("../LICENSE-APACHE", import.meta.url), "utf8").includes("Apache License"), "repository", "LICENSE-APACHE must contain the Apache-2.0 license text");
+assert(mitLicense.includes("MIT License"), "repository", "LICENSE-MIT must contain the MIT license text");
+assert(apacheLicense.includes("Apache License"), "repository", "LICENSE-APACHE must contain the Apache-2.0 license text");
 
-for (const name of expectedPackages) {
-  const manifest = readManifest(name);
-  const packed = pack(name);
-  const files = new Set(packed.files.map(({ path }) => path));
+const packDirectory = mkdtempSync(join(tmpdir(), "vooya-pack-check-"));
 
-  assert(files.has("package.json"), name, "archive is missing package.json");
-  assert(manifest.license === license, name, `license must be ${license}`);
-  assert(manifest.repository?.type === "git", name, "repository type must be git");
-  assert(manifest.repository?.url === repositoryUrl, name, `repository URL must be ${repositoryUrl}`);
-  assert(manifest.repository?.directory === `packages/${name.replace("@vooya/", "")}`, name, "repository directory must identify this package");
-  assert(manifest.publishConfig?.access === "public", name, "publishConfig.access must be public");
-  for (const target of exportTargets(manifest.exports)) {
-    assert(files.has(target), name, `archive is missing exported file ${target}`);
-  }
+try {
+  for (const name of expectedPackages) {
+    const manifest = readManifest(name);
+    const packed = pack(name);
+    const files = new Set(packed.files.map(({ path }) => path));
 
-  if (name === "@vooya/core") {
-    assert(files.has("dist/vooya_app_bg.wasm"), name, "archive is missing runtime WASM");
-    assert(files.has("dist/vooya_app.d.ts"), name, "archive is missing runtime types");
-  }
-  if (name === "@vooya/vue" || name === "@vooya/react") {
-    assert(files.has("dist/index.js"), name, "archive is missing adapter JavaScript");
-    assert(files.has("dist/index.d.ts"), name, "archive is missing adapter types");
-  }
-  if (name === "@vooya/artifact-vue-counter") {
-    for (const file of ["dist/manifest.json", "dist/index.js", "dist/index.d.ts", "dist/wasm/vooya_app.js", "dist/wasm/vooya_app_bg.wasm"]) {
-      assert(files.has(file), name, `archive is missing ${file}`);
+    assert(files.has("package.json"), name, "archive is missing package.json");
+    assert(manifest.license === license, name, `license must be ${license}`);
+    assert(manifest.repository?.type === "git", name, "repository type must be git");
+    assert(manifest.repository?.url === repositoryUrl, name, `repository URL must be ${repositoryUrl}`);
+    assert(manifest.repository?.directory === `packages/${name.replace("@vooya/", "")}`, name, "repository directory must identify this package");
+    assert(manifest.publishConfig?.access === "public", name, "publishConfig.access must be public");
+    assert(files.has("LICENSE-MIT"), name, "archive is missing MIT license text");
+    assert(files.has("LICENSE-APACHE"), name, "archive is missing Apache-2.0 license text");
+    assert(readArchiveFile(packed.archivePath, "package/LICENSE-MIT") === mitLicense, name, "packed MIT license text must match the canonical root copy");
+    assert(readArchiveFile(packed.archivePath, "package/LICENSE-APACHE") === apacheLicense, name, "packed Apache-2.0 license text must match the canonical root copy");
+    for (const target of exportTargets(manifest.exports)) {
+      assert(files.has(target), name, `archive is missing exported file ${target}`);
     }
-  }
 
-  for (const file of files) {
-    assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
-    assert(!file.includes("VOOYA_PRODUCT_OPERATING_PLAN"), name, `archive leaks internal planning file ${file}`);
-  }
+    if (name === "@vooya/core") {
+      assert(files.has("dist/vooya_app_bg.wasm"), name, "archive is missing runtime WASM");
+      assert(files.has("dist/vooya_app.d.ts"), name, "archive is missing runtime types");
+    }
+    if (name === "@vooya/vue" || name === "@vooya/react") {
+      assert(files.has("dist/index.js"), name, "archive is missing adapter JavaScript");
+      assert(files.has("dist/index.d.ts"), name, "archive is missing adapter types");
+    }
+    if (name === "@vooya/artifact-vue-counter") {
+      for (const file of ["dist/manifest.json", "dist/index.js", "dist/index.d.ts", "dist/wasm/vooya_app.js", "dist/wasm/vooya_app_bg.wasm"]) {
+        assert(files.has(file), name, `archive is missing ${file}`);
+      }
+    }
 
-  console.log(`Verified ${name}@${packed.version}: ${files.size} archive files.`);
+    for (const file of files) {
+      assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
+      assert(!file.includes("VOOYA_PRODUCT_OPERATING_PLAN"), name, `archive leaks internal planning file ${file}`);
+    }
+
+    console.log(`Verified ${name}@${packed.version}: ${files.size} archive files.`);
+  }
+} finally {
+  rmSync(packDirectory, { force: true, recursive: true });
 }
 
 function readManifest(name) {
@@ -60,7 +74,7 @@ function readManifest(name) {
 }
 
 function pack(name) {
-  const result = spawnSync("npm", ["pack", "--json", "--dry-run", "--workspace", name], {
+  const result = spawnSync("npm", ["pack", "--json", "--pack-destination", packDirectory, "--workspace", name], {
     cwd: root,
     encoding: "utf8",
   });
@@ -69,7 +83,15 @@ function pack(name) {
   }
   const archives = JSON.parse(result.stdout);
   assert(archives.length === 1, name, `expected one archive, received ${archives.length}`);
-  return archives[0];
+  return { ...archives[0], archivePath: join(packDirectory, archives[0].filename) };
+}
+
+function readArchiveFile(archivePath, path) {
+  const result = spawnSync("tar", ["-xOf", archivePath, path], { encoding: "utf8" });
+  if (result.status !== 0) {
+    throw new Error(`could not read ${path} from ${archivePath}:\n${result.stderr || result.stdout}`);
+  }
+  return result.stdout;
 }
 
 function exportTargets(value) {

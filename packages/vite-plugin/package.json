@@ -20,7 +20,9 @@
     "bin",
     "src/*.js",
     "src/*.mjs",
-    "!src/*.test.js"
+    "!src/*.test.js",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
   ],
   "exports": {
     ".": "./src/index.js",

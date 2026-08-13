@@ -13,7 +13,9 @@
     "access": "public"
   },
   "files": [
-    "src/*.js"
+    "src/*.js",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
   ],
   "exports": {
     ".": "./src/index.js"
