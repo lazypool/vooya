@@ -17,6 +17,8 @@ try {
     },
   });
   writeFileSync(resolve(fixture, "package.json"), JSON.stringify({ private: true, workspaces: ["packages/*"] }));
+  const currentVersion = JSON.parse(readFileSync(resolve(fixture, "packages/core/package.json"), "utf8")).version;
+  const expectedVersion = nextAlphaVersion(currentVersion);
   writeFileSync(resolve(fixture, ".changes", "fixed-group.md"), `---\nvooya-compiler: "patch:chore"\nvooya-core: "patch:chore"\nvooya-vite-plugin: "patch:chore"\nvooya-vue: "patch:chore"\nvooya-react: "patch:chore"\n---\n\nVerify Vooya's coordinated release group.\n`);
   for (const args of [["init", "--quiet"], ["add", "."], ["-c", "user.name=Vooya test", "-c", "user.email=tests@vooya.dev", "commit", "--quiet", "-m", "fixture"]]) {
     const git = spawnSync("git", args, { cwd: fixture, encoding: "utf8" });
@@ -45,7 +47,7 @@ try {
   for (const id of ["vooya-compiler", "vooya-core", "vooya-vite-plugin", "vooya-vue", "vooya-react"]) {
     assert.match(versionOutput, new RegExp(id));
   }
-  assert.match(versionOutput, /0\.1\.0-alpha\.7/);
+  assert.match(versionOutput, new RegExp(escapeRegExp(expectedVersion)));
 
   const apply = spawnSync(process.execPath, [resolve(root, "scripts/generated/semifold.js"), "version"], {
     cwd: fixture,
@@ -55,11 +57,21 @@ try {
   assert.equal(apply.status, 0, apply.stderr || apply.stdout);
   const lockfile = JSON.parse(readFileSync(resolve(fixture, "package-lock.json"), "utf8"));
   for (const directory of ["compiler", "core", "vite-plugin", "vue", "react"]) {
-    assert.equal(lockfile.packages[`packages/${directory}`].version, "0.1.0-alpha.7");
+    assert.equal(lockfile.packages[`packages/${directory}`].version, expectedVersion);
   }
-  assert.equal(lockfile.packages["packages/vite-plugin"].dependencies["@vooya/core"], "0.1.0-alpha.7");
-  assert.equal(lockfile.packages["packages/vite-plugin"].dependencies["@vooya/compiler"], "0.1.0-alpha.7");
+  assert.equal(lockfile.packages["packages/vite-plugin"].dependencies["@vooya/core"], expectedVersion);
+  assert.equal(lockfile.packages["packages/vite-plugin"].dependencies["@vooya/compiler"], expectedVersion);
   console.log("Semifold fixed-group status, version dry-run, and lockfile synchronization passed.");
 } finally {
   rmSync(fixture, { force: true, recursive: true });
+}
+
+function nextAlphaVersion(version) {
+  const match = /^(\d+\.\d+\.\d+)-alpha\.(\d+)$/.exec(version);
+  assert(match, `Expected an alpha version, got ${version}.`);
+  return `${match[1]}-alpha.${Number(match[2]) + 1}`;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
