@@ -5,50 +5,75 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
-const fixture = resolve(repositoryRoot, "tests/fixtures/quickstart-vue");
 const temporaryRoot = mkdtempSync(resolve(tmpdir(), "vooya-quickstart-"));
 const packageDirectory = resolve(temporaryRoot, "packages");
-const project = resolve(temporaryRoot, "app");
 
 try {
-  verifyGettingStarted();
   mkdirSync(packageDirectory, { recursive: true });
   run("npm", ["run", "build:core"], repositoryRoot);
   run("npm", ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
-  const packages = [
-    pack("@vooya/compiler"),
-    pack("@vooya/core"),
-    pack("@vooya/vite-plugin"),
-    pack("@vooya/vue"),
-  ];
+  run("npm", ["run", "build", "--workspace", "@vooya/react"], repositoryRoot);
+  const packages = {
+    common: [
+      pack("@vooya/compiler"),
+      pack("@vooya/core"),
+      pack("@vooya/vite-plugin"),
+    ],
+    vue: pack("@vooya/vue"),
+    react: pack("@vooya/react"),
+  };
 
-  cpSync(fixture, project, { recursive: true });
-  run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", ...packages], project);
-  run("npm", ["run", "build"], project);
-
-  const assets = readdirSync(resolve(project, "dist/assets"));
-  if (!assets.some((asset) => /^vooya_app_bg-.*\.wasm$/.test(asset))) {
-    throw new Error("Quickstart build did not emit the application WASM asset.");
-  }
-  console.log(`Verified Vue source quickstart outside the checkout: ${project}`);
+  verifyGettingStarted();
+  verifyQuickstart("vue", packages);
+  verifyQuickstart("react", packages);
 } finally {
   if (!process.env.VOOYA_KEEP_QUICKSTART_FIXTURE) rmSync(temporaryRoot, { force: true, recursive: true });
 }
 
 function verifyGettingStarted() {
   const guide = readFileSync(resolve(repositoryRoot, "docs/guide/getting-started.md"), "utf8");
-  const greeting = readFileSync(resolve(fixture, "src/Greeting.voo"), "utf8");
-  for (const expected of [
+  const greeting = readFileSync(resolve(repositoryRoot, "tests/fixtures/quickstart-vue/src/Greeting.voo"), "utf8");
+  const shared = [
     "npm exec -- vooya doctor",
-    'npm install @vooya/vue@alpha',
-    'npm install --save-dev @vooya/vite-plugin@alpha',
-    "plugins: [vue(), vooya()]",
     "npm run dev",
     "npm run build",
     greeting.trim(),
-  ]) {
-    if (!guide.includes(expected)) throw new Error(`Getting Started drifted from the Vue quickstart: missing ${JSON.stringify(expected)}.`);
+  ];
+  const frameworkSpecific = {
+    vue: [
+      "## Vue",
+      'npm install @vooya/vue@alpha',
+      'npm install --save-dev @vooya/vite-plugin@alpha',
+      "plugins: [vue(), vooya()]",
+      'import Greeting from "./Greeting.voo";',
+      "<Greeting />",
+    ],
+    react: [
+      "## React",
+      'npm install @vooya/react@alpha',
+      'npm install --save-dev @vooya/vite-plugin@alpha',
+      "plugins: [react(), vooya({ framework: \"react\" })]",
+      "return <Greeting name=\"Rust\" />;",
+      "[React counter](../../examples/react-counter)",
+    ],
+  };
+  for (const expected of [...shared, ...frameworkSpecific.vue, ...frameworkSpecific.react]) {
+    if (!guide.includes(expected)) throw new Error(`Getting Started drifted from a tested quickstart: missing ${JSON.stringify(expected)}.`);
   }
+}
+
+function verifyQuickstart(framework, packages) {
+  const fixture = resolve(repositoryRoot, `tests/fixtures/quickstart-${framework}`);
+  const project = resolve(temporaryRoot, framework);
+  cpSync(fixture, project, { recursive: true });
+  run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", ...packages.common, packages[framework]], project);
+  run("npm", ["run", "build"], project);
+
+  const assets = readdirSync(resolve(project, "dist/assets"));
+  if (!assets.some((asset) => /^vooya_app_bg-.*\.wasm$/.test(asset))) {
+    throw new Error(`${framework} quickstart build did not emit the application WASM asset.`);
+  }
+  console.log(`Verified ${framework} source quickstart outside the checkout: ${project}`);
 }
 
 function pack(workspace) {
