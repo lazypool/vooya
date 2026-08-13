@@ -25,6 +25,14 @@ site without changing its structure or URLs unnecessarily.
 The RFCs record decisions and their original stage context. They are not a
 substitute for the current guides.
 
+### Proposing an RFC
+
+Open a GitHub issue titled `RFC: <proposal>` first. The issue is where options,
+compatibility effects, acceptance gates, and the maintainer decision are
+recorded. After a decision, maintainers may add a numbered document here; bugs,
+chores, and implementation tasks do not consume RFC numbers. RFC 0007 is the
+next available number.
+
 - [RFC 0001: component islands](rfcs/0001-component-islands.md)
 - [RFC 0002: reactive component model](rfcs/0002-reactive-component-model.md)
 - [RFC 0003: first public alpha](rfcs/0003-production-readiness.md)

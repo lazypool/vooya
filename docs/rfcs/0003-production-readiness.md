@@ -2,8 +2,12 @@
 
 ## Status
 
-Proposed for Stage 6. This RFC authorizes build and packaging work only; it
-does not authorize publishing to npm.
+Historical Stage 6 proposal. At that stage this RFC authorized build and
+packaging work only; it did not authorize publishing to npm. Subsequently,
+maintainers published the coordinated package set as `v0.1.0-alpha.4`.
+
+This record preserves its original authorization boundary; see the project
+status for the current published state.
 
 ## Release unit
 

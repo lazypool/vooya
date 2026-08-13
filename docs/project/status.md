@@ -1,7 +1,9 @@
 # Project Status
 
 Vooya is a public alpha and an architecture-validation project. It is not a
-stable compiler or a production compatibility promise.
+stable compiler or a production compatibility promise. The latest published
+coordinated release is `v0.1.0-alpha.4`; use the npm `alpha` tag to resolve the
+latest published set.
 
 The six packages form one coordinated release unit:
 
@@ -34,8 +36,10 @@ prerelease.
 - Ship `vooya doctor` for Rust target, CLI-version, and rustup-path diagnostics.
 - Demonstrate a Vue-hosted 150,000-point Rust/WASM Canvas scatter plot.
 - Build packed npm artifacts from a project outside the repository checkout.
-- Consume the Vue-only `@vooya/artifact-vue-counter` in a clean Vite project
-  without Cargo, Rust, a Rust target, or `wasm-bindgen`.
+- Consume the Vue-only `@vooya/artifact-vue-counter` reference artifact in a
+  clean Vite project without Cargo, Rust, a Rust target, `wasm-bindgen`, or the
+  Vite plugin. It demonstrates the retained requirement that each precompiled
+  component is consumable as one explicit package.
 
 ## Current limits
 
@@ -56,8 +60,9 @@ prerelease.
 
 1. Grow the Rust view layer into declarative trees, reactive bindings, and
    explicit effect cleanup.
-2. Extend the Vue-only precompiled artifact vertical slice to a broader
-   component set; React artifact consumption remains unimplemented.
+2. Build a generic artifact producer and supported component products that can
+   supersede the Vue-only reference artifact; React artifact consumption
+   remains unimplemented.
 3. Bridge extracted Rust source to rust-analyzer for completion, navigation,
    and diagnostics.
 4. Define state-preserving HMR semantics.
