@@ -1,238 +1,198 @@
 const defaultRuntime = "@vooya/core";
-
 export class VooParseError extends Error {
-  constructor(message, id, line) {
-    super(`${message} (${id}:${line})`);
-    this.name = "VooParseError";
-    this.id = id;
-    this.line = line;
-  }
+    id;
+    line;
+    constructor(message, id, line) {
+        super(`${message} (${id}:${line})`);
+        this.name = "VooParseError";
+        this.id = id;
+        this.line = line;
+    }
 }
-
 export function parseVooComponent(source, id = "<anonymous>.voo") {
-  if (source.trimStart().startsWith("<component")) {
-    return parseSourceComponent(source, id);
-  }
-  return parseManifestComponent(source, id);
+    if (source.trimStart().startsWith("<component"))
+        return parseSourceComponent(source, id);
+    return parseManifestComponent(source, id);
 }
-
 function parseSourceComponent(source, id) {
-  const componentBlock = readBlock(source, "component", id, true);
-  const rustBlock = readBlock(source, "rust", id, true);
-  const styleBlock = readBlock(source, "style", id, false);
-  const name = readComponentName(componentBlock.attributes, id, componentBlock.openLine);
-  const contract = parseContract(componentBlock.content, id, componentBlock.contentLine);
-
-  if (styleBlock) {
-    assertAttributes(styleBlock.attributes, new Set(["scoped"]), id, styleBlock.openLine);
-  }
-
-  return {
-    format: "source",
-    name,
-    props: contract.props,
-    events: contract.events,
-    rust: {
-      content: trimBlock(rustBlock.content),
-      startLine: rustBlock.contentLine,
-    },
-    style: styleBlock
-      ? {
-          content: trimBlock(styleBlock.content),
-          scoped: Object.hasOwn(styleBlock.attributes, "scoped"),
-          startLine: styleBlock.contentLine,
-        }
-      : undefined,
-  };
-}
-
-function parseContract(source, id, startLine) {
-  const props = [];
-  const events = [];
-  let section;
-
-  for (const [index, rawLine] of source.split(/\r?\n/).entries()) {
-    const lineNumber = startLine + index;
-    const line = rawLine.replace(/\/\/.*$/, "").trim();
-    if (!line) continue;
-
-    const sectionMatch = line.match(/^(props|events):$/);
-    if (sectionMatch) {
-      section = sectionMatch[1];
-      continue;
-    }
-    if (!section) {
-      throw new VooParseError(`Expected "props:" or "events:", found "${line}"`, id, lineNumber);
-    }
-
-    if (section === "props") {
-      const match = line.match(/^([A-Za-z_][\w]*)\s*:\s*(.+?)(?:\s*=\s*(.+))?$/);
-      if (!match) throw new VooParseError(`Invalid prop declaration "${line}"`, id, lineNumber);
-      const [, name, rustType, defaultValue] = match;
-      props.push({
+    const componentBlock = readBlock(source, "component", id, true);
+    const rustBlock = readBlock(source, "rust", id, true);
+    const styleBlock = readBlock(source, "style", id, false);
+    if (!componentBlock || !rustBlock)
+        throw new Error("Required Voo blocks were not read.");
+    const name = readComponentName(componentBlock.attributes, id, componentBlock.openLine);
+    const contract = parseContract(componentBlock.content, id, componentBlock.contentLine);
+    if (styleBlock)
+        assertAttributes(styleBlock.attributes, new Set(["scoped"]), id, styleBlock.openLine);
+    return {
+        format: "source",
         name,
-        rustType: rustType.trim(),
-        required: defaultValue === undefined,
-        defaultValue: defaultValue?.trim(),
-      });
-      continue;
-    }
-
-    const eventMatch = line.match(/^([A-Za-z_][\w-]*)\s*\((.*)\)$/);
-    if (!eventMatch) throw new VooParseError(`Invalid event declaration "${line}"`, id, lineNumber);
-    events.push({
-      name: eventMatch[1],
-      parameters: parseEventParameters(eventMatch[2], id, lineNumber),
-    });
-  }
-
-  return { props, events };
+        props: contract.props,
+        events: contract.events,
+        rust: { content: trimBlock(rustBlock.content), startLine: rustBlock.contentLine },
+        style: styleBlock
+            ? {
+                content: trimBlock(styleBlock.content),
+                scoped: Object.hasOwn(styleBlock.attributes, "scoped"),
+                startLine: styleBlock.contentLine,
+            }
+            : undefined,
+    };
 }
-
+function parseContract(source, id, startLine) {
+    const props = [];
+    const events = [];
+    let section;
+    for (const [index, rawLine] of source.split(/\r?\n/).entries()) {
+        const lineNumber = startLine + index;
+        const line = rawLine.replace(/\/\/.*$/, "").trim();
+        if (!line)
+            continue;
+        const sectionMatch = line.match(/^(props|events):$/);
+        if (sectionMatch) {
+            section = sectionMatch[1];
+            continue;
+        }
+        if (!section)
+            throw new VooParseError(`Expected "props:" or "events:", found "${line}"`, id, lineNumber);
+        if (section === "props") {
+            const match = line.match(/^([A-Za-z_][\w]*)\s*:\s*(.+?)(?:\s*=\s*(.+))?$/);
+            if (!match)
+                throw new VooParseError(`Invalid prop declaration "${line}"`, id, lineNumber);
+            const [, name, rustType, defaultValue] = match;
+            props.push({ name, rustType: rustType.trim(), required: defaultValue === undefined, defaultValue: defaultValue?.trim() });
+            continue;
+        }
+        const eventMatch = line.match(/^([A-Za-z_][\w-]*)\s*\((.*)\)$/);
+        if (!eventMatch)
+            throw new VooParseError(`Invalid event declaration "${line}"`, id, lineNumber);
+        events.push({ name: eventMatch[1], parameters: parseEventParameters(eventMatch[2], id, lineNumber) });
+    }
+    return { props, events };
+}
 function parseEventParameters(source, id, line) {
-  if (!source.trim()) return [];
-  return splitTopLevel(source).map((parameter) => {
-    const match = parameter.trim().match(/^([A-Za-z_][\w]*)\s*:\s*(.+)$/);
-    if (!match) throw new VooParseError(`Invalid event parameter "${parameter.trim()}"`, id, line);
-    return { name: match[1], rustType: match[2].trim() };
-  });
+    if (!source.trim())
+        return [];
+    return splitTopLevel(source).map((parameter) => {
+        const match = parameter.trim().match(/^([A-Za-z_][\w]*)\s*:\s*(.+)$/);
+        if (!match)
+            throw new VooParseError(`Invalid event parameter "${parameter.trim()}"`, id, line);
+        return { name: match[1], rustType: match[2].trim() };
+    });
 }
-
 function splitTopLevel(source) {
-  const values = [];
-  let depth = 0;
-  let start = 0;
-
-  for (let index = 0; index < source.length; index += 1) {
-    const character = source[index];
-    if ("<([{".includes(character)) depth += 1;
-    if (">)]}".includes(character)) depth -= 1;
-    if (character === "," && depth === 0) {
-      values.push(source.slice(start, index));
-      start = index + 1;
+    const values = [];
+    let depth = 0;
+    let start = 0;
+    for (let index = 0; index < source.length; index += 1) {
+        const character = source[index];
+        if ("<([{".includes(character))
+            depth += 1;
+        if (">)]}".includes(character))
+            depth -= 1;
+        if (character === "," && depth === 0) {
+            values.push(source.slice(start, index));
+            start = index + 1;
+        }
     }
-  }
-  values.push(source.slice(start));
-  return values;
+    values.push(source.slice(start));
+    return values;
 }
-
 function readBlock(source, tag, id, required) {
-  const opening = new RegExp(`<${tag}\\b([^>]*)>`).exec(source);
-  if (!opening) {
-    if (!required) return undefined;
-    throw new VooParseError(`Missing <${tag}> block`, id, 1);
-  }
-  const contentStart = opening.index + opening[0].length;
-  const closing = `</${tag}>`;
-  const contentEnd = source.indexOf(closing, contentStart);
-  if (contentEnd === -1) {
-    throw new VooParseError(`Missing ${closing}`, id, lineAt(source, opening.index));
-  }
-
-  return {
-    attributes: parseAttributes(opening[1], id, lineAt(source, opening.index)),
-    content: source.slice(contentStart, contentEnd),
-    openLine: lineAt(source, opening.index),
-    contentLine:
-      lineAt(source, contentStart) + (/^\r?\n/.test(source.slice(contentStart, contentEnd)) ? 1 : 0),
-  };
+    const opening = new RegExp(`<${tag}\\b([^>]*)>`).exec(source);
+    if (!opening) {
+        if (!required)
+            return undefined;
+        throw new VooParseError(`Missing <${tag}> block`, id, 1);
+    }
+    const contentStart = opening.index + opening[0].length;
+    const closing = `</${tag}>`;
+    const contentEnd = source.indexOf(closing, contentStart);
+    if (contentEnd === -1)
+        throw new VooParseError(`Missing ${closing}`, id, lineAt(source, opening.index));
+    return {
+        attributes: parseAttributes(opening[1], id, lineAt(source, opening.index)),
+        content: source.slice(contentStart, contentEnd),
+        openLine: lineAt(source, opening.index),
+        contentLine: lineAt(source, contentStart) + (/^\r?\n/.test(source.slice(contentStart, contentEnd)) ? 1 : 0),
+    };
 }
-
 function parseAttributes(source, id, line) {
-  const attributes = {};
-  let remaining = source.trim();
-  while (remaining) {
-    const match = remaining.match(/^([A-Za-z_][\w-]*)(?:\s*=\s*"([^"]*)")?\s*/);
-    if (!match) throw new VooParseError(`Invalid block attributes "${remaining}"`, id, line);
-    attributes[match[1]] = match[2] ?? true;
-    remaining = remaining.slice(match[0].length);
-  }
-  return attributes;
+    const attributes = {};
+    let remaining = source.trim();
+    while (remaining) {
+        const match = remaining.match(/^([A-Za-z_][\w-]*)(?:\s*=\s*"([^"]*)")?\s*/);
+        if (!match)
+            throw new VooParseError(`Invalid block attributes "${remaining}"`, id, line);
+        attributes[match[1]] = match[2] ?? true;
+        remaining = remaining.slice(match[0].length);
+    }
+    return attributes;
 }
-
 function readComponentName(attributes, id, line) {
-  assertAttributes(attributes, new Set(["name"]), id, line);
-  const name = attributes.name;
-  if (typeof name !== "string" || !/^[A-Z][A-Za-z0-9_]*$/.test(name)) {
-    throw new VooParseError("<component> requires a PascalCase name", id, line);
-  }
-  return name;
+    assertAttributes(attributes, new Set(["name"]), id, line);
+    const name = attributes.name;
+    if (typeof name !== "string" || !/^[A-Z][A-Za-z0-9_]*$/.test(name))
+        throw new VooParseError("<component> requires a PascalCase name", id, line);
+    return name;
 }
-
 function assertAttributes(attributes, allowed, id, line) {
-  for (const name of Object.keys(attributes)) {
-    if (!allowed.has(name)) throw new VooParseError(`Unknown attribute "${name}"`, id, line);
-  }
+    for (const name of Object.keys(attributes))
+        if (!allowed.has(name))
+            throw new VooParseError(`Unknown attribute "${name}"`, id, line);
 }
-
 function parseManifestComponent(source, id) {
-  const lines = source
-    .split(/\r?\n/)
-    .map((raw, index) => ({ value: raw.replace(/\/\/.*$/, "").trim(), line: index + 1 }))
-    .filter(({ value }) => value);
-  const declaration = lines.shift();
-  const componentMatch = declaration?.value.match(/^component\s+([A-Z][A-Za-z0-9_]*)$/);
-  if (!componentMatch) {
-    throw new VooParseError('Expected "component Name" or a <component> block', id, declaration?.line ?? 1);
-  }
-
-  const component = {
-    format: "manifest",
-    name: componentMatch[1],
-    runtime: defaultRuntime,
-    exportName: undefined,
-    adapters: {},
-    props: [],
-    events: [],
-  };
-  let section = "root";
-
-  for (const { value, line } of lines) {
-    const sectionMatch = value.match(/^(adapter|props|events):$/);
-    if (sectionMatch) {
-      section = sectionMatch[1];
-      continue;
+    const lines = source.split(/\r?\n/).map((raw, index) => ({ value: raw.replace(/\/\/.*$/, "").trim(), line: index + 1 })).filter(({ value }) => value);
+    const declaration = lines.shift();
+    const componentMatch = declaration?.value.match(/^component\s+([A-Z][A-Za-z0-9_]*)$/);
+    if (!componentMatch)
+        throw new VooParseError('Expected "component Name" or a <component> block', id, declaration?.line ?? 1);
+    const component = { format: "manifest", name: componentMatch[1], runtime: defaultRuntime, exportName: "", adapters: {}, props: [], events: [] };
+    let section = "root";
+    for (const { value, line } of lines) {
+        const sectionMatch = value.match(/^(adapter|props|events):$/);
+        if (sectionMatch) {
+            section = sectionMatch[1];
+            continue;
+        }
+        if (section === "root") {
+            const fieldMatch = value.match(/^([a-z][a-z0-9-]*)\s*:\s*(.+)$/);
+            if (!fieldMatch)
+                throw new VooParseError(`Invalid Voo field "${value}"`, id, line);
+            const [, key, fieldValue] = fieldMatch;
+            if (key === "runtime")
+                component.runtime = fieldValue;
+            else if (key === "export")
+                component.exportName = fieldValue;
+            else
+                throw new VooParseError(`Unknown Voo field "${key}"`, id, line);
+            continue;
+        }
+        if (section === "adapter") {
+            const match = value.match(/^(vue|react)\s*:\s*([A-Za-z_$][\w$]*)$/);
+            if (!match)
+                throw new VooParseError(`Invalid adapter declaration "${value}"`, id, line);
+            component.adapters[match[1]] = match[2];
+            continue;
+        }
+        if (section === "props") {
+            const match = value.match(/^([A-Za-z_$][\w$]*)\s*:\s*([A-Za-z][\w<>[\]|]*)\s*(required)?$/);
+            if (!match)
+                throw new VooParseError(`Invalid prop declaration "${value}"`, id, line);
+            component.props.push({ name: match[1], type: match[2], required: match[3] === "required" });
+            continue;
+        }
+        const match = value.match(/^([A-Za-z_$][\w$-]*)\s*:\s*([A-Za-z][\w<>[\]|]*)$/);
+        if (!match)
+            throw new VooParseError(`Invalid event declaration "${value}"`, id, line);
+        component.events.push({ name: match[1], type: match[2] });
     }
-    if (section === "root") {
-      const fieldMatch = value.match(/^([a-z][a-z0-9-]*)\s*:\s*(.+)$/);
-      if (!fieldMatch) throw new VooParseError(`Invalid Voo field "${value}"`, id, line);
-      const [, key, fieldValue] = fieldMatch;
-      if (key === "runtime") component.runtime = fieldValue;
-      else if (key === "export") component.exportName = fieldValue;
-      else throw new VooParseError(`Unknown Voo field "${key}"`, id, line);
-      continue;
-    }
-    if (section === "adapter") {
-      const match = value.match(/^(vue|react)\s*:\s*([A-Za-z_$][\w$]*)$/);
-      if (!match) throw new VooParseError(`Invalid adapter declaration "${value}"`, id, line);
-      component.adapters[match[1]] = match[2];
-      continue;
-    }
-    if (section === "props") {
-      const match = value.match(/^([A-Za-z_$][\w$]*)\s*:\s*([A-Za-z][\w<>[\]|]*)\s*(required)?$/);
-      if (!match) throw new VooParseError(`Invalid prop declaration "${value}"`, id, line);
-      component.props.push({ name: match[1], type: match[2], required: match[3] === "required" });
-      continue;
-    }
-    const match = value.match(/^([A-Za-z_$][\w$-]*)\s*:\s*([A-Za-z][\w<>[\]|]*)$/);
-    if (!match) throw new VooParseError(`Invalid event declaration "${value}"`, id, line);
-    component.events.push({ name: match[1], type: match[2] });
-  }
-
-  if (!component.exportName) {
-    throw new VooParseError(`Component ${component.name} is missing "export"`, id, declaration.line);
-  }
-  if (!/^[A-Za-z_$][\w$]*$/.test(component.exportName)) {
-    throw new VooParseError(`Component ${component.name} has invalid export "${component.exportName}"`, id, declaration.line);
-  }
-
-  return component;
+    const declarationLine = declaration?.line ?? 1;
+    if (!component.exportName)
+        throw new VooParseError(`Component ${component.name} is missing "export"`, id, declarationLine);
+    if (!/^[A-Za-z_$][\w$]*$/.test(component.exportName))
+        throw new VooParseError(`Component ${component.name} has invalid export "${component.exportName}"`, id, declarationLine);
+    return component;
 }
-
-function trimBlock(source) {
-  return source.replace(/^\r?\n/, "").replace(/\r?\n\s*$/, "");
-}
-
-function lineAt(source, index) {
-  return source.slice(0, index).split(/\r?\n/).length;
-}
+function trimBlock(source) { return source.replace(/^\r?\n/, "").replace(/\r?\n\s*$/, ""); }
+function lineAt(source, index) { return source.slice(0, index).split(/\r?\n/).length; }
