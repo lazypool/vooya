@@ -1,5 +1,6 @@
 export const VOO_ABI_VERSION = 1;
 export function generateRustComponents(components, sourcePaths = new Map()) {
+    components.forEach(validatePublicAbi);
     const modules = components
         .map((component) => generateRustComponent(component, sourcePaths.get(component.id)))
         .join("\n\n");
@@ -28,6 +29,7 @@ export function generatedComponentPrelude(component) {
     return `use super::${contextName} as Context;\n`;
 }
 export function generatedAdapterDefinition(component) {
+    validatePublicAbi(component);
     return {
         abiVersion: VOO_ABI_VERSION,
         name: component.name,
@@ -208,6 +210,22 @@ function rustValueToJs(name, rustType) {
         return `wasm_bindgen::JsValue::from_bool(${name})`;
     return `wasm_bindgen::JsValue::from_str(&${name})`;
 }
+function validatePublicAbi(component) {
+    for (const prop of component.props) {
+        assertSupportedPublicInteger(prop.rustType, `prop "${prop.name}"`);
+    }
+    for (const event of component.events) {
+        for (const parameter of event.parameters) {
+            assertSupportedPublicInteger(parameter.rustType, `event "${event.name}" parameter "${parameter.name}"`);
+        }
+    }
+}
+function assertSupportedPublicInteger(rustType, location) {
+    if (/^[iu](?:64|128)$/.test(rustType)) {
+        throw new Error(`Unsupported Voo public ABI type "${rustType}" for ${location}. ` +
+            "Use a supported 32-bit numeric type or expose this value as a String.");
+    }
+}
 function rustStem(name) {
     return name
         .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -215,7 +233,7 @@ function rustStem(name) {
         .toLowerCase();
 }
 function javascriptType(rustType) {
-    if (/^(?:[iu](?:8|16|32|64|128|size)|f(?:32|64))$/.test(rustType))
+    if (/^(?:[iu](?:8|16|32|size)|f(?:32|64))$/.test(rustType))
         return "number";
     if (rustType === "bool")
         return "boolean";

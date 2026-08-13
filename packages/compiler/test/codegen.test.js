@@ -108,6 +108,30 @@ test("rejects prop types that cannot cross the generated ABI", () => {
   );
 });
 
+test("rejects unstable 64-bit and 128-bit public integer ABI types before code generation", () => {
+  for (const rustType of ["i64", "u64", "i128", "u128"]) {
+    assert.throws(
+      () =>
+        generatedAdapterDefinition({
+          ...counter,
+          props: [{ name: "value", rustType, required: false, defaultValue: "7" }],
+        }),
+      new RegExp(`Unsupported Voo public ABI type "${rustType}" for prop "value"`),
+    );
+    assert.throws(
+      () =>
+        generateRustComponents([
+          {
+            ...counter,
+            props: [],
+            events: [{ name: "change", parameters: [{ name: "value", rustType }] }],
+          },
+        ]),
+      new RegExp(`Unsupported Voo public ABI type "${rustType}" for event "change" parameter "value"`),
+    );
+  }
+});
+
 test("generates a stable style scope from the component path", () => {
   const component = {
     ...counter,

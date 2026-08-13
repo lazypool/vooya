@@ -6,6 +6,7 @@ export function generateRustComponents(
   components: CodegenComponent[],
   sourcePaths = new Map<string | undefined, string>(),
 ) {
+  components.forEach(validatePublicAbi);
   const modules = components
     .map((component) => generateRustComponent(component, sourcePaths.get(component.id)))
     .join("\n\n");
@@ -39,6 +40,7 @@ export function generatedComponentPrelude(component: CodegenComponent) {
 }
 
 export function generatedAdapterDefinition(component: CodegenComponent) {
+  validatePublicAbi(component);
   return {
     abiVersion: VOO_ABI_VERSION,
     name: component.name,
@@ -230,6 +232,29 @@ function rustValueToJs(name: string, rustType: string) {
   return `wasm_bindgen::JsValue::from_str(&${name})`;
 }
 
+function validatePublicAbi(component: CodegenComponent) {
+  for (const prop of component.props) {
+    assertSupportedPublicInteger(prop.rustType, `prop "${prop.name}"`);
+  }
+  for (const event of component.events) {
+    for (const parameter of event.parameters) {
+      assertSupportedPublicInteger(
+        parameter.rustType,
+        `event "${event.name}" parameter "${parameter.name}"`,
+      );
+    }
+  }
+}
+
+function assertSupportedPublicInteger(rustType: string, location: string) {
+  if (/^[iu](?:64|128)$/.test(rustType)) {
+    throw new Error(
+      `Unsupported Voo public ABI type "${rustType}" for ${location}. ` +
+        "Use a supported 32-bit numeric type or expose this value as a String.",
+    );
+  }
+}
+
 function rustStem(name: string) {
   return name
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -238,7 +263,7 @@ function rustStem(name: string) {
 }
 
 function javascriptType(rustType: string) {
-  if (/^(?:[iu](?:8|16|32|64|128|size)|f(?:32|64))$/.test(rustType)) return "number";
+  if (/^(?:[iu](?:8|16|32|size)|f(?:32|64))$/.test(rustType)) return "number";
   if (rustType === "bool") return "boolean";
   if (rustType === "String" || rustType === "str" || rustType === "&str") return "string";
   throw new Error(`Unsupported Voo prop type "${rustType}".`);
