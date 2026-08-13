@@ -17,6 +17,8 @@ site without changing its structure or URLs unnecessarily.
   framework owns, what WASM owns, and why that boundary exists.
 - [Tooling reference](reference/tooling.md): Vite options, generated files,
   formatting, editor support, and development rebuilds.
+- [Maintainer releases](maintainers/releases.md): release state, alpha
+  publication, and the stable-release lifecycle.
 - [Project status](project/status.md): what works, what remains experimental,
   and the next milestones.
 - [Compatibility matrix](project/compatibility.md): automated framework and

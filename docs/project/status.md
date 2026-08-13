@@ -41,6 +41,8 @@ prerelease.
 ## Current limits
 
 - Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`.
+- Vite is the only supported bundler integration. Webpack, Rspack, Rollup,
+  and other bundlers currently have no `.voo` adapter.
 - No precompiled component product is currently published; the retained Vue
   fixture is build-contract evidence, not a user-facing package.
 - A non-trivial component still uses some direct `web_sys` APIs.

@@ -23,6 +23,8 @@ SSR and hydration. Each entry is evidence for the named test path only.
   component path above.
 - No precompiled component product is currently published; the Vue fixture is
   build-contract evidence only.
+- Webpack, Rspack, Rollup, and other non-Vite bundlers have no current `.voo`
+  compatibility claim.
 - Alpha ABI revisions may be breaking; use one exact coordinated `@vooya`
   package version.
 

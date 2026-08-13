@@ -6,7 +6,6 @@
     "@vooya/react": "0.1.0-alpha.0",
     "@vooya/vite-plugin": "0.1.0-alpha.0",
     "@vooya/vue": "0.1.0-alpha.0",
-    "@vooya/artifact-vue-counter": "0.1.0-alpha.3",
     "@vooya/compiler": "0.1.0-alpha.3"
   },
   "changesets": [

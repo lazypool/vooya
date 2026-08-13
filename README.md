@@ -131,8 +131,8 @@ foundation, not a template language or virtual DOM.
 
 ## Current Status
 
-Vooya is currently a published alpha and an architecture-validation prototype,
-not a stable compiler.
+Vooya is currently a published alpha and a Vite-first architecture-validation
+prototype, not a stable compiler or a general bundler plugin.
 
 The repository now has:
 
@@ -167,6 +167,10 @@ Source `.voo` compilation still requires Cargo, the WASM Rust target, and the
 precompiled Vue consumer proof, but it does not currently publish a component
 product. Non-trivial component code still needs some low-level `web_sys` DOM
 APIs, and published packages can change between alpha versions.
+
+The only supported build integration today is Vite through
+`@vooya/vite-plugin`. Webpack, Rspack, Rollup, and other bundlers do not yet
+have an adapter; do not expect this release to load `.voo` files there.
 
 ## Documentation
 
