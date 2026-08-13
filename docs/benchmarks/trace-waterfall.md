@@ -15,3 +15,15 @@ Use **Measure workload** in each pane and record both displayed values with the 
 ```bash
 VOOYA_E2E_TARGET=trace playwright test
 ```
+
+Use this record format for a real run; leave fields blank rather than inventing a comparison result:
+
+```text
+Date:
+Browser + version:
+OS / hardware:
+Vooya commit:
+Rust pane median / p95:
+Vue pane median / p95:
+Notes (cold/warm page, throttling, deviations):
+```
