@@ -1,4 +1,4 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
 const targets = {
   vue: {
@@ -31,6 +31,13 @@ const targets = {
 const targetName = process.env.VOOYA_E2E_TARGET ?? "vue";
 const target = targets[targetName];
 if (!target) throw new Error(`Unknown VOOYA_E2E_TARGET "${targetName}".`);
+const browserName = process.env.VOOYA_E2E_BROWSER ?? "chromium";
+const browserProjects = {
+  chromium: { use: { ...devices["Desktop Chrome"] } },
+  firefox: { use: { ...devices["Desktop Firefox"] } },
+};
+const browserProject = browserProjects[browserName];
+if (!browserProject) throw new Error(`Unknown VOOYA_E2E_BROWSER "${browserName}".`);
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -39,6 +46,7 @@ export default defineConfig({
   retries: 0,
   reporter: "line",
   use: {
+    ...browserProject.use,
     baseURL: target.url,
     trace: "retain-on-failure",
   },

@@ -18,9 +18,9 @@ jobs:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -30,7 +30,7 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Restore wasm-bindgen CLI cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/bin/wasm-bindgen
           key: wasm-bindgen-cli-0.2.115-${{ runner.os }}
@@ -45,10 +45,13 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
-      - name: Install Chromium for browser coverage
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium and Firefox for browser coverage
+        run: npx playwright install --with-deps chromium firefox
 
       # This command is deliberately verification-only. Publishing and npm
       # dist-tag inspection remain explicit maintainer actions in release:alpha.
       - name: Run release gate
         run: npm run verify:ci
+
+      - name: Run Firefox Vue source-component evidence
+        run: npm run test:e2e:firefox
