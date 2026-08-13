@@ -55,6 +55,8 @@ prerelease.
   automatic Homebrew/rustup selector.
 - SSR, hydration, slots, and standalone application rendering are out of scope.
 - Alpha ABI revisions can be breaking.
+- The current browser evidence is limited to the repository's Playwright
+  Chromium project; see the [compatibility matrix](compatibility.md).
 
 ## Next milestones
 
