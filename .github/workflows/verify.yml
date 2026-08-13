@@ -1,0 +1,54 @@
+name: Verify
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Restore wasm-bindgen CLI cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/wasm-bindgen
+          key: wasm-bindgen-cli-0.2.115-${{ runner.os }}
+
+      - name: Install wasm-bindgen CLI
+        run: |
+          if ! wasm-bindgen --version 2>/dev/null | grep -Fx 'wasm-bindgen 0.2.115'; then
+            cargo install wasm-bindgen-cli --version 0.2.115 --locked --force
+          fi
+          wasm-bindgen --version | grep -Fx 'wasm-bindgen 0.2.115'
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Install Chromium for browser coverage
+        run: npx playwright install --with-deps chromium
+
+      # This command is deliberately verification-only. Publishing and npm
+      # dist-tag inspection remain explicit maintainer actions in release:alpha.
+      - name: Run release gate
+        run: npm run verify:ci
