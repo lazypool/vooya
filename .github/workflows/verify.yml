@@ -10,6 +10,52 @@ permissions:
   contents: read
 
 jobs:
+  windows-source-quickstart:
+    name: Windows source quickstart
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: 1
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Restore wasm-bindgen CLI cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/wasm-bindgen.exe
+          key: wasm-bindgen-cli-0.2.115-${{ runner.os }}
+
+      - name: Install wasm-bindgen CLI
+        shell: pwsh
+        run: |
+          $expected = 'wasm-bindgen 0.2.115'
+          $installed = Get-Command wasm-bindgen -ErrorAction SilentlyContinue
+          if (-not $installed -or ((wasm-bindgen --version) -ne $expected)) {
+            cargo install wasm-bindgen-cli --version 0.2.115 --locked --force
+          }
+          if ((wasm-bindgen --version) -ne $expected) {
+            throw "Expected $expected"
+          }
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      # This is intentionally a source-only contract: each fixture installs
+      # packed local packages, runs the installed `vooya doctor`, and emits a
+      # production WASM bundle. Browser support is verified separately.
+      - name: Verify source quickstarts
+        run: npm run test:quickstart
+
   verify:
     name: Release gate
     runs-on: ubuntu-latest

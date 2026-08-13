@@ -67,6 +67,9 @@ function verifyQuickstart(framework, packages) {
   const project = resolve(temporaryRoot, framework);
   cpSync(fixture, project, { recursive: true });
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", ...packages.common, packages[framework]], project);
+  // Exercise the CLI from the installed consumer dependency tree. This keeps
+  // the documented preflight separate from the workspace's own PATH.
+  run("npm", ["exec", "--", "vooya", "doctor"], project);
   run("npm", ["run", "build"], project);
 
   const assets = readdirSync(resolve(project, "dist/assets"));
