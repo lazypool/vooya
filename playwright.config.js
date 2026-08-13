@@ -29,6 +29,7 @@ const targets = {
   tasks: viteTarget("npm run dev:tasks", "task-list.spec.js", 4176),
   benchmark: viteTarget("npm run dev:benchmark", "data-grid.spec.js", 4177),
   scatter: viteTarget("npm run dev:scatter", "scatter-plot.spec.js", 4178),
+  trace: viteTarget("npm run dev:trace", "trace-waterfall.spec.js", 4179),
 };
 
 const targetName = process.env.VOOYA_E2E_TARGET ?? "vue";

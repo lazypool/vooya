@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "composite": true, "module": "ESNext", "moduleResolution": "Bundler", "target": "ES2020", "strict": true, "jsx": "preserve", "skipLibCheck": true },
+  "include": ["src/**/*.ts", "src/**/*.vue"]
+}
