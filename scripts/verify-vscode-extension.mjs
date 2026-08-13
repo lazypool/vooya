@@ -10,6 +10,8 @@ const { INITIAL, Registry, parseRawGrammar } = textmate;
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const extensionRoot = resolve(root, "editors/vscode");
+const runtimeRoot = resolve(extensionRoot, "runtime/vooya-core");
+const canonicalRuntimeRoot = resolve(root, "packages/core/rust");
 const manifest = readJson("package.json");
 const grammar = readJson("syntaxes/voo.tmLanguage.json");
 const language = readJson("language-configuration.json");
@@ -23,6 +25,13 @@ props:
   initial: number required
 events:
   change: number`;
+
+for (const relativePath of ["Cargo.toml", "src/lib.rs", "src/reactive.rs", "src/view.rs"]) {
+  assert(
+    readFileSync(resolve(runtimeRoot, relativePath), "utf8") === readFileSync(resolve(canonicalRuntimeRoot, relativePath), "utf8"),
+    `VS Code bundled runtime drifted from packages/core/rust/${relativePath}; sync it before packaging.`,
+  );
+}
 
 const contribution = manifest.contributes.languages.find(({ id }) => id === "voo");
 assert(contribution?.extensions.includes(".voo"), "VS Code must associate .voo files.");

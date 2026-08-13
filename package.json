@@ -30,7 +30,7 @@
     "verify:editor": "node scripts/verify-vscode-extension.mjs && npm run package:editor",
     "verify:branding": "node scripts/verify-branding.mjs",
     "verify:docs": "node scripts/verify-docs.mjs",
-    "package:editor": "mkdir -p dist && cd editors/vscode && vsce package --no-dependencies --out ../../dist/voo-vscode.vsix",
+    "package:editor": "mkdir -p dist && cd editors/vscode && vsce package --no-dependencies --out ../../dist/voo-vscode.vsix && cd ../.. && node scripts/verify-vscode-package.mjs",
     "changeset": "changeset",
     "version:packages": "changeset version",
     "verify:versions": "node scripts/verify-package-versions.mjs",

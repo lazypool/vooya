@@ -3,7 +3,12 @@
   "displayName": "Vooya",
   "description": "Language support for Vooya .voo Rust components.",
   "version": "0.1.0",
+  "type": "module",
   "publisher": "vooya",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:extension-host": "node test/run-extension-host.mjs"
+  },
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
@@ -13,6 +18,11 @@
   "engines": {
     "vscode": "^1.95.0"
   },
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onLanguage:voo",
+    "onCommand:vooya.checkEmbeddedRust"
+  ],
   "categories": [
     "Programming Languages"
   ],
@@ -23,6 +33,12 @@
     "wasm"
   ],
   "contributes": {
+    "commands": [
+      {
+        "command": "vooya.checkEmbeddedRust",
+        "title": "Vooya: Check Embedded Rust"
+      }
+    ],
     "languages": [
       {
         "id": "voo",
@@ -47,5 +63,8 @@
         }
       }
     ]
+  },
+  "devDependencies": {
+    "@vscode/test-electron": "^3.1.0"
   }
 }

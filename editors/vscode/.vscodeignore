@@ -1,2 +1,4 @@
 .vscodeignore
+.gitignore
+test
 **/*.vsix
