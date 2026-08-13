@@ -1,21 +1,8 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { generatedAdapterDefinition, generatedComponentBinding, parseVooComponent } from "@vooya/compiler";
-import { buildApplication } from "@vooya/vite-plugin/build";
+import { buildPrecompiledVueArtifact } from "@vooya/vite-plugin/build";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const packageMetadata = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const source = resolve(root, "component/PortableCounter.voo");
-const dist = resolve(root, "dist");
-const component = parseVooComponent(readFileSync(source, "utf8"), source);
-component.id = source;
-const definition = generatedAdapterDefinition(component);
-const binding = generatedComponentBinding(component);
-rmSync(dist, { force: true, recursive: true });
-mkdirSync(dist, { recursive: true });
-buildApplication({ applicationRoot: root, components: [component], cacheRoot: resolve(root, ".artifact-build"), outputDir: resolve(dist, "wasm"), rust: { webSysFeatures: ["Node", "NodeList"] } });
-const manifest = { formatVersion: 1, artifactVersion: packageMetadata.version, framework: "vue", component: component.name, abiVersion: definition.abiVersion, bindings: { mount: binding.exportName, dispose: binding.disposeName, updates: binding.updateNames }, wasm: "./wasm/vooya_app_bg.wasm", types: "./index.d.ts" };
-writeFileSync(resolve(dist, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-writeFileSync(resolve(dist, "index.js"), `// Generated precompiled Vooya artifact.\nimport init, { ${binding.exportName}, ${binding.disposeName}, ${Object.values(binding.updateNames).join(", ")}, voo_abi_version } from "./wasm/vooya_app.js";\nimport { defineVooyaComponent } from "@vooya/vue";\nexport const manifest = ${JSON.stringify(manifest, null, 2)};\nconst definition = ${JSON.stringify(definition, null, 2)};\nlet bindings;\nexport function assertArtifactAbi(actual) { if (actual !== manifest.abiVersion) throw new Error(\`Vooya artifact ABI mismatch for \${manifest.component}: artifact expects \${manifest.abiVersion}, but WASM provides \${String(actual)}.\`); }\nasync function loadBindings() { if (!bindings) bindings = Promise.resolve(init()).then(() => { assertArtifactAbi(voo_abi_version()); return { mount(host, ...props) { const handle = ${binding.exportName}(host, ...props); return { dispose() { ${binding.disposeName}(handle); }, ${Object.entries(binding.updateNames).map(([prop, name]) => `update_${prop}(value) { ${name}(handle, value); }`).join(", ")} }; } }; }); return bindings; }\nexport default defineVooyaComponent(definition, loadBindings);\n`);
-writeFileSync(resolve(dist, "index.d.ts"), `import type { DefineComponent } from "vue";\nexport interface PortableCounterProps { initial: number }\nexport interface VooyaArtifactManifest { formatVersion: 1; artifactVersion: string; framework: "vue"; component: "PortableCounter"; abiVersion: number; bindings: { mount: string; dispose: string; updates: Record<string, string> }; wasm: string; types: string }\nexport const manifest: VooyaArtifactManifest;\nexport function assertArtifactAbi(actual: number): void;\ndeclare const PortableCounter: DefineComponent<PortableCounterProps>;\nexport default PortableCounter;\n`);
+buildPrecompiledVueArtifact({ packageRoot: root, source });

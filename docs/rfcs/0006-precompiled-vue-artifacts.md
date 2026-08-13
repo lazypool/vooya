@@ -3,12 +3,15 @@
 ## Status
 
 Implemented as an alpha reference artifact / validation specimen for
-`@vooya/artifact-vue-counter`. It is a published compatibility test, not the
+`@vooya/artifact-vue-counter`. It is a reusable build-contract prototype, not the
 intended durable name of a component product.
 
 ## Artifact contents
 
-The package contains `dist/manifest.json`, wasm-bindgen JavaScript and WASM under
+`buildPrecompiledVueArtifact` from `@vooya/vite-plugin/build` accepts one explicit
+artifact package root and one source `.voo` component. It validates the package
+identity and exact Vue-adapter version, then produces `dist/manifest.json`,
+wasm-bindgen JavaScript and WASM under
 `dist/wasm`, a Vue component entry, and TypeScript declarations. The manifest
 records format, framework, component, artifact and ABI versions, binding names,
 and the WASM/type paths.
