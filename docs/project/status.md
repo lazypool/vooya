@@ -47,7 +47,10 @@ prerelease.
 - The contract is limited to primitive prop and event values.
 - Reactive dependencies and cleanup are explicit and minimal.
 - Successful Rust HMR performs a full reload and loses component state.
-- The VS Code extension does not bridge `.voo` Rust into rust-analyzer.
+- The VS Code extension can run an explicit embedded-Rust diagnostics check and
+  checks saved `.voo` documents through a generated local rust-analyzer
+  workspace. It intentionally does not provide rust-analyzer completion,
+  navigation, rename, or code actions inside `.voo` documents.
 - `vooya doctor` is a local diagnostic, not a toolchain installer or an
   automatic Homebrew/rustup selector.
 - SSR, hydration, slots, and standalone application rendering are out of scope.
@@ -62,8 +65,8 @@ prerelease.
    explicit effect cleanup.
 2. Design a supported, explicitly named component product on top of the generic
    precompiled Vue producer.
-3. Bridge extracted Rust source to rust-analyzer for completion, navigation,
-   and diagnostics.
+3. Evaluate editor interactions beyond diagnostics only after their `.voo`
+   source mapping and lifecycle semantics can be specified and tested.
 4. Define state-preserving HMR semantics.
 5. Expand component contracts beyond primitive values.
 6. Establish and continuously test a browser and framework compatibility

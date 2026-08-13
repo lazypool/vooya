@@ -87,9 +87,24 @@ npm run package:editor
 code --install-extension dist/voo-vscode.vsix
 ```
 
-The extension currently provides syntax highlighting and language
-configuration. rust-analyzer completion, navigation, and diagnostics inside a
-`.voo` document require a source bridge that has not been implemented yet.
+The extension provides syntax highlighting, language configuration, and an
+embedded-Rust diagnostics bridge. Run **Vooya: Check Embedded Rust** from the
+Command Palette, or save a `.voo` document, to check its extracted Rust with
+the locally available `rust-analyzer`; diagnostics are mapped back to the
+original `.voo` lines.
+
+This is diagnostics-only. It does not provide rust-analyzer completion,
+navigation, rename, or code actions inside a `.voo` document.
+
+For a clean-checkout editor gate, run:
+
+```sh
+npm run test:editor
+```
+
+That command installs the extension's lockfile-pinned development dependencies
+before running its bridge and extension-host tests. It requires a local
+`rust-analyzer` and downloads the VS Code test host on its first run.
 
 ## Repository verification
 
