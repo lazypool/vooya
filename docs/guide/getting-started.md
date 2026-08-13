@@ -21,7 +21,7 @@ After installing the Vite plugin, verify the exact programs that Vite will
 inherit from `PATH`:
 
 ```sh
-npx vooya doctor
+npm exec -- vooya doctor
 ```
 
 The command checks `cargo`, `rustc`, the `wasm32-unknown-unknown` target, and
@@ -35,7 +35,8 @@ prepared; do not mix source from `main` with older published adapters.
 
 ## Vue
 
-Install the Vue adapter and Vite plugin in an existing Vue application:
+Install the Vue adapter and Vite plugin in an existing Vue application. The
+application must already depend on `vue`, `vite`, and `@vitejs/plugin-vue`.
 
 ```sh
 npm install @vooya/vue@alpha
@@ -52,6 +53,13 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [vue(), vooya()],
 });
+```
+
+For a production build, run the application's normal Vite command:
+
+```sh
+npm run dev
+npm run build
 ```
 
 ## React
@@ -132,7 +140,7 @@ import Greeting from "./Greeting.voo";
 </script>
 
 <template>
-  <Greeting name="Rust" />
+  <Greeting />
 </template>
 ```
 

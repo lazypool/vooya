@@ -35,6 +35,7 @@
     "test:voo": "npm test --workspace @vooya/vite-plugin",
     "test:compiler": "npm test --workspace @vooya/compiler",
     "test:portable": "node tests/portable-build.mjs",
+    "test:quickstart": "node tests/quickstart.mjs",
     "test:artifact": "node tests/precompiled-artifact.mjs",
     "test:hmr": "npm run build:packages && node tests/hmr.mjs",
     "test:e2e": "npm run build:packages && node tests/e2e/run.mjs",
