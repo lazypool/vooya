@@ -7,12 +7,13 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 const temporaryRoot = mkdtempSync(resolve(tmpdir(), "vooya-quickstart-"));
 const packageDirectory = resolve(temporaryRoot, "packages");
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
 try {
   mkdirSync(packageDirectory, { recursive: true });
-  run("npm", ["run", "build:core"], repositoryRoot);
-  run("npm", ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
-  run("npm", ["run", "build", "--workspace", "@vooya/react"], repositoryRoot);
+  run(npmCommand, ["run", "build:core"], repositoryRoot);
+  run(npmCommand, ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
+  run(npmCommand, ["run", "build", "--workspace", "@vooya/react"], repositoryRoot);
   const packages = {
     common: [
       pack("@vooya/compiler"),
@@ -66,11 +67,11 @@ function verifyQuickstart(framework, packages) {
   const fixture = resolve(repositoryRoot, `tests/fixtures/quickstart-${framework}`);
   const project = resolve(temporaryRoot, framework);
   cpSync(fixture, project, { recursive: true });
-  run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", ...packages.common, packages[framework]], project);
+  run(npmCommand, ["install", "--ignore-scripts", "--no-audit", "--no-fund", ...packages.common, packages[framework]], project);
   // Exercise the CLI from the installed consumer dependency tree. This keeps
   // the documented preflight separate from the workspace's own PATH.
-  run("npm", ["exec", "--", "vooya", "doctor"], project);
-  run("npm", ["run", "build"], project);
+  run(npmCommand, ["exec", "--", "vooya", "doctor"], project);
+  run(npmCommand, ["run", "build"], project);
 
   const assets = readdirSync(resolve(project, "dist/assets"));
   if (!assets.some((asset) => /^vooya_app_bg-.*\.wasm$/.test(asset))) {
@@ -81,7 +82,7 @@ function verifyQuickstart(framework, packages) {
 
 function pack(workspace) {
   const result = spawnSync(
-    "npm",
+    npmCommand,
     ["pack", "--json", "--workspace", workspace, "--pack-destination", packageDirectory],
     { cwd: repositoryRoot, encoding: "utf8" },
   );

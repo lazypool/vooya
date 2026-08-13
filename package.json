@@ -27,7 +27,7 @@
     "typecheck:react": "node packages/vite-plugin/src/generate-declarations.mjs examples/react-counter react && tsc --noEmit -p examples/react-counter/tsconfig.json",
     "format:voo": "node packages/vite-plugin/bin/voo-format.mjs examples tests/fixtures",
     "format:voo:check": "node packages/vite-plugin/bin/voo-format.mjs --check examples tests/fixtures",
-    "test:editor": "npm ci --prefix editors/vscode && npm test --prefix editors/vscode && npm run test:extension-host --prefix editors/vscode",
+    "test:editor": "node scripts/test-editor.mjs",
     "verify:editor": "node scripts/verify-vscode-extension.mjs && npm run test:editor && npm run package:editor",
     "verify:branding": "node scripts/verify-branding.mjs",
     "verify:docs": "node scripts/verify-docs.mjs",
