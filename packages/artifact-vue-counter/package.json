@@ -4,6 +4,14 @@
   "description": "Precompiled Vue PortableCounter island for Vooya.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vooyajs/vooya.git",
+    "directory": "packages/artifact-vue-counter"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist"
   ],

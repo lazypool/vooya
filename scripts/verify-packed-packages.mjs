@@ -11,6 +11,11 @@ const expectedPackages = [
   "@vooya/react",
   "@vooya/artifact-vue-counter",
 ];
+const license = "MIT OR Apache-2.0";
+const repositoryUrl = "git+https://github.com/vooyajs/vooya.git";
+
+assert(readFileSync(new URL("../LICENSE-MIT", import.meta.url), "utf8").includes("MIT License"), "repository", "LICENSE-MIT must contain the MIT license text");
+assert(readFileSync(new URL("../LICENSE-APACHE", import.meta.url), "utf8").includes("Apache License"), "repository", "LICENSE-APACHE must contain the Apache-2.0 license text");
 
 for (const name of expectedPackages) {
   const manifest = readManifest(name);
@@ -18,6 +23,11 @@ for (const name of expectedPackages) {
   const files = new Set(packed.files.map(({ path }) => path));
 
   assert(files.has("package.json"), name, "archive is missing package.json");
+  assert(manifest.license === license, name, `license must be ${license}`);
+  assert(manifest.repository?.type === "git", name, "repository type must be git");
+  assert(manifest.repository?.url === repositoryUrl, name, `repository URL must be ${repositoryUrl}`);
+  assert(manifest.repository?.directory === `packages/${name.replace("@vooya/", "")}`, name, "repository directory must identify this package");
+  assert(manifest.publishConfig?.access === "public", name, "publishConfig.access must be public");
   for (const target of exportTargets(manifest.exports)) {
     assert(files.has(target), name, `archive is missing exported file ${target}`);
   }
