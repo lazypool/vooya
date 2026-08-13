@@ -2,9 +2,10 @@
 
 ## Status
 
-Implemented as an alpha reference artifact / validation specimen for
-`@vooya/artifact-vue-counter`. It is a reusable build-contract prototype, not the
-intended durable name of a component product.
+The initial alpha validation specimen was published as
+`@vooya/artifact-vue-counter`. It was retired from the coordinated release unit:
+it proved a build contract, not a useful component product. The generic builder
+and a test-only consumer proof remain. Historical npm versions are not removed.
 
 ## Artifact contents
 
@@ -29,17 +30,14 @@ artifact expects <expected>, but WASM provides <actual>.` before mount.
 
 ## Consumer boundary
 
-The producer needs the existing Rust and wasm-bindgen build path. Consumers
-install one explicit precompiled-component package; its framework adapter is
-transitive, and no Cargo, Rust target, wasm-bindgen, or Vite plugin is needed.
-The clean fixture builds with Rust tools absent from PATH and loads the component
-in Chromium. The current package has an exact `@vooya/vue` dependency, so it
-remains compatible with the fixed alpha release group.
+The producer needs the existing Rust and wasm-bindgen build path. The retained
+clean fixture builds generated WASM with Rust tools absent from the consumer
+PATH and loads it in Chromium. It is not an installation API.
 
-A generic artifact builder and supported component products may supersede this
-specimen later. Historical published versions will not be unpublished. Any
-future artifact package should be named for the component product users adopt,
-not for this packaging experiment.
+Any future precompiled package must be named for a component product users
+actually adopt, carry its framework adapter transitively, and have a clean
+consumer contract. It must not use `artifact-*` or a demo name as its product
+identity.
 
 ## Non-goals
 

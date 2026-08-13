@@ -5,8 +5,7 @@ import { fileURLToPath } from "node:url";
 const scriptRoot = fileURLToPath(new URL("..", import.meta.url));
 const rootOption = process.argv.indexOf("--root");
 const root = rootOption === -1 ? scriptRoot : resolve(process.argv[rootOption + 1] ?? "");
-const requireArtifactManifest = process.argv.includes("--require-artifact-manifest");
-const directories = ["compiler", "core", "vite-plugin", "vue", "react", "artifact-vue-counter"];
+const directories = ["compiler", "core", "vite-plugin", "vue", "react"];
 const packageEntries = directories.map((directory) => ({
   directory,
   path: resolve(root, `packages/${directory}/package.json`),
@@ -32,13 +31,6 @@ if (plugin.dependencies["@vooya/compiler"] !== plugin.version) {
   throw new Error("@vooya/vite-plugin must depend on the exact fixed @vooya/compiler version.");
 }
 
-const artifact = packages.find((package_) => package_.name === "@vooya/artifact-vue-counter");
-if (artifact.dependencies["@vooya/vue"] !== artifact.version) {
-  throw new Error(
-    "@vooya/artifact-vue-counter must depend on the exact fixed @vooya/vue version.",
-  );
-}
-
 const lockfile = JSON.parse(readFileSync(resolve(root, "package-lock.json"), "utf8"));
 for (const { directory, path, package: package_ } of packageEntries) {
   const lockEntry = lockfile.packages?.[`packages/${directory}`];
@@ -60,28 +52,6 @@ for (const { directory, path, package: package_ } of packageEntries) {
         `package-lock.json workspace entry packages/${directory} must keep internal dependency ${dependency}@${range}.`,
       );
     }
-  }
-}
-
-const artifactManifestPath = resolve(root, "packages/artifact-vue-counter/dist/manifest.json");
-if (requireArtifactManifest && !existsSync(artifactManifestPath)) {
-  throw new Error("Artifact manifest is required for release verification; run its package build first.");
-}
-if (existsSync(artifactManifestPath)) {
-  const manifest = JSON.parse(readFileSync(artifactManifestPath, "utf8"));
-  if (manifest.artifactVersion !== artifact.version) {
-    throw new Error(
-      `Artifact manifest artifactVersion must match @vooya/artifact-vue-counter@${artifact.version}, found ${String(manifest.artifactVersion)}.`,
-    );
-  }
-  const compilerSource = readFileSync(resolve(root, "packages/compiler/src/codegen.js"), "utf8");
-  const abiMatch = compilerSource.match(/export const VOO_ABI_VERSION = (\d+);/);
-  if (!abiMatch) throw new Error("Could not determine VOO_ABI_VERSION from @vooya/compiler.");
-  const expectedAbi = Number(abiMatch[1]);
-  if (manifest.abiVersion !== expectedAbi) {
-    throw new Error(
-      `Artifact manifest ABI must match @vooya/compiler VOO_ABI_VERSION ${expectedAbi}, found ${String(manifest.abiVersion)}.`,
-    );
   }
 }
 

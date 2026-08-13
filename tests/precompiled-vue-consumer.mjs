@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
@@ -11,18 +11,20 @@ const fixture = resolve(root, "tests/fixtures/precompiled-vue");
 const temporaryRoot = mkdtempSync(resolve(tmpdir(), "vooya-precompiled-"));
 const packages = resolve(temporaryRoot, "packages");
 const project = resolve(temporaryRoot, "app");
+const artifactSource = resolve(temporaryRoot, "artifact-source");
 const noRustPath = [dirname(process.execPath), "/usr/bin", "/bin"].join(":");
 
 try {
   mkdirSync(packages, { recursive: true });
-  run("npm", ["run", "build", "--workspace", "@vooya/artifact-vue-counter"], root);
-  await assertAbiMismatch();
+  cpSync(resolve(fixture, "artifact"), artifactSource, { recursive: true });
+  writeFixturePackageManifest();
+  run(process.execPath, [resolve(fixture, "build-artifact.mjs"), artifactSource], root);
   run("npm", ["run", "build", "--workspace", "@vooya/vue"], root);
-  const artifact = pack("@vooya/artifact-vue-counter");
   const vue = pack("@vooya/vue");
-  assertPackedArtifact(artifact);
   cpSync(fixture, project, { recursive: true });
-  run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", artifact, vue], project);
+  cpSync(resolve(artifactSource, "dist"), resolve(project, "src/generated-artifact"), { recursive: true });
+  run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", vue], project);
+  await assertAbiMismatch();
   run(process.execPath, [resolve(project, "node_modules/vite/bin/vite.js"), "build"], project, { PATH: noRustPath });
   if (!readdirSync(resolve(project, "dist/assets")).some((file) => file.endsWith(".wasm"))) throw new Error("Precompiled consumer build did not emit artifact WASM.");
   await assertBrowserRun();
@@ -35,13 +37,6 @@ function pack(workspace) {
   const result = spawnSync("npm", ["pack", "--json", "--workspace", workspace, "--pack-destination", packages], { cwd: root, encoding: "utf8" });
   if (result.status !== 0) throw new Error(result.stderr || result.stdout);
   return resolve(packages, JSON.parse(result.stdout)[0].filename);
-}
-
-function assertPackedArtifact(tarball) {
-  const output = spawnSync("tar", ["-tf", tarball], { encoding: "utf8" }).stdout.split("\n");
-  for (const file of ["package/dist/index.js", "package/dist/index.d.ts", "package/dist/manifest.json", "package/dist/wasm/vooya_app.js", "package/dist/wasm/vooya_app_bg.wasm"]) {
-    if (!output.includes(file)) throw new Error(`Artifact package is missing ${file}.`);
-  }
 }
 
 async function assertBrowserRun() {
@@ -88,13 +83,28 @@ async function assertBrowserRun() {
 }
 
 async function assertAbiMismatch() {
-  const artifact = await import(resolve(root, "packages/artifact-vue-counter/dist/index.js"));
+  const artifact = await import(resolve(project, "src/generated-artifact/index.js"));
   try {
     artifact.assertArtifactAbi(artifact.manifest.abiVersion + 1);
     throw new Error("Artifact ABI mismatch was accepted.");
   } catch (error) {
     if (!/Vooya artifact ABI mismatch for PortableCounter: artifact expects 1, but WASM provides 2\./.test(String(error.message))) throw error;
   }
+}
+
+function writeFixturePackageManifest() {
+  const vue = JSON.parse(readFileSync(resolve(root, "packages/vue/package.json"), "utf8"));
+  writeFileSync(
+    resolve(artifactSource, "package.json"),
+    `${JSON.stringify({
+      name: "@vooya/test-precompiled-vue-fixture",
+      version: vue.version,
+      type: "module",
+      files: ["dist"],
+      exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
+      dependencies: { "@vooya/vue": vue.version },
+    }, null, 2)}\n`,
+  );
 }
 
 function run(command, args, cwd, env = process.env) {

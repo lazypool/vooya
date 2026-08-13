@@ -20,7 +20,6 @@ The first alpha is a coordinated package set:
 | `@vooya/vite-plugin` | Rust build, `.voo` transform, development reload | Vite |
 | `@vooya/vue` | Vue host lifecycle bridge | Vue 3 |
 | `@vooya/react` | React host lifecycle bridge | React 19 |
-| `@vooya/artifact-vue-counter` | Vue-only precompiled PortableCounter island | Vue 3 |
 
 All packages share one `0.0.x-alpha.y` version initially. Independently
 versioning adapters is deferred until the WASM ABI is explicitly stable.
@@ -37,10 +36,11 @@ target, and the matching `wasm-bindgen` CLI. `npm run test:portable` packs the
 local npm packages, installs them in a temporary project outside the checkout,
 and builds a source `.voo` component there.
 
-The initial Vue-only precompiled artifact is
-`@vooya/artifact-vue-counter`. Its consumers do not need a Rust toolchain; the
-author or CI builds the WASM and framework bindings before publication. React
-artifact consumption is not implemented.
+This historical stage also contained a Vue-only precompiled-artifact experiment.
+The published `@vooya/artifact-vue-counter` alpha package was later retired from
+the coordinated release unit because it was a validation specimen rather than a
+component product. The reusable build contract and a test-only consumer proof
+remain; a future product must have its own user-facing name and adoption case.
 
 ## ABI rule
 
@@ -83,7 +83,7 @@ cargo test -p vooya-core
 npm run test:compiler
 npm run test:voo
 npm run test:portable
-npm run test:artifact
+npm run test:precompiled-vue
 npm run test:hmr
 npm run test:e2e
 npm run typecheck
@@ -95,7 +95,6 @@ npm pack --dry-run --workspace @vooya/core
 npm pack --dry-run --workspace @vooya/vite-plugin
 npm pack --dry-run --workspace @vooya/vue
 npm pack --dry-run --workspace @vooya/react
-npm pack --dry-run --workspace @vooya/artifact-vue-counter
 ```
 
 The packed archives must contain the compiler JavaScript, adapter JavaScript and

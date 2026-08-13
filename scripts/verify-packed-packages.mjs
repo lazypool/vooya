@@ -11,7 +11,6 @@ const expectedPackages = [
   "@vooya/vite-plugin",
   "@vooya/vue",
   "@vooya/react",
-  "@vooya/artifact-vue-counter",
 ];
 const license = "MIT OR Apache-2.0";
 const repositoryUrl = "git+https://github.com/vooyajs/vooya.git";
@@ -51,12 +50,6 @@ try {
       assert(files.has("dist/index.js"), name, "archive is missing adapter JavaScript");
       assert(files.has("dist/index.d.ts"), name, "archive is missing adapter types");
     }
-    if (name === "@vooya/artifact-vue-counter") {
-      for (const file of ["dist/manifest.json", "dist/index.js", "dist/index.d.ts", "dist/wasm/vooya_app.js", "dist/wasm/vooya_app_bg.wasm"]) {
-        assert(files.has(file), name, `archive is missing ${file}`);
-      }
-    }
-
     for (const file of files) {
       assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
       assert(!file.includes("VOOYA_PRODUCT_OPERATING_PLAN"), name, `archive leaks internal planning file ${file}`);

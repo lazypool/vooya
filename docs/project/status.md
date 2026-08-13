@@ -5,14 +5,13 @@ stable compiler or a production compatibility promise. The latest published
 coordinated release is `v0.1.0-alpha.5`; use the npm `alpha` tag to resolve the
 latest published set.
 
-The six packages form one coordinated release unit:
+The five packages form one coordinated release unit:
 
 - `@vooya/compiler`
 - `@vooya/core`
 - `@vooya/vite-plugin`
 - `@vooya/vue`
 - `@vooya/react`
-- `@vooya/artifact-vue-counter`
 
 Use the same exact version for every package. The npm `alpha` dist-tag identifies
 the latest published set, while `main` can contain changes queued for the next
@@ -36,16 +35,14 @@ prerelease.
 - Ship `vooya doctor` for Rust target, CLI-version, and rustup-path diagnostics.
 - Demonstrate a Vue-hosted 150,000-point Rust/WASM Canvas scatter plot.
 - Build packed npm artifacts from a project outside the repository checkout.
-- Consume the Vue-only `@vooya/artifact-vue-counter` reference artifact in a
-  clean Vite project without Cargo, Rust, a Rust target, `wasm-bindgen`, or the
-  Vite plugin. It demonstrates the retained requirement that each precompiled
-  component is consumable as one explicit package.
+- Verify a test-only precompiled Vue WASM consumer in a clean Vite project
+  without Cargo, Rust, a Rust target, `wasm-bindgen`, or the Vite plugin.
 
 ## Current limits
 
-- Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`; the
-  Vue-only precompiled artifact consumer does not.
-- React artifact consumption is not implemented.
+- Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`.
+- No precompiled component product is currently published; the retained Vue
+  fixture is build-contract evidence, not a user-facing package.
 - A non-trivial component still uses some direct `web_sys` APIs.
 - The contract is limited to primitive prop and event values.
 - Reactive dependencies and cleanup are explicit and minimal.
@@ -63,9 +60,8 @@ prerelease.
 
 1. Grow the Rust view layer into declarative trees, reactive bindings, and
    explicit effect cleanup.
-2. Build a generic artifact producer and supported component products that can
-   supersede the Vue-only reference artifact; React artifact consumption
-   remains unimplemented.
+2. Design a supported, explicitly named component product on top of the generic
+   precompiled Vue producer.
 3. Bridge extracted Rust source to rust-analyzer for completion, navigation,
    and diagnostics.
 4. Define state-preserving HMR semantics.

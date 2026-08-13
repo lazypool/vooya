@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import PortableCounter from "@vooya/artifact-vue-counter";
+import PortableCounter from "./generated-artifact/index.js";
 
 const value = ref(7);
 </script>

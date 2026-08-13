@@ -7,7 +7,7 @@ import test from "node:test";
 import { buildPrecompiledVueArtifact } from "./build-core.mjs";
 
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
-const counterSource = resolve(repositoryRoot, "packages/artifact-vue-counter/component/PortableCounter.voo");
+const counterSource = resolve(repositoryRoot, "tests/fixtures/precompiled-vue/artifact/component/PortableCounter.voo");
 const vueVersion = JSON.parse(readFileSync(resolve(repositoryRoot, "packages/vue/package.json"), "utf8")).version;
 
 test("builds a Vue artifact from an explicitly named non-prefix package", () => {

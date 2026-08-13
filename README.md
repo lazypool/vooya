@@ -146,8 +146,8 @@ The repository now has:
 - application-isolated Cargo crates, build caches, and WASM output;
 - an npm-tarball portability test that builds source `.voo` in a temporary
   project outside the Vooya checkout;
-- a Vue-only precompiled artifact vertical slice whose packed consumer imports
-  shipped WASM without Rust tooling;
+- a test-only Vue precompiled-WASM consumer slice that proves generated output
+  can run without Rust tooling;
 - debounced development rebuilds that survive Rust errors, coalesce rapid
   saves, and reload only after a successful WASM build;
 - structured Cargo dependency configuration, application-relative path crates,
@@ -163,12 +163,10 @@ The repository now has:
   its Vue baseline.
 
 Source `.voo` compilation still requires Cargo, the WASM Rust target, and the
-`wasm-bindgen` CLI on the author's machine. The Vue-only
-`@vooya/artifact-vue-counter` precompiled artifact is the exception: consumers
-install its shipped bindings and WASM without a Rust toolchain. React artifact
-consumption is not implemented. Non-trivial component code still needs some
-low-level `web_sys` DOM APIs, and published packages can change between alpha
-versions.
+`wasm-bindgen` CLI on the author's machine. The repository retains a test-only
+precompiled Vue consumer proof, but it does not currently publish a component
+product. Non-trivial component code still needs some low-level `web_sys` DOM
+APIs, and published packages can change between alpha versions.
 
 ## Documentation
 
@@ -254,10 +252,9 @@ code --install-extension dist/voo-vscode.vsix
 
 ## Versioning and alpha releases
 
-Six coordinated `@vooya` packages use one fixed version while the compiler ABI,
-framework adapters, and first Vue precompiled artifact evolve together:
-`@vooya/compiler`, `@vooya/core`, `@vooya/vite-plugin`, `@vooya/vue`,
-`@vooya/react`, and `@vooya/artifact-vue-counter`. Changesets owns version
+Five coordinated `@vooya` packages use one fixed version while the compiler ABI
+and framework adapters evolve together: `@vooya/compiler`, `@vooya/core`,
+`@vooya/vite-plugin`, `@vooya/vue`, and `@vooya/react`. Changesets owns version
 changes, and the release command synchronizes every published prerelease to the
 `alpha` dist-tag:
 
@@ -279,8 +276,8 @@ The next milestones move the working compiler toward a developer preview:
 
 1. Grow the Rust view layer into declarative trees, reactive bindings, and
    explicit effect cleanup without hiding the underlying browser APIs.
-2. Extend the Vue-only precompiled artifact vertical slice; React artifact
-   consumption is not implemented.
+2. Design one genuinely useful, explicitly named precompiled component product;
+   the current precompiled Vue slice is only a test fixture.
 3. Complete Rust editor integration; `.voo` formatting and syntax highlighting
    are available now.
 4. Define state-preserving HMR semantics; successful Rust rebuilds currently

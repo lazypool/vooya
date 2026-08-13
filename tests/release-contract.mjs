@@ -11,7 +11,6 @@ const releaseVersion = readJson(resolve(root, "packages/core/package.json")).ver
 try {
   createFixture();
   runVerifier();
-  assertArtifactMatchesPackage();
   assertFailure("lockfile workspace version drift", (fixture) => {
     const lockfile = readJson(resolve(fixture, "package-lock.json"));
     lockfile.packages["packages/core"].version = "0.1.0-alpha.3";
@@ -27,16 +26,6 @@ try {
     packageMetadata.dependencies["@vooya/core"] = "^0.1.0-alpha.4";
     writeJson(resolve(fixture, "packages/vite-plugin/package.json"), packageMetadata);
   }, /must depend on the exact fixed @vooya\/core version/);
-  assertFailure("artifact version drift", (fixture) => {
-    const manifest = readJson(resolve(fixture, "packages/artifact-vue-counter/dist/manifest.json"));
-    manifest.artifactVersion = "0.1.0-alpha.3";
-    writeJson(resolve(fixture, "packages/artifact-vue-counter/dist/manifest.json"), manifest);
-  }, /Artifact manifest artifactVersion must match/);
-  assertFailure("artifact ABI drift", (fixture) => {
-    const manifest = readJson(resolve(fixture, "packages/artifact-vue-counter/dist/manifest.json"));
-    manifest.abiVersion = 999;
-    writeJson(resolve(fixture, "packages/artifact-vue-counter/dist/manifest.json"), manifest);
-  }, /Artifact manifest ABI must match/);
   console.log("Release contract regression checks passed.");
 } finally {
   rmSync(temporaryRoot, { force: true, recursive: true });
@@ -51,14 +40,6 @@ function createFixture() {
       return !source.includes("node_modules") && !source.includes(".artifact-build");
     },
   });
-}
-
-function assertArtifactMatchesPackage() {
-  const artifact = readJson(resolve(temporaryRoot, "packages/artifact-vue-counter/package.json"));
-  const manifest = readJson(resolve(temporaryRoot, "packages/artifact-vue-counter/dist/manifest.json"));
-  if (manifest.artifactVersion !== artifact.version) {
-    throw new Error("Artifact build did not derive manifest artifactVersion from package metadata.");
-  }
 }
 
 function assertFailure(description, change, expected) {
@@ -76,7 +57,7 @@ function assertFailure(description, change, expected) {
 }
 
 function runVerifier(fixture = temporaryRoot, throwOnFailure = true) {
-  const result = spawnSync(process.execPath, [resolve(root, "scripts/verify-package-versions.mjs"), "--root", fixture, "--require-artifact-manifest"], { encoding: "utf8" });
+  const result = spawnSync(process.execPath, [resolve(root, "scripts/verify-package-versions.mjs"), "--root", fixture], { encoding: "utf8" });
   if (throwOnFailure && result.status !== 0) throw new Error(result.stderr || result.stdout);
   return result;
 }
