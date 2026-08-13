@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { homedir } from "node:os";
-import { resolve, sep } from "node:path";
+import { homedir, platform as hostPlatform } from "node:os";
+import { posix, win32 } from "node:path";
 
 export const WASM_BINDGEN_VERSION = "0.2.115";
 export const WASM_TARGET = "wasm32-unknown-unknown";
@@ -10,17 +10,23 @@ export const WASM_TARGET = "wasm32-unknown-unknown";
  * The function is intentionally dependency-free so `vooya doctor` can run
  * before a Vite project has successfully compiled.
  */
-export function inspectToolchain({ env = process.env, run = runCommand } = {}) {
+export function inspectToolchain({
+  env = process.env,
+  run = runCommand,
+  platform = hostPlatform(),
+  home = homedir(),
+} = {}) {
   const cargo = probe("cargo", ["--version"], run);
   const rustc = probe("rustc", ["--version"], run);
   const sysroot = probe("rustc", ["--print", "sysroot"], run);
   const wasmBindgen = probe("wasm-bindgen", ["--version"], run);
   const rustupTargets = probe("rustup", ["target", "list", "--installed"], run);
-  const cargoPath = findExecutable("cargo", env.PATH, run);
-  const rustcPath = findExecutable("rustc", env.PATH, run);
-  const wasmBindgenPath = findExecutable("wasm-bindgen", env.PATH, run);
-  const rustupHome = env.RUSTUP_HOME ?? resolve(homedir(), ".rustup");
-  const expectedSysrootPrefix = resolve(rustupHome, "toolchains");
+  const cargoPath = findExecutable("cargo", env, run, platform);
+  const rustcPath = findExecutable("rustc", env, run, platform);
+  const wasmBindgenPath = findExecutable("wasm-bindgen", env, run, platform);
+  const paths = platform === "win32" ? win32 : posix;
+  const rustupHome = env.RUSTUP_HOME ?? paths.resolve(home, ".rustup");
+  const expectedSysrootPrefix = paths.resolve(rustupHome, "toolchains");
 
   const results = [];
   results.push(check("cargo", Boolean(cargo.value), cargo.value ?? cargo.error));
@@ -48,13 +54,13 @@ export function inspectToolchain({ env = process.env, run = runCommand } = {}) {
     ),
   );
 
-  const sysrootIsRustup = Boolean(sysroot.value && isPathInside(sysroot.value, expectedSysrootPrefix));
+  const sysrootIsRustup = Boolean(sysroot.value && isPathInside(sysroot.value, expectedSysrootPrefix, paths));
   results.push({
     name: "cargo/rustc toolchain",
     status: sysrootIsRustup ? "ok" : "warning",
     detail: sysrootIsRustup
       ? `rustup sysroot: ${sysroot.value}`
-      : `rustc sysroot: ${sysroot.value ?? "unavailable"}. Vooya uses PATH, and this is not a rustup toolchain. If builds cannot find ${WASM_TARGET}, put ${resolve(homedir(), ".cargo/bin")} before Homebrew in PATH.`,
+      : `rustc sysroot: ${sysroot.value ?? "unavailable"}. Vooya uses PATH, and this is not a rustup toolchain. If builds cannot find ${WASM_TARGET}, install and select a rustup toolchain, then make sure cargo, rustc, and wasm-bindgen resolve from the intended PATH.`,
   });
 
   return {
@@ -94,10 +100,12 @@ function probe(command, args, run) {
   }
 }
 
-function findExecutable(command, path, run) {
+function findExecutable(command, env, run, platform) {
+  const path = platform === "win32" ? env.Path ?? env.PATH : env.PATH;
   if (!path) return undefined;
   try {
-    return run("which", [command]);
+    const output = run(platform === "win32" ? "where.exe" : "which", [command]);
+    return output.split(/\r?\n/)[0] || undefined;
   } catch {
     return undefined;
   }
@@ -107,8 +115,13 @@ function runCommand(command, args) {
   return execFileSync(command, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 }
 
-function isPathInside(path, directory) {
-  const normalizedPath = resolve(path);
-  const normalizedDirectory = resolve(directory);
-  return normalizedPath === normalizedDirectory || normalizedPath.startsWith(`${normalizedDirectory}${sep}`);
+function isPathInside(path, directory, paths) {
+  const normalizedPath = normalizePath(paths.resolve(path), paths);
+  const normalizedDirectory = normalizePath(paths.resolve(directory), paths);
+  const separator = paths.sep;
+  return normalizedPath === normalizedDirectory || normalizedPath.startsWith(`${normalizedDirectory}${separator}`);
+}
+
+function normalizePath(path, paths) {
+  return paths === win32 ? path.toLowerCase() : path;
 }
