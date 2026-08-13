@@ -84,7 +84,7 @@ function pack(workspace) {
   const result = spawnSync(
     npmCommand,
     ["pack", "--json", "--workspace", workspace, "--pack-destination", packageDirectory],
-    { cwd: repositoryRoot, encoding: "utf8" },
+    { cwd: repositoryRoot, encoding: "utf8", shell: process.platform === "win32" },
   );
   if (result.status !== 0) fail("npm pack", result);
   const [{ filename }] = JSON.parse(result.stdout);
@@ -92,7 +92,7 @@ function pack(workspace) {
 }
 
 function run(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, stdio: "inherit" });
+  const result = spawnSync(command, args, { cwd, stdio: "inherit", shell: process.platform === "win32" });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}.`);
 }
