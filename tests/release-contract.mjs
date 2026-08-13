@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const temporaryRoot = mkdtempSync(resolve(tmpdir(), "vooya-release-contract-"));
+const releaseVersion = readJson(resolve(root, "packages/core/package.json")).version;
 
 try {
   createFixture();
@@ -20,7 +21,7 @@ try {
     const lockfile = readJson(resolve(fixture, "package-lock.json"));
     lockfile.packages["packages/vite-plugin"].dependencies["@vooya/core"] = "0.1.0-alpha.3";
     writeJson(resolve(fixture, "package-lock.json"), lockfile);
-  }, /must keep internal dependency @vooya\/core@0\.1\.0-alpha\.4/);
+  }, new RegExp(`must keep internal dependency @vooya/core@${escapeRegExp(releaseVersion)}`));
   assertFailure("package internal dependency drift", (fixture) => {
     const packageMetadata = readJson(resolve(fixture, "packages/vite-plugin/package.json"));
     packageMetadata.dependencies["@vooya/core"] = "^0.1.0-alpha.4";
@@ -87,4 +88,8 @@ function readJson(path) {
 function writeJson(path, value) {
   mkdirSync(resolve(path, ".."), { recursive: true });
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
