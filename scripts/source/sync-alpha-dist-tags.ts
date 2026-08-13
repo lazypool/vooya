@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const dryRun = process.argv.includes("--dry-run");
 const check = process.argv.includes("--check");
 const checkPublished = process.argv.includes("--check-published");

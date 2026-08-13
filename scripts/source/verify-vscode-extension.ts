@@ -8,7 +8,7 @@ import textmate from "vscode-textmate";
 const { createOnigScanner, createOnigString, loadWASM } = oniguruma;
 const { INITIAL, Registry, parseRawGrammar } = textmate;
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const extensionRoot = resolve(root, "editors/vscode");
 const runtimeRoot = resolve(extensionRoot, "runtime/vooya-core");
 const canonicalRuntimeRoot = resolve(root, "packages/core/rust");

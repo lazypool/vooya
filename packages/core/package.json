@@ -23,6 +23,6 @@
     "./rust/Cargo.toml": "./rust/Cargo.toml"
   },
   "scripts": {
-    "build": "node ../../scripts/build-core.mjs"
+    "build": "npm run build:scripts --prefix ../.. && node ../../scripts/generated/build-core.js"
   }
 }

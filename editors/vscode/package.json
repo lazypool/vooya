@@ -6,7 +6,9 @@
   "type": "module",
   "publisher": "vooya",
   "scripts": {
-    "test": "node --test test/*.test.mjs",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
     "test:extension-host": "node test/run-extension-host.mjs"
   },
   "license": "MIT OR Apache-2.0",

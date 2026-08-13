@@ -26,12 +26,14 @@
   ],
   "exports": {
     ".": "./src/index.js",
-    "./build": "./src/build-core.mjs",
+    "./build": "./src/build-core.js",
     "./format": "./src/voo-format.js",
     "./runtime": "./src/runtime.js"
   },
   "scripts": {
-    "test": "node --test src/*.test.js"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build && node --test src/*.test.js"
   },
   "peerDependencies": {
     "vite": "^7.0.0"

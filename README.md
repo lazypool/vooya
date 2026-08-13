@@ -258,9 +258,10 @@ code --install-extension dist/voo-vscode.vsix
 
 Five coordinated `@vooya` packages use one fixed version while the compiler ABI
 and framework adapters evolve together: `@vooya/compiler`, `@vooya/core`,
-`@vooya/vite-plugin`, `@vooya/vue`, and `@vooya/react`. Changesets owns version
-changes, and the release command synchronizes every published prerelease to the
-`alpha` dist-tag:
+`@vooya/vite-plugin`, `@vooya/vue`, and `@vooya/react`. Semifold owns version
+changes. A Vooya changeset names all five packages at the same bump level, and
+the release command synchronizes every published prerelease to the `alpha`
+dist-tag:
 
 ```sh
 npm run changeset

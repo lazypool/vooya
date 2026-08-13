@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const scriptRoot = fileURLToPath(new URL("..", import.meta.url));
+const scriptRoot = fileURLToPath(new URL("../..", import.meta.url));
 const rootOption = process.argv.indexOf("--root");
 const root = rootOption === -1 ? scriptRoot : resolve(process.argv[rootOption + 1] ?? "");
 const directories = ["compiler", "core", "vite-plugin", "vue", "react"];
@@ -55,10 +55,12 @@ for (const { directory, path, package: package_ } of packageEntries) {
   }
 }
 
-const changesets = JSON.parse(readFileSync(resolve(root, ".changeset/config.json"), "utf8"));
-const fixed = changesets.fixed.find(
-  (group) => JSON.stringify([...group].sort()) === JSON.stringify(expectedNames),
-);
-if (!fixed) throw new Error("Changesets must contain one fixed group with all @vooya packages.");
+const semifoldConfig = readFileSync(resolve(root, ".changes/config.toml"), "utf8");
+for (const package_ of packages) {
+  const id = package_.name.replace("@vooya/", "vooya-");
+  if (!new RegExp(`\\[packages\\.${id.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\]`).test(semifoldConfig)) {
+    throw new Error(`Semifold must configure ${package_.name} as a fixed Vooya release package.`);
+  }
+}
 
 console.log(`Verified fixed @vooya package release contract at version ${packages[0].version}.`);

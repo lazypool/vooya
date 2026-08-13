@@ -1,3 +1,7 @@
+// The build core accepts user-owned Vite/Rust configuration whose shape is
+// intentionally open-ended. Keep that boundary untyped while the emitted
+// public JavaScript surface is migrated to TypeScript source.
+// @ts-nocheck
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";

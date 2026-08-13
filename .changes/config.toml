@@ -1,0 +1,55 @@
+[branches]
+base = "main"
+release = "release"
+
+[tags]
+chore = "Maintenance"
+feat = "Features"
+fix = "Fixes"
+perf = "Performance"
+refactor = "Refactors"
+
+[packages.vooya-compiler]
+path = "packages/compiler"
+resolver = "nodejs"
+channel = "alpha"
+publish = true
+github-release = false
+
+[packages.vooya-core]
+path = "packages/core"
+resolver = "nodejs"
+channel = "alpha"
+publish = true
+github-release = false
+
+[packages.vooya-vite-plugin]
+path = "packages/vite-plugin"
+resolver = "nodejs"
+channel = "alpha"
+publish = true
+github-release = false
+depends-on = ["vooya-core", "vooya-compiler"]
+
+[packages.vooya-vue]
+path = "packages/vue"
+resolver = "nodejs"
+channel = "alpha"
+publish = true
+github-release = false
+
+[packages.vooya-react]
+path = "packages/react"
+resolver = "nodejs"
+channel = "alpha"
+publish = true
+github-release = false
+
+[resolver.nodejs.pre-check]
+type = "http"
+url = "https://registry.npmjs.org/{{ package.name }}/{{ package.version }}"
+retry = [2, 5, 15]
+
+[[resolver.nodejs.publish]]
+command = "npm"
+args = ["publish", "--access", "public", "--tag", "alpha"]

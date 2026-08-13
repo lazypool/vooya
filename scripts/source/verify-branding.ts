@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const files = execFileSync(
   "git",
   ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
@@ -12,7 +12,7 @@ const files = execFileSync(
   .toString()
   .split("\0")
   .filter(Boolean)
-  .filter((file) => file !== "scripts/verify-branding.mjs");
+  .filter((file) => file !== "scripts/source/verify-branding.ts");
 const legacyPattern = new RegExp(["VO", "YA", "|Vo", "ya", "|vo", "ya"].join(""), "g");
 const failures = [];
 

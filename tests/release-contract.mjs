@@ -26,6 +26,12 @@ try {
     packageMetadata.dependencies["@vooya/core"] = "^0.1.0-alpha.4";
     writeJson(resolve(fixture, "packages/vite-plugin/package.json"), packageMetadata);
   }, /must depend on the exact fixed @vooya\/core version/);
+  assertSemifoldFailure("incomplete fixed release group", (fixture) => {
+    writeFileSync(resolve(fixture, ".changes", "incomplete.md"), `---\nvooya-core: "patch:fix"\n---\n\nIncomplete release.\n`);
+  }, /must name every fixed Vooya package/);
+  assertSemifoldFailure("mixed fixed release bump levels", (fixture) => {
+    writeFileSync(resolve(fixture, ".changes", "mixed.md"), `---\nvooya-compiler: "patch:fix"\nvooya-core: "minor:fix"\nvooya-vite-plugin: "patch:fix"\nvooya-vue: "patch:fix"\nvooya-react: "patch:fix"\n---\n\nMixed release.\n`);
+  }, /must use one bump level/);
   console.log("Release contract regression checks passed.");
 } finally {
   rmSync(temporaryRoot, { force: true, recursive: true });
@@ -33,13 +39,27 @@ try {
 
 function createFixture() {
   cpSync(resolve(root, "package-lock.json"), resolve(temporaryRoot, "package-lock.json"));
-  cpSync(resolve(root, ".changeset/config.json"), resolve(temporaryRoot, ".changeset/config.json"), { recursive: true });
+  cpSync(resolve(root, ".changes/config.toml"), resolve(temporaryRoot, ".changes/config.toml"), { recursive: true });
   cpSync(resolve(root, "packages"), resolve(temporaryRoot, "packages"), {
     recursive: true,
     filter(source) {
       return !source.includes("node_modules") && !source.includes(".artifact-build");
     },
   });
+}
+
+function assertSemifoldFailure(description, change, expected) {
+  const fixture = mkdtempSync(resolve(tmpdir(), "vooya-semifold-contract-case-"));
+  try {
+    cpSync(temporaryRoot, fixture, { recursive: true });
+    change(fixture);
+    const output = spawnSync(process.execPath, [resolve(root, "scripts/generated/verify-semifold-release-contract.js"), "--root", fixture], { encoding: "utf8" });
+    if (output.status === 0 || !expected.test(`${output.stdout}\n${output.stderr}`)) {
+      throw new Error(`Expected ${description} to fail with ${expected}, got:\n${output.stdout}\n${output.stderr}`);
+    }
+  } finally {
+    rmSync(fixture, { force: true, recursive: true });
+  }
 }
 
 function assertFailure(description, change, expected) {
@@ -57,7 +77,7 @@ function assertFailure(description, change, expected) {
 }
 
 function runVerifier(fixture = temporaryRoot, throwOnFailure = true) {
-  const result = spawnSync(process.execPath, [resolve(root, "scripts/verify-package-versions.mjs"), "--root", fixture], { encoding: "utf8" });
+  const result = spawnSync(process.execPath, [resolve(root, "scripts/generated/verify-package-versions.js"), "--root", fixture], { encoding: "utf8" });
   if (throwOnFailure && result.status !== 0) throw new Error(result.stderr || result.stdout);
   return result;
 }

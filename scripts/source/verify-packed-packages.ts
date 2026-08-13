@@ -1,10 +1,12 @@
+// npm pack JSON is external process output and is validated at runtime.
+// @ts-nocheck
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const expectedPackages = [
   "@vooya/compiler",
   "@vooya/core",
@@ -14,8 +16,8 @@ const expectedPackages = [
 ];
 const license = "MIT OR Apache-2.0";
 const repositoryUrl = "git+https://github.com/vooyajs/vooya.git";
-const mitLicense = readFileSync(new URL("../LICENSE-MIT", import.meta.url), "utf8");
-const apacheLicense = readFileSync(new URL("../LICENSE-APACHE", import.meta.url), "utf8");
+const mitLicense = readFileSync(new URL("../../LICENSE-MIT", import.meta.url), "utf8");
+const apacheLicense = readFileSync(new URL("../../LICENSE-APACHE", import.meta.url), "utf8");
 
 assert(mitLicense.includes("MIT License"), "repository", "LICENSE-MIT must contain the MIT license text");
 assert(apacheLicense.includes("Apache License"), "repository", "LICENSE-APACHE must contain the Apache-2.0 license text");
@@ -53,6 +55,7 @@ try {
     for (const file of files) {
       assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
       assert(!file.includes("VOOYA_PRODUCT_OPERATING_PLAN"), name, `archive leaks internal planning file ${file}`);
+      assert(!file.includes("/source/") && (!file.endsWith(".ts") || file.endsWith(".d.ts")), name, `archive must contain compiled JavaScript rather than TypeScript authoring source ${file}`);
     }
 
     console.log(`Verified ${name}@${packed.version}: ${files.size} archive files.`);
@@ -63,7 +66,7 @@ try {
 
 function readManifest(name) {
   const directory = name.replace("@vooya/", "");
-  return JSON.parse(readFileSync(new URL(`../packages/${directory}/package.json`, import.meta.url), "utf8"));
+  return JSON.parse(readFileSync(join(root, "packages", directory, "package.json"), "utf8"));
 }
 
 function pack(name) {

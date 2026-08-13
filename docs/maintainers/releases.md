@@ -1,8 +1,9 @@
 # Releases
 
-Changesets is Vooya's only version planner. The five published packages form one
+Semifold is Vooya's only version planner. The five published packages form one
 fixed release group; never edit their versions or internal exact dependencies by
-hand.
+hand. Semifold is a maintainer tool, not a dependency of published Vooya
+packages.
 
 ## Inspect before changing state
 
@@ -11,13 +12,15 @@ npm run release:status
 npm run verify:release
 ```
 
-In alpha pre-mode, markdown files named by `pre.json.changesets` are already
-consumed release history. Their continued presence does not mean they will be
-published again. Do not delete them manually.
+`npm run release:status` runs Semifold's read-only release plan after checking
+Vooya's fixed-version contract. A pending `.changes/*.md` file must name all
+five package IDs with the same bump level. This is deliberate: Semifold's Node
+adapter does not infer Vooya's coordinated release policy from npm dependency
+ranges.
 
 ## Publish another alpha
 
-Add one reviewed changeset for user-visible work, then run:
+Add one reviewed Semifold changeset for user-visible work, then run:
 
 ```sh
 npm run version:packages
@@ -34,11 +37,11 @@ sequence that publishes to npm.
 Only after the ABI and documented support matrix are intentionally frozen:
 
 ```sh
-npm run changeset pre exit
 npm run version:packages
 npm run verify:release
 ```
 
-Review and commit the stable version plan before publishing. The stable version
-step removes `pre.json` and the consumed changeset markdown as part of the
-Changesets lifecycle; that is expected release bookkeeping, not cleanup.
+Before a stable release, change `channel = "alpha"` to `channel = "stable"` in
+`.changes/config.toml`, review `npm run release:status`, then run the commands
+above. Semifold consumes applied changesets during `version`; that is expected
+release bookkeeping, not cleanup.

@@ -8,6 +8,8 @@ examples/*/dist
 /playwright-report
 /test-results
 /.vooya-lab/
+/.vooya-tools/
+/scripts/generated/
 packages/*/dist
 packages/*/.artifact-build
 *.wasm

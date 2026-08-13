@@ -1,5 +1,16 @@
 # Tooling Reference
 
+## JavaScript output and TypeScript authoring
+
+Vooya packages execute published JavaScript. TypeScript is a repository
+development dependency only: it compiles authoring source during package builds
+and emits the JavaScript that Vite, Node, and the VS Code extension load.
+Installing `@vooya/*` does not require installing TypeScript.
+
+Repository-owned runtime/tooling code is authored in TypeScript. Generated
+output, package CLI launchers, consumer fixtures, and compatibility config files
+may remain JavaScript when Node or a consumer tool must execute them directly.
+
 ## Vite plugin
 
 The public plugin entry is `vooya()` from `@vooya/vite-plugin`.

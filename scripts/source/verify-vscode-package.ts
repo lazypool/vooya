@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const archive = resolve(root, "dist/voo-vscode.vsix");
 if (!existsSync(archive)) throw new Error(`Expected VSIX archive at ${archive}.`);
 
@@ -19,4 +19,7 @@ for (const file of [
 if (files.some((file) => file.startsWith("extension/test/"))) {
   throw new Error("VSIX must not include editor tests.");
 }
-console.log("Verified VSIX includes the bundled Vooya runtime and excludes editor tests.");
+if (files.some((file) => file.startsWith("extension/source/") || file.endsWith("/tsconfig.json"))) {
+  throw new Error("VSIX must contain compiled editor JavaScript, not TypeScript authoring source.");
+}
+console.log("Verified VSIX includes the bundled Vooya runtime and excludes tests and TypeScript authoring source.");
