@@ -4,7 +4,28 @@ import test from "node:test";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
-import { vooya } from "./index.js";
+import { createRustBuildProgress, vooya } from "./index.js";
+
+test("reports stable Rust/WASM build stages with their elapsed duration", () => {
+  const messages = [];
+  let time = 100;
+  const progress = createRustBuildProgress({ info(message) { messages.push(message); } }, () => time);
+
+  progress.complete();
+  progress.start();
+  time = 142.4;
+  progress.complete();
+  progress.start();
+  time = 200;
+  progress.fail();
+
+  assert.deepEqual(messages, [
+    "Vooya: building Rust/WASM source…",
+    "Vooya: Rust/WASM build complete in 42ms.",
+    "Vooya: building Rust/WASM source…",
+    "Vooya: Rust/WASM build failed after 58ms.",
+  ]);
+});
 
 test("uses compiler output when generating a source component virtual module", () => {
   const root = mkdtempSync(resolve(tmpdir(), "vooya-plugin-"));

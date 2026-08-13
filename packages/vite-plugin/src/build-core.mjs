@@ -35,6 +35,7 @@ export function buildApplication({
   runtimeCrateRoot = resolveRuntimeCrateRoot(),
   cacheRoot = resolve(applicationRoot, ".voo-cache"),
   outputDir = resolve(cacheRoot, "dist"),
+  onRustBuildStart = () => {},
 }) {
   const sourceDir = resolve(cacheRoot, "src/components");
   const targetDir = resolve(cacheRoot, "target");
@@ -63,6 +64,9 @@ export function buildApplication({
     `pub use vooya_core::*;\n\n${generateRustComponents(components, sourcePaths)}`,
   );
 
+  // Keep this callback immediately adjacent to Cargo. Consumers use it to
+  // report work that has actually begun, rather than merely a queued rebuild.
+  onRustBuildStart();
   runCargo(
     applicationRoot,
     [

@@ -25,6 +25,7 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
   let runtimeModule;
   let sourceComponents = [];
   let watchedRustRoots = [];
+  let logger;
 
   const handleVooyaHotUpdate = ({ file }) => {
     if (
@@ -44,11 +45,21 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
     const components = applicationRoot ? readVooComponents(applicationRoot) : [];
     sourceComponents = components.filter((component) => component.format === "source");
     writeVooDeclarations(components, framework);
-    ({ runtimeModule } = buildApplication({
-      applicationRoot,
-      components: sourceComponents,
-      rust,
-    }));
+    const progress = createRustBuildProgress(logger);
+    try {
+      ({ runtimeModule } = buildApplication({
+        applicationRoot,
+        components: sourceComponents,
+        rust,
+        onRustBuildStart: progress.start,
+      }));
+      progress.complete();
+    } catch (error) {
+      // Cargo has already rendered source-mapped .voo diagnostics. Keep this
+      // summary separate so Vite can preserve those diagnostics verbatim.
+      progress.fail();
+      throw error;
+    }
   };
 
   return {
@@ -56,6 +67,7 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
     enforce: "pre",
     configResolved(config) {
       applicationRoot = config.root;
+      logger = config.logger;
     },
     buildStart() {
       compile();
@@ -162,6 +174,27 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
     // Vite 7 uses `hotUpdate`; keep the legacy hook for Vite 6 consumers.
     hotUpdate: handleVooyaHotUpdate,
     handleHotUpdate: handleVooyaHotUpdate,
+  };
+}
+
+function formatBuildDuration(duration) {
+  return `${Math.max(0, Math.round(duration))}ms`;
+}
+
+export function createRustBuildProgress(logger, now = () => performance.now()) {
+  let startedAt;
+  const elapsed = () => formatBuildDuration(now() - startedAt);
+  return {
+    start() {
+      startedAt = now();
+      logger?.info("Vooya: building Rust/WASM source…");
+    },
+    complete() {
+      if (startedAt !== undefined) logger?.info(`Vooya: Rust/WASM build complete in ${elapsed()}.`);
+    },
+    fail() {
+      if (startedAt !== undefined) logger?.info(`Vooya: Rust/WASM build failed after ${elapsed()}.`);
+    },
   };
 }
 
