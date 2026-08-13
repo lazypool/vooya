@@ -38,6 +38,7 @@
     "test:artifact": "node tests/precompiled-artifact.mjs",
     "test:hmr": "npm run build:packages && node tests/hmr.mjs",
     "test:e2e": "npm run build:packages && node tests/e2e/run.mjs",
+    "test:e2e:scatter": "VOOYA_E2E_TARGET=scatter playwright test",
     "verify:release": "npm run verify:branding && npm run verify:docs && npm run test:release-contract && node scripts/verify-package-versions.mjs --require-artifact-manifest && node scripts/sync-alpha-dist-tags.mjs --check && npm run format:voo:check && npm run verify:editor && cargo test -p vooya-core && npm run test:compiler && npm run test:voo && npm run typecheck && npm run typecheck:react && npm run typecheck:tasks && npm run typecheck:benchmark && npm run typecheck:scatter && npm run test:e2e && npm run test:portable && npm run test:artifact && npm run test:hmr && npm run pack:check",
     "release:alpha": "npm run verify:release && npm run build:packages && changeset publish && node scripts/sync-alpha-dist-tags.mjs",
     "build:packages": "npm run build --workspace @vooya/core && npm run build --workspace @vooya/vue && npm run build --workspace @vooya/react",

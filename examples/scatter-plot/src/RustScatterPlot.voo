@@ -57,7 +57,7 @@ pub fn mount(context: Context) -> Result<Component, JsValue> {
           <button type="button" data-scatter-in aria-label="Zoom in">+</button>
         </span>
       </div>
-      <canvas data-scatter-canvas width="960" height="520" aria-label="Scatter plot with 150000 points"></canvas>
+      <canvas data-scatter-canvas width="960" height="520" aria-label="Scatter plot canvas"></canvas>
     "#);
     context.host.append_child(&root)?;
 
@@ -134,6 +134,10 @@ fn draw(root: &Element, state: &ScatterState) {
     if let Ok(Some(summary)) = root.query_selector("[data-scatter-summary]") {
         summary.set_text_content(Some(&format!("{} points | {:.0}% zoom", state.points.len(), state.zoom * 100.0)));
     }
+    let _ = canvas.set_attribute(
+        "aria-label",
+        &format!("Scatter plot with {} points at {:.0}% zoom", state.points.len(), state.zoom * 100.0),
+    );
 }
 </rust>
 

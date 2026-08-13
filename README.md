@@ -233,6 +233,8 @@ npm run build:vue
 npm run build:react
 npm run build:tasks
 npm run build:benchmark
+npm run build:scatter
+npm run test:e2e:scatter
 ```
 
 Format source components, or check formatting in CI:

@@ -19,6 +19,8 @@ site without changing its structure or URLs unnecessarily.
   formatting, editor support, and development rebuilds.
 - [Project status](project/status.md): what works, what remains experimental,
   and the next milestones.
+- [Scatter-plot demo](guide/scatter-plot.md): a repeatable browser check for a
+  Rust-owned Canvas rendering surface.
 
 ## Design records
 
