@@ -39,7 +39,7 @@
     "test:artifact": "node tests/precompiled-artifact.mjs",
     "test:hmr": "npm run build:packages && node tests/hmr.mjs",
     "test:e2e": "npm run build:packages && node tests/e2e/run.mjs",
-    "test:e2e:firefox": "npm run build:packages && VOOYA_E2E_TARGET=vue VOOYA_E2E_BROWSER=firefox playwright test",
+    "test:e2e:firefox": "npm run build:packages && VOOYA_E2E_TARGET=vue VOOYA_E2E_BROWSER=firefox VOOYA_E2E_PORT=4184 playwright test",
     "test:e2e:scatter": "VOOYA_E2E_TARGET=scatter playwright test",
     "verify:ci": "npm run verify:branding && npm run verify:docs && npm run test:release-contract && node scripts/verify-package-versions.mjs --require-artifact-manifest && npm run format:voo:check && npm run verify:editor && cargo test -p vooya-core && npm run test:compiler && npm run test:voo && npm run typecheck && npm run typecheck:react && npm run typecheck:tasks && npm run typecheck:benchmark && npm run typecheck:scatter && npm run test:quickstart && npm run test:portable && npm run test:artifact && npm run test:hmr && npm run test:e2e && npm run pack:check",
     "verify:release": "npm run verify:ci && node scripts/sync-alpha-dist-tags.mjs --check-published",

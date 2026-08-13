@@ -1,31 +1,34 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const requestedPort = process.env.VOOYA_E2E_PORT;
+
+function portFor(defaultPort) {
+  if (requestedPort === undefined) return defaultPort;
+  if (!/^\d+$/.test(requestedPort)) {
+    throw new Error(`Invalid VOOYA_E2E_PORT "${requestedPort}".`);
+  }
+  const port = Number(requestedPort);
+  if (port < 1 || port > 65_535) {
+    throw new Error(`Invalid VOOYA_E2E_PORT "${requestedPort}".`);
+  }
+  return port;
+}
+
+function viteTarget(command, test, defaultPort) {
+  const port = portFor(defaultPort);
+  return {
+    command: `${command} -- --host 127.0.0.1 --port ${port}`,
+    test,
+    url: `http://127.0.0.1:${port}`,
+  };
+}
+
 const targets = {
-  vue: {
-    command: "npm run dev:vue -- --host 127.0.0.1 --port 4174",
-    test: "vue-counter.spec.js",
-    url: "http://127.0.0.1:4174",
-  },
-  react: {
-    command: "npm run dev:react -- --host 127.0.0.1 --port 4175",
-    test: "react-counter.spec.js",
-    url: "http://127.0.0.1:4175",
-  },
-  tasks: {
-    command: "npm run dev:tasks -- --host 127.0.0.1 --port 4176",
-    test: "task-list.spec.js",
-    url: "http://127.0.0.1:4176",
-  },
-  benchmark: {
-    command: "npm run dev:benchmark -- --host 127.0.0.1 --port 4177",
-    test: "data-grid.spec.js",
-    url: "http://127.0.0.1:4177",
-  },
-  scatter: {
-    command: "npm run dev:scatter -- --host 127.0.0.1 --port 4178",
-    test: "scatter-plot.spec.js",
-    url: "http://127.0.0.1:4178",
-  },
+  vue: viteTarget("npm run dev:vue", "vue-counter.spec.js", 4174),
+  react: viteTarget("npm run dev:react", "react-counter.spec.js", 4175),
+  tasks: viteTarget("npm run dev:tasks", "task-list.spec.js", 4176),
+  benchmark: viteTarget("npm run dev:benchmark", "data-grid.spec.js", 4177),
+  scatter: viteTarget("npm run dev:scatter", "scatter-plot.spec.js", 4178),
 };
 
 const targetName = process.env.VOOYA_E2E_TARGET ?? "vue";
