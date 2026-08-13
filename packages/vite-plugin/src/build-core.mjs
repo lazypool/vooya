@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -112,20 +112,20 @@ export function buildCore(root = repositoryRoot) {
  * explicit artifact package. It deliberately has no package discovery or
  * registry behavior: callers name their package root and component source.
  */
-export function buildPrecompiledVueArtifact({ packageRoot, source, outputDir = resolve(packageRoot, "dist") }) {
-  const metadata = JSON.parse(readFileSync(resolve(packageRoot, "package.json"), "utf8"));
-  if (!metadata.name?.startsWith("@vooya/artifact-")) {
-    throw new Error("Vooya precompiled artifact packages must use an explicit @vooya/artifact- package name.");
-  }
+export function buildPrecompiledVueArtifact({ packageRoot, source, outputDir } = {}) {
+  const root = resolveArtifactPackageRoot(packageRoot);
+  const metadata = readArtifactPackageMetadata(root);
+  const sourcePath = resolveArtifactSource(root, source);
+  const distribution = resolveArtifactOutput(root, outputDir);
   if (metadata.dependencies?.["@vooya/vue"] !== metadata.version) {
     throw new Error(`${metadata.name} must depend on @vooya/vue at its exact package version.`);
   }
 
-  const component = parseVooComponent(readFileSync(source, "utf8"), source);
+  const component = parseVooComponent(readFileSync(sourcePath, "utf8"), sourcePath);
   if (component.format !== "source") {
     throw new Error(`Vooya precompiled Vue artifacts require source .voo input, received ${component.format}.`);
   }
-  component.id = source;
+  component.id = sourcePath;
   const definition = generatedAdapterDefinition(component);
   const binding = generatedComponentBinding(component);
   const manifest = {
@@ -143,19 +143,91 @@ export function buildPrecompiledVueArtifact({ packageRoot, source, outputDir = r
     types: "./index.d.ts",
   };
 
-  rmSync(outputDir, { force: true, recursive: true });
-  mkdirSync(outputDir, { recursive: true });
+  rmSync(distribution, { force: true, recursive: true });
+  mkdirSync(distribution, { recursive: true });
   buildApplication({
-    applicationRoot: packageRoot,
+    applicationRoot: root,
     components: [component],
-    cacheRoot: resolve(packageRoot, ".artifact-build"),
-    outputDir: resolve(outputDir, "wasm"),
+    cacheRoot: resolve(root, ".artifact-build"),
+    outputDir: resolve(distribution, "wasm"),
     rust: { webSysFeatures: ["Node", "NodeList"] },
   });
-  writeFileSync(resolve(outputDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  writeFileSync(resolve(outputDir, "index.js"), generatePrecompiledVueEntry({ manifest, definition, binding }));
-  writeFileSync(resolve(outputDir, "index.d.ts"), generatePrecompiledVueDeclaration(component, manifest));
+  writeFileSync(resolve(distribution, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(resolve(distribution, "index.js"), generatePrecompiledVueEntry({ manifest, definition, binding }));
+  writeFileSync(resolve(distribution, "index.d.ts"), generatePrecompiledVueDeclaration(component, manifest));
+  assertArtifactOutput(distribution);
   return manifest;
+}
+
+function resolveArtifactPackageRoot(packageRoot) {
+  if (typeof packageRoot !== "string" || !packageRoot) {
+    throw new Error("Vooya precompiled Vue artifacts require an explicit packageRoot directory.");
+  }
+  const root = resolve(packageRoot);
+  try {
+    if (!statSync(root).isDirectory()) throw new Error("not a directory");
+  } catch {
+    throw new Error(`Vooya precompiled Vue artifact packageRoot must be an existing directory: ${root}.`);
+  }
+  return root;
+}
+
+function readArtifactPackageMetadata(packageRoot) {
+  const packageJson = resolve(packageRoot, "package.json");
+  if (!existsSync(packageJson)) {
+    throw new Error(`Vooya precompiled Vue artifact packageRoot is missing package.json: ${packageRoot}.`);
+  }
+  const metadata = JSON.parse(readFileSync(packageJson, "utf8"));
+  if (typeof metadata.name !== "string" || !metadata.name.trim()) {
+    throw new Error("Vooya precompiled Vue artifact package.json must declare a package name.");
+  }
+  if (typeof metadata.version !== "string" || !isSemverVersion(metadata.version)) {
+    throw new Error(`${metadata.name} must declare a valid package version.`);
+  }
+  return metadata;
+}
+
+function resolveArtifactSource(packageRoot, source) {
+  if (typeof source !== "string" || !source.endsWith(".voo")) {
+    throw new Error("Vooya precompiled Vue artifacts require an explicit source .voo file.");
+  }
+  const sourcePath = resolve(source);
+  if (!isPathInside(sourcePath, packageRoot)) {
+    throw new Error("Vooya precompiled Vue artifact source must stay inside packageRoot.");
+  }
+  try {
+    if (!statSync(sourcePath).isFile()) throw new Error("not a file");
+  } catch {
+    throw new Error(`Vooya precompiled Vue artifact source must be an existing file: ${sourcePath}.`);
+  }
+  return sourcePath;
+}
+
+function resolveArtifactOutput(packageRoot, outputDir) {
+  const expected = resolve(packageRoot, "dist");
+  const output = resolve(outputDir ?? expected);
+  if (output !== expected) {
+    throw new Error(`Vooya precompiled Vue artifact output must be packageRoot/dist: ${expected}.`);
+  }
+  return output;
+}
+
+function assertArtifactOutput(outputDir) {
+  const expected = ["manifest.json", "index.js", "index.d.ts", "wasm/vooya_app.js", "wasm/vooya_app_bg.wasm"];
+  for (const file of expected) {
+    if (!existsSync(resolve(outputDir, file))) {
+      throw new Error(`Vooya precompiled Vue artifact build did not produce expected output ${file}.`);
+    }
+  }
+}
+
+function isSemverVersion(version) {
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(version);
+}
+
+function isPathInside(path, directory) {
+  const relativePath = relative(directory, path);
+  return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
 }
 
 function generatePrecompiledVueEntry({ manifest, definition, binding }) {

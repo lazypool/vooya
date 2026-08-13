@@ -10,7 +10,9 @@ intended durable name of a component product.
 
 `buildPrecompiledVueArtifact` from `@vooya/vite-plugin/build` accepts one explicit
 artifact package root and one source `.voo` component. It validates the package
-identity and exact Vue-adapter version, then produces `dist/manifest.json`,
+root, non-empty package identity and version, source location, and exact
+Vue-adapter version. The source must remain under the package root and output
+is deliberately restricted to `packageRoot/dist`. It then produces `dist/manifest.json`,
 wasm-bindgen JavaScript and WASM under
 `dist/wasm`, a Vue component entry, and TypeScript declarations. The manifest
 records format, framework, component, artifact and ABI versions, binding names,
