@@ -1,6 +1,6 @@
 {
   "name": "@vooya/artifact-vue-counter",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "description": "Precompiled Vue PortableCounter island for Vooya.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
@@ -28,6 +28,6 @@
     "build": "node scripts/build.mjs"
   },
   "dependencies": {
-    "@vooya/vue": "0.1.0-alpha.4"
+    "@vooya/vue": "0.1.0-alpha.5"
   }
 }
