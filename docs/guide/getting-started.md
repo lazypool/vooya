@@ -2,7 +2,10 @@
 
 Vooya currently targets existing Vite applications using Vue 3 or React 19.
 Source `.voo` components are compiled on the application author's machine, so
-both the JavaScript and Rust toolchains are required.
+both the JavaScript and Rust toolchains are required. The repository also keeps
+a test-only precompiled Vue-consumer fixture, but it is build-contract evidence
+rather than a published no-Rust component product. Use the source-authoring path
+below when creating or changing `.voo` components.
 
 ## Prerequisites
 
@@ -33,6 +36,33 @@ All `@vooya` packages must use the same alpha version. The repository `main`
 branch can lead the npm `alpha` tag while a breaking prerelease is being
 prepared; do not mix source from `main` with older published adapters.
 
+## Before the first development server
+
+After adding the packages for your framework, run the toolchain preflight before
+starting Vite. With npm, use:
+
+```sh
+npm exec -- vooya doctor
+```
+
+With pnpm, use the equivalent command:
+
+```sh
+pnpm exec vooya doctor
+```
+
+If a fresh pnpm 11 install reports `ERR_PNPM_IGNORED_BUILDS` for `esbuild`, pnpm
+has blocked that dependency's install script under its supply-chain policy; it
+does not indicate a Vooya failure. Review the dependency and, only when pnpm
+reports that approval is needed, allow that specific build with:
+
+```sh
+pnpm approve-builds esbuild
+```
+
+Approval permits `esbuild` to run its install step and make its platform-specific
+binary available. Do not approve unrelated packages merely to remove the warning.
+
 ## Vue
 
 Install the Vue adapter and Vite plugin in an existing Vue application. The
@@ -41,6 +71,13 @@ application must already depend on `vue`, `vite`, and `@vitejs/plugin-vue`.
 ```sh
 npm install @vooya/vue@alpha
 npm install --save-dev @vooya/vite-plugin@alpha
+```
+
+With pnpm:
+
+```sh
+pnpm add @vooya/vue@alpha
+pnpm add -D @vooya/vite-plugin@alpha
 ```
 
 Add `vooya()` after the Vue plugin:
@@ -62,6 +99,13 @@ npm run dev
 npm run build
 ```
 
+With pnpm:
+
+```sh
+pnpm dev
+pnpm build
+```
+
 ## React
 
 Install the React adapter and Vite plugin:
@@ -69,6 +113,13 @@ Install the React adapter and Vite plugin:
 ```sh
 npm install @vooya/react@alpha
 npm install --save-dev @vooya/vite-plugin@alpha
+```
+
+With pnpm:
+
+```sh
+pnpm add @vooya/react@alpha
+pnpm add -D @vooya/vite-plugin@alpha
 ```
 
 Select the React adapter in Vite:
