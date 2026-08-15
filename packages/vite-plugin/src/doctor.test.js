@@ -67,16 +67,47 @@ test("doctor uses Windows executable resolution and recognizes a case-insensitiv
       "cargo --version": "cargo 1.94.0",
       "rustc --version": "rustc 1.94.0",
       "rustc --print sysroot": "c:\\USERS\\TEST\\.RUSTUP\\toolchains\\stable-x86_64-pc-windows-msvc",
+      "rustc -vV": "rustc 1.94.0\nhost: x86_64-pc-windows-msvc",
       "wasm-bindgen --version": `wasm-bindgen ${WASM_BINDGEN_VERSION}`,
       "rustup target list --installed": "wasm32-unknown-unknown\nx86_64-pc-windows-msvc",
       "where.exe cargo": "C:\\Users\\test\\.cargo\\bin\\cargo.exe\r\nC:\\other\\cargo.exe",
       "where.exe rustc": "C:\\Users\\test\\.cargo\\bin\\rustc.exe",
       "where.exe wasm-bindgen": "C:\\Users\\test\\.cargo\\bin\\wasm-bindgen.exe",
+      "where.exe link.exe": "C:\\BuildTools\\VC\\Tools\\MSVC\\bin\\Hostx64\\x64\\link.exe",
     }),
   });
 
   assert.equal(report.ok, true);
   assert.equal(report.cargoPath, "C:\\Users\\test\\.cargo\\bin\\cargo.exe");
   assert.equal(report.results.at(-1).status, "ok");
+  assert.match(formatToolchainReport(report), /\[ok\] MSVC linker link\.exe/);
   assert.doesNotMatch(formatToolchainReport(report), /Homebrew|which/);
+});
+
+test("doctor explains the Windows Build Tools prerequisite when an MSVC linker is missing", () => {
+  const report = inspectToolchain({
+    platform: "win32",
+    home: "C:\\Users\\test",
+    env: {
+      Path: "C:\\Users\\test\\.cargo\\bin;C:\\Windows\\System32",
+      RUSTUP_HOME: "C:\\Users\\test\\.rustup",
+    },
+    run: runner({
+      "cargo --version": "cargo 1.94.0",
+      "rustc --version": "rustc 1.94.0",
+      "rustc --print sysroot": "C:\\Users\\test\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc",
+      "rustc -vV": "rustc 1.94.0\nhost: x86_64-pc-windows-msvc",
+      "wasm-bindgen --version": `wasm-bindgen ${WASM_BINDGEN_VERSION}`,
+      "rustup target list --installed": "wasm32-unknown-unknown\nx86_64-pc-windows-msvc",
+      "where.exe cargo": "C:\\Users\\test\\.cargo\\bin\\cargo.exe",
+      "where.exe rustc": "C:\\Users\\test\\.cargo\\bin\\rustc.exe",
+      "where.exe wasm-bindgen": "C:\\Users\\test\\.cargo\\bin\\wasm-bindgen.exe",
+      "where.exe link.exe": new Error("INFO: Could not find files for the given pattern(s)."),
+    }),
+  });
+
+  assert.equal(report.ok, false);
+  assert.match(formatToolchainReport(report), /\[error\] MSVC linker link\.exe/);
+  assert.match(formatToolchainReport(report), /Visual Studio Build Tools/);
+  assert.match(formatToolchainReport(report), /Desktop development with C\+\+/);
 });
