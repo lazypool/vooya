@@ -11,6 +11,14 @@ both the JavaScript and Rust toolchains are required.
 - The `wasm32-unknown-unknown` Rust target.
 - `wasm-bindgen-cli` version `0.2.115` for the current alpha runtime.
 
+### Windows MSVC prerequisite
+
+If Rust reports a host ending in `-pc-windows-msvc`, install Visual Studio Build
+Tools before installing `wasm-bindgen-cli`. Select the **Desktop development with
+C++** workload, including MSVC C++ build tools and a Windows SDK. Cargo needs the
+MSVC linker, `link.exe`, to compile the CLI. Reopen the terminal after installation
+so the linker is available on `PATH`.
+
 ```sh
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli --version 0.2.115 --locked
@@ -25,9 +33,10 @@ npm exec -- vooya doctor
 ```
 
 The command checks `cargo`, `rustc`, the `wasm32-unknown-unknown` target, and
-the pinned `wasm-bindgen` CLI. It reports the executable paths and warns when
-the active Rust sysroot is not managed by rustup, which commonly means a
-Homebrew toolchain is taking precedence.
+the pinned `wasm-bindgen` CLI. On Windows MSVC toolchains, it also checks for
+`link.exe`. It reports the executable paths and warns when the active Rust
+sysroot is not managed by rustup, which commonly means a Homebrew toolchain is
+taking precedence.
 
 All `@vooya` packages must use the same alpha version. The repository `main`
 branch can lead the npm `alpha` tag while a breaking prerelease is being

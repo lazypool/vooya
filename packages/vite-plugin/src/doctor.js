@@ -12,6 +12,7 @@ export function inspectToolchain({ env = process.env, run = runCommand, platform
     const cargo = probe("cargo", ["--version"], run);
     const rustc = probe("rustc", ["--version"], run);
     const sysroot = probe("rustc", ["--print", "sysroot"], run);
+    const rustcVerbose = platform === "win32" ? probe("rustc", ["-vV"], run) : undefined;
     const wasmBindgen = probe("wasm-bindgen", ["--version"], run);
     const rustupTargets = probe("rustup", ["target", "list", "--installed"], run);
     const cargoPath = findExecutable("cargo", env, run, platform);
@@ -23,6 +24,12 @@ export function inspectToolchain({ env = process.env, run = runCommand, platform
     const results = [];
     results.push(check("cargo", Boolean(cargo.value), cargo.value ?? cargo.error));
     results.push(check("rustc", Boolean(rustc.value), rustc.value ?? rustc.error));
+    if (rustcVerbose?.value && isWindowsMsvcHost(rustcVerbose.value)) {
+        const linkerPath = findExecutable("link.exe", env, run, platform);
+        results.push(check("MSVC linker link.exe", Boolean(linkerPath), linkerPath
+            ? `found at ${linkerPath}`
+            : "Install Visual Studio Build Tools with the Desktop development with C++ workload, including MSVC C++ build tools and a Windows SDK. Then reopen the terminal so link.exe is available on PATH."));
+    }
     const targetInstalled = rustupTargets.value?.split(/\r?\n/).includes(WASM_TARGET) ?? false;
     results.push(check(`Rust target ${WASM_TARGET}`, targetInstalled, targetInstalled
         ? "installed"
@@ -98,4 +105,7 @@ function isPathInside(path, directory, paths) {
 }
 function normalizePath(path, paths) {
     return paths === win32 ? path.toLowerCase() : path;
+}
+function isWindowsMsvcHost(rustcVersion) {
+    return /^host:\s*.+-pc-windows-msvc$/m.test(rustcVersion);
 }
