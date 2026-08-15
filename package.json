@@ -5,6 +5,9 @@
   "workspaces": [
     "packages/*"
   ],
+  "overrides": {
+    "esbuild": "^0.28.1"
+  },
   "scripts": {
     "build:scripts": "tsc -p scripts/tsconfig.json",
     "build:core": "npm run build --workspace @vooya/vite-plugin && npm run build:scripts && node scripts/generated/build-core.js",
