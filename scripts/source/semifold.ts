@@ -41,10 +41,16 @@ const releases = {
 };
 
 const candidates = [process.env.SEMIFOLD_BIN, "semifold", "smif"].filter(Boolean);
+const commandEnv = { ...process.env };
+// Semifold 0.3.0 treats every GitHub Actions invocation of `status` as a pull
+// request and unconditionally parses `GITHUB_EVENT_PATH.pull_request`. Vooya
+// runs release planning on both pushes and pull requests and does not use the
+// optional Semifold bot comment, so keep `status` in deterministic local mode.
+if (command === "status") delete commandEnv.GITHUB_ACTIONS;
 let lastError;
 let completed = false;
 for (const binary of candidates) {
-  const result = spawnSync(binary, [command, ...args], { stdio: "inherit" });
+  const result = spawnSync(binary, [command, ...args], { env: commandEnv, stdio: "inherit" });
   if (result.error?.code === "ENOENT") {
     lastError = result.error;
     continue;
@@ -57,7 +63,7 @@ for (const binary of candidates) {
 
 if (process.exitCode === undefined) {
   const binary = await cachedBinary();
-  const result = spawnSync(binary, [command, ...args], { stdio: "inherit" });
+  const result = spawnSync(binary, [command, ...args], { env: commandEnv, stdio: "inherit" });
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;
   completed = result.status === 0;
