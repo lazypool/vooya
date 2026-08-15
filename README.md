@@ -1,89 +1,144 @@
-# Vooya
+<h1 align="center">Vooya</h1>
 
-**Write frontend components in Rust. Use them from Vue and React.**
+<p align="center">
+  <strong>Write Rust-powered components. Use them from Vue and React.</strong>
+</p>
 
-Vooya is an experimental Rust-to-WASM component compiler for JavaScript
-applications. A Vooya component owns an isolated DOM subtree, while the host
-framework keeps control of the surrounding application, routing, and state.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@vooya/vite-plugin"><img src="https://img.shields.io/npm/v/@vooya/vite-plugin/alpha?label=alpha" alt="npm alpha version"></a>
+  <a href="https://github.com/vooyajs/vooya/actions/workflows/verify.yml"><img src="https://github.com/vooyajs/vooya/actions/workflows/verify.yml/badge.svg?branch=main" alt="build status"></a>
+  <a href="LICENSE-MIT"><img src="https://img.shields.io/github/license/vooyajs/vooya" alt="license"></a>
+</p>
+
+Vooya compiles Rust from a `.voo` component into WebAssembly and exposes it as
+an ordinary Vue or React component. The host framework keeps the application,
+routing, and surrounding UI; Rust owns one isolated component surface.
 
 ```vue
 <script setup lang="ts">
-import Counter from "./Counter.voo";
+import RustChart from "./RustChart.voo";
 </script>
 
 <template>
-  <Counter :initial="1" @change="value => console.log(value)" />
+  <RustChart :points="150000" @select="handleSelect" />
 </template>
 ```
 
-The implementation, public props, events, and scoped styles live in one `.voo`
-component file. Vooya compiles its Rust code to WASM and generates the framework
-adapter and TypeScript declarations automatically.
+The component contract, Rust implementation, and scoped styles live together.
+Vooya generates the framework adapter, TypeScript declarations, WASM lifecycle,
+event forwarding, and diagnostic mappings.
 
-## Why Vooya
+> [!IMPORTANT]
+> Vooya is a public alpha. Source `.voo` authoring currently requires Vite 7
+> and a local Rust/WASM toolchain. Published alpha APIs may still change.
 
-Rust already has excellent tools for data processing, parsers, editors,
-graphics, simulation, and other demanding workloads. Vooya is an attempt to
-bring that code all the way to the component boundary without asking teams to
-replace their existing frontend framework.
+## Why Vooya?
 
-The intended use cases are isolated, computation-heavy or high-update-rate
-components such as:
+Rust already has strong libraries for parsing, graphics, simulation, search,
+editors, media, and data processing. Bringing one of those libraries into an
+existing frontend application usually means maintaining WASM initialization,
+framework wrappers, types, events, cleanup, diagnostics, and packaging by hand.
 
-- data grids and large interactive lists;
-- editors, timelines, and visualization controls;
-- Canvas, WebGL, and application-specific rendering surfaces;
-- components backed by an existing Rust library.
+Vooya is exploring a repeatable component boundary for that work:
 
-Vooya does not assume that WASM makes ordinary DOM work faster. Crossing the
-JavaScript/WASM boundary and manipulating the DOM both have costs. Early
-versions may lose to a mature JavaScript implementation in some workloads. The
-project is exploring the larger design space: typed component contracts,
-shared Rust logic, generated framework bridges, and rendering strategies that
-can improve without changing application code.
+- keep existing Vue and React applications;
+- reuse browser-compatible Rust crates;
+- generate typed props and events;
+- manage mount, updates, failures, and disposal;
+- develop from a single `.voo` component;
+- eventually distribute precompiled components whose consumers do not need
+  Rust installed.
 
-## Component Model
+Vooya is not a replacement for Vue or React, and it does not assume that WASM
+makes ordinary DOM work faster. Performance claims belong to measured,
+component-level workloads.
 
-The host framework owns the mount element and its position in the application.
-Vooya owns every node below it.
+## Quick start with Vue
 
-```text
-Vue / React props -> generated adapter -> WASM component -> owned DOM subtree
-Vue / React events <- generated adapter <- component events
-unmount            -> dispose           -> release state and listeners
+### 1. Prerequisites
+
+- Node.js `^20.19.0` or `>=22.12.0`;
+- a current stable Rust toolchain managed by [rustup](https://rustup.rs/);
+- the `wasm32-unknown-unknown` target;
+- `wasm-bindgen-cli` `0.2.115` for the current alpha.
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.115 --locked
 ```
 
-This boundary allows a Vooya component to behave like a normal Vue or React
-component while keeping its state, update logic, and rendering implementation
-in Rust.
+### 2. Create a Vite 7 application
 
-## `.voo` Components
+The current Vooya alpha supports Vite 7. Pin `create-vite@7` so a new project
+does not silently select an unverified Vite major.
 
-The current compiler accepts a component contract, a Rust module, and an
-optional style block:
+Using npm:
+
+```sh
+npm create vite@7 vooya-demo -- --template vue-ts
+cd vooya-demo
+npm install
+npm install @vooya/vue@alpha
+npm install --save-dev @vooya/vite-plugin@alpha
+```
+
+Using pnpm:
+
+```sh
+pnpm create vite@7 vooya-demo --template vue-ts
+cd vooya-demo
+pnpm install
+pnpm add @vooya/vue@alpha
+pnpm add --save-dev @vooya/vite-plugin@alpha
+```
+
+If pnpm reports that the `esbuild` install script was blocked, run
+`pnpm approve-builds`, select `esbuild`, and repeat the install. This is pnpm's
+dependency-script policy, not a Vooya compiler error.
+
+### 3. Enable the plugin
+
+Update `vite.config.ts`:
+
+```ts
+import vue from "@vitejs/plugin-vue";
+import { vooya } from "@vooya/vite-plugin";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [vue(), vooya()],
+});
+```
+
+Check the exact Rust tools inherited by Vite:
+
+```sh
+npm exec -- vooya doctor
+# or: pnpm exec vooya doctor
+```
+
+### 4. Create your first component
+
+Create `src/Greeting.voo`:
 
 ```voo
-<component name="Counter">
+<component name="Greeting">
 props:
-  initial: i32
-
-events:
-  change(value: i32)
+  name: String = "world"
 </component>
 
 <rust>
 use wasm_bindgen::JsValue;
 
-use crate::{EventListener, View, ViewElement};
+use crate::{View, ViewElement};
 
 pub struct Component {
     root: ViewElement,
-    _click: EventListener,
 }
 
 impl Component {
-    pub fn update_initial(&self, value: i32) {
-        self.root.set_text(&format!("Count: {value}"));
+    pub fn update_name(&self, name: String) {
+        self.root.set_text(&format!("Hello, {name}."));
     }
 
     pub fn dispose(&mut self) {
@@ -92,108 +147,90 @@ impl Component {
 }
 
 pub fn mount(context: Context) -> Result<Component, JsValue> {
-    let host = context.host;
-    let initial = context.props.initial;
-    let events = context.events;
-    let view = View::from_host(&host)?;
+    let view = View::from_host(&context.host)?;
     let root = view
-        .element("button")?
-        .class("counter")
-        .text(&format!("Count: {initial}"));
-    let click = root.on("click", move |_event| {
-        let _ = events.change(initial + 1);
-    })?;
-    root.mount(&host)?;
-    Ok(Component { root, _click: click })
+        .element("p")?
+        .class("greeting")
+        .text(&format!("Hello, {}.", context.props.name));
+    root.mount(&context.host)?;
+    Ok(Component { root })
 }
 </rust>
 
 <style scoped>
-.counter {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+.greeting {
+    color: #2f7d68;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 </style>
 ```
 
-The compiler generates the component's typed `Context`, `Props`, and `Events`,
-then turns `mount`, `update_<prop>`, and `dispose` into the public WASM ABI.
-Authors do not write `wasm_bindgen` exports, `CustomEvent` plumbing, WASM
-initialization, Vue/React adapter factories, TypeScript declarations, or CSS
-scope attributes.
+Replace `src/App.vue` with:
 
-`vooya-core` provides an initial `View` and `ViewElement` API for structured DOM
-creation plus an `EventListener` that unregisters its callback when dropped.
-`ViewElement::as_element()` remains available when a component needs a browser
-API that the small Vooya layer does not expose yet. This is a deliberately small
-foundation, not a template language or virtual DOM.
+```vue
+<script setup lang="ts">
+import Greeting from "./Greeting.voo";
+</script>
 
-## Current Status
-
-Vooya is currently a published alpha and a Vite-first architecture-validation
-prototype, not a stable compiler or a general bundler plugin.
-
-The repository now has:
-
-- Rust source compiled directly from `<rust>` blocks to application-level WASM;
-- generated mount, prop-update, dispose, and ABI-version bindings;
-- contract-generated Vue and React lifecycle adapters;
-- per-component `.d.voo.ts` declarations for props and events;
-- Rust diagnostics mapped back to original `.voo` line numbers;
-- PostCSS-based scoped styles shared by Vue and React;
-- structured Rust DOM creation and owned browser event listeners;
-- application-isolated Cargo crates, build caches, and WASM output;
-- an npm-tarball portability test that builds source `.voo` in a temporary
-  project outside the Vooya checkout;
-- a test-only Vue precompiled-WASM consumer slice that proves generated output
-  can run without Rust tooling;
-- debounced development rebuilds that survive Rust errors, coalesce rapid
-  saves, and reload only after a successful WASM build;
-- structured Cargo dependency configuration, application-relative path crates,
-  and opt-in `web-sys` browser features;
-- warm Cargo builds that preserve generated-file timestamps when unchanged;
-- browser E2E coverage for Counter, TaskList, and DataGrid components;
-- a `vooya doctor` command that diagnoses the inherited Rust toolchain and
-  pinned wasm-bindgen CLI;
-- browser fixtures for loop-created listeners, cloned event dispatch, and
-  repeated lifecycle teardown in both Vue and React;
-- a Vue-hosted 150,000-point Canvas scatter-plot island;
-- an honest 100,000-row benchmark currently showing approximate parity with
-  its Vue baseline.
-
-Source `.voo` compilation still requires Cargo, the WASM Rust target, and the
-`wasm-bindgen` CLI on the author's machine. The repository retains a test-only
-precompiled Vue consumer proof, but it does not currently publish a component
-product. Non-trivial component code still needs some low-level `web_sys` DOM
-APIs, and published packages can change between alpha versions.
-
-The only supported build integration today is Vite through
-`@vooya/vite-plugin`. Webpack, Rspack, Rollup, and other bundlers do not yet
-have an adapter; do not expect this release to load `.voo` files there.
-
-## Documentation
-
-Start with the [documentation index](docs/README.md) for installation, component
-authoring, architecture, tooling, and an honest separation between current
-behavior and planned work.
-
-## Development
-
-Install the JavaScript dependencies and ensure the Rust WASM target and
-`wasm-bindgen` CLI are available:
-
-```sh
-npm install
-rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli --version 0.2.115 --locked
-npx vooya doctor
+<template>
+  <main>
+    <h1>Vue hosts the application</h1>
+    <Greeting name="Vooya" />
+  </main>
+</template>
 ```
 
-Configure application Rust dependencies in the Vite plugin. Path dependencies
-are resolved from the Vite application root and watched during development:
+Start Vite:
 
-```js
+```sh
+npm run dev
+# or: pnpm dev
+```
+
+The first run generates an application-local Cargo crate, compiles the Rust
+source to WASM, and writes an adjacent TypeScript declaration for the component.
+
+## Using React
+
+Create a Vite 7 React project and install the React adapter:
+
+```sh
+npm create vite@7 vooya-react-demo -- --template react-ts
+cd vooya-react-demo
+npm install
+npm install @vooya/react@alpha
+npm install --save-dev @vooya/vite-plugin@alpha
+```
+
+Use the React mode in `vite.config.ts`:
+
+```ts
+import react from "@vitejs/plugin-react";
+import { vooya } from "@vooya/vite-plugin";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [react(), vooya({ framework: "react" })],
+});
+```
+
+The same `Greeting.voo` can then be imported from React:
+
+```tsx
+import Greeting from "./Greeting.voo";
+
+export default function App() {
+  return <Greeting name="Vooya" />;
+}
+```
+
+## Using Rust libraries
+
+Additional Cargo dependencies are configured in the Vite plugin. Registry,
+Git, feature, and application-relative path dependencies are supported:
+
+```ts
 vooya({
   rust: {
     dependencies: {
@@ -205,99 +242,111 @@ vooya({
 });
 ```
 
-Vooya owns the `vooya-core`, `wasm-bindgen`, `js-sys`, and `web-sys` dependency
-versions in the generated application crate. Additional `web-sys` APIs are
-enabled through `webSysFeatures` rather than overriding that dependency.
+The crate must compile for `wasm32-unknown-unknown` and be compatible with the
+browser environment. Crates that require native operating-system APIs, an
+ordinary filesystem, or unsupported threading facilities will need a Web/WASM
+compatible configuration or adapter.
 
-Run the examples:
+## Component boundary
+
+```text
+Vue / React props  -> generated adapter -> Rust/WASM component
+Vue / React events <- generated adapter <- typed component events
+framework unmount  -> dispose           -> listeners and resources released
+```
+
+The framework owns the host element and its location in the application tree.
+The mounted Vooya component owns the subtree below that element. Rust can use
+the small structured `View` API, Canvas/WebGL, or lower-level `web-sys` browser
+APIs when necessary.
+
+## What works today
+
+- source `.voo` components in Vite 7;
+- Vue 3.5 and React 19 adapters;
+- typed primitive props and component events;
+- generated mount, prop-update, error, dispose, and ABI bindings;
+- TypeScript declarations and scoped CSS;
+- Rust diagnostics mapped back to `.voo` source lines;
+- crates.io, Git, feature, and watched path dependencies;
+- failed-build recovery and reliable full-page reload after Rust rebuilds;
+- `vooya doctor`, `.voo` formatting, and a VS Code diagnostics extension;
+- browser fixtures for lifecycle cleanup, DataGrid, Canvas scatter, and trace
+  waterfall examples;
+- a test-only precompiled Vue consumer proof that runs without Rust tools.
+
+Current boundaries:
+
+- Vite is the only supported bundler integration;
+- Webpack, Rspack, Turbopack, Rollup, SSR, and hydration are not supported;
+- successful Rust HMR currently performs a full reload and loses local state;
+- component contracts are intentionally limited and will evolve during alpha;
+- the precompiled artifact path is not yet a published component product.
+
+See the [project status](docs/project/status.md) and
+[compatibility matrix](docs/project/compatibility.md) for the precise evidence
+behind these statements.
+
+## Documentation
+
+- [Getting started](docs/guide/getting-started.md)
+- [Writing `.voo` components](docs/guide/voo-components.md)
+- [Component ownership boundary](docs/concepts/component-boundary.md)
+- [Tooling and Rust dependencies](docs/reference/tooling.md)
+- [Project status](docs/project/status.md)
+- [Compatibility matrix](docs/project/compatibility.md)
+- [Design RFCs](docs/README.md#design-records)
+
+## Examples
+
+After cloning this repository and installing its dependencies, run:
 
 ```sh
+npm install
 npm run dev:vue       # Vue counter
 npm run dev:react     # React counter
-npm run dev:tasks     # Rust task list inside Vue
-npm run dev:benchmark # Rust data grid and benchmark harness
-npm run dev:scatter   # 150,000 point Rust Canvas scatter plot
+npm run dev:tasks     # Rust-owned task list
+npm run dev:scatter   # 150,000-point Canvas scatter plot
+npm run dev:benchmark # Rust/Vue data-grid comparison
+npm run dev:trace     # trace-waterfall interaction case
 ```
 
-Build and type-check all current examples:
+Repository development also requires the Rust target and pinned wasm-bindgen
+CLI shown in the quick start above.
+
+## Packages
+
+| Package | Purpose |
+| --- | --- |
+| [`@vooya/compiler`](packages/compiler) | Pure `.voo` parser, IR, code generation, formatting, and scoped styles |
+| [`@vooya/core`](packages/core) | Rust component runtime source and ownership primitives |
+| [`@vooya/vite-plugin`](packages/vite-plugin) | Vite integration, Rust/WASM build orchestration, diagnostics, and CLI |
+| [`@vooya/vue`](packages/vue) | Vue lifecycle and event adapter |
+| [`@vooya/react`](packages/react) | React lifecycle and event adapter |
+
+All public packages use one coordinated alpha version. Install the adapter and
+Vite plugin from the same `alpha` channel.
+
+## Contributing
+
+Vooya is looking for feedback and contributions across Rust/WASM runtime work,
+compiler design, Vue/React integration, build tooling, compatibility testing,
+examples, and documentation.
+
+- Browse the [open issues](https://github.com/vooyajs/vooya/issues).
+- Read [Issue #16](https://github.com/vooyajs/vooya/issues/16) for the current
+  product-boundary discussion.
+- Use a focused issue or RFC before expanding public APIs.
+- Keep performance claims tied to reproducible browser evidence.
+
+Before submitting a code change, run the checks relevant to the area you
+changed. The complete release gate is:
 
 ```sh
-npm run typecheck
-npm run typecheck:react
-npm run typecheck:tasks
-npm run typecheck:benchmark
-npm run typecheck:scatter
-npm run test:voo
-npm run test:portable
-npm run test:hmr
-npm run test:e2e
-npm run build:vue
-npm run build:react
-npm run build:tasks
-npm run build:benchmark
-npm run build:scatter
-npm run test:e2e:scatter
+npm run verify:ci
 ```
 
-Format source components, or check formatting in CI:
+## License
 
-```sh
-npx voo-format src
-npx voo-format --check src
-```
-
-Build and install the repository's VS Code extension for `.voo` contract,
-embedded Rust, and scoped CSS highlighting:
-
-```sh
-npm run package:editor
-code --install-extension dist/voo-vscode.vsix
-```
-
-## Versioning and alpha releases
-
-Five coordinated `@vooya` packages use one fixed version while the compiler ABI
-and framework adapters evolve together: `@vooya/compiler`, `@vooya/core`,
-`@vooya/vite-plugin`, `@vooya/vue`, and `@vooya/react`. Semifold owns version
-changes. A Vooya changeset names all five packages at the same bump level, and
-the release command synchronizes every published prerelease to the `alpha`
-dist-tag:
-
-```sh
-npm run changeset
-npm run version:packages
-npm run release:alpha
-```
-
-Independent adapter versions are deferred until the generated ABI is stable.
-Publishing remains an explicit maintainer action; the release command runs the
-full Rust, compiler, type, browser, portable-package, HMR, and tarball gates.
-Before the first stable release exists, npm may also expose the newest alpha as
-`latest`; consumers should install `@vooya/*@alpha` during the preview.
-
-## Roadmap
-
-The next milestones move the working compiler toward a developer preview:
-
-1. Grow the Rust view layer into declarative trees, reactive bindings, and
-   explicit effect cleanup without hiding the underlying browser APIs.
-2. Design one genuinely useful, explicitly named precompiled component product;
-   the current precompiled Vue slice is only a test fixture.
-3. Complete Rust editor integration; `.voo` formatting and syntax highlighting
-   are available now.
-4. Define state-preserving HMR semantics; successful Rust rebuilds currently
-   perform a reliable full reload.
-5. Expand the generated contract beyond primitive props and event payloads.
-6. Establish the browser/framework compatibility matrix and public alpha
-   release automation.
-
-## Scope
-
-Vooya is not trying to replace Vue, React, routing, application state management,
-or the JavaScript ecosystem. It is a way to introduce Rust at a component
-boundary where Rust provides enough value to justify the WASM cost.
-
-See [RFC 0001](docs/rfcs/0001-component-islands.md) for the ownership boundary,
-[RFC 0002](docs/rfcs/0002-reactive-component-model.md) for the current reactive
-prototype, and [the data-grid benchmark plan](docs/benchmarks/data-grid.md) for
-the first performance validation case.
+Vooya is dual-licensed under [MIT](LICENSE-MIT) or
+[Apache-2.0](LICENSE-APACHE).
