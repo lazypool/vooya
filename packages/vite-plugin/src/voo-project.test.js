@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 
-import { readVooComponents } from "./voo-project.js";
+import { readVooComponents } from "../dist/voo-project.js";
 
 test("does not scan generated build caches for components", () => {
   const root = mkdtempSync(resolve(tmpdir(), "vooya-project-"));

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { generateVooDeclaration } from "../src/index.js";
+import { generateVooDeclaration } from "../dist/index.js";
 
 test("generates Vue props and event declarations from a component contract", () => {
   const declaration = generateVooDeclaration(

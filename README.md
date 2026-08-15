@@ -333,9 +333,11 @@ Vooya is looking for feedback and contributions across Rust/WASM runtime work,
 compiler design, Vue/React integration, build tooling, compatibility testing,
 examples, and documentation.
 
+- Read the [contribution guide](CONTRIBUTING.md) before starting code or public
+  API work.
 - Browse the [open issues](https://github.com/vooyajs/vooya/issues).
 - Read [Issue #16](https://github.com/vooyajs/vooya/issues/16) for the current
-  product-boundary discussion.
+  0.1 product boundary.
 - Use a focused issue or RFC before expanding public APIs.
 - Keep performance claims tied to reproducible browser evidence.
 
@@ -345,6 +347,9 @@ changed. The complete release gate is:
 ```sh
 npm run verify:ci
 ```
+
+Security reports should follow [SECURITY.md](SECURITY.md). Community
+participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

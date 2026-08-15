@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { formatVooComponent } from "../src/index.js";
+import { formatVooComponent } from "../dist/index.js";
 
 test("formats source contracts while preserving Rust, CSS, and comments", () => {
   const formatted = formatVooComponent(`<component   name="Counter" >

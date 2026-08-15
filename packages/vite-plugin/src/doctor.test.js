@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { WASM_BINDGEN_VERSION, formatToolchainReport, inspectToolchain } from "./doctor.js";
+import { WASM_BINDGEN_VERSION, formatToolchainReport, inspectToolchain } from "../dist/doctor.js";
 
 function runner(responses) {
   return (command, args) => {

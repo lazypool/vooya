@@ -1,0 +1,64 @@
+name: Feature or RFC proposal
+description: Propose a user-facing capability, public API, or architecture change
+title: "[Proposal] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with the user problem. A Rust/WASM technique is not automatically a product requirement.
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Who is blocked, and what are they trying to accomplish in an existing Web project?
+    validations:
+      required: true
+  - type: dropdown
+    id: user
+    attributes:
+      label: Primary user
+      options:
+        - .voo component author
+        - Vue or React application developer
+        - Component package publisher
+        - Vooya contributor or maintainer
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current workaround
+      description: Describe how this is done with Vooya today, by hand with wasm-bindgen, or with another approach.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Explain the smallest useful behavior and its boundary. API sketches are welcome but not required.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and alternatives
+      description: Link prior art, a reproduction, measurements, or alternatives such as Web Components or handwritten wrappers.
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What should this proposal deliberately avoid promising?
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked Issue #16 and existing proposals for overlap.
+          required: true
+        - label: I have separated current behavior from the proposed behavior.
+          required: true
+        - label: Any performance claim includes reproducible evidence.
+          required: false

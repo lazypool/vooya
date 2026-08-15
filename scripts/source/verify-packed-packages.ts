@@ -1,7 +1,7 @@
 // npm pack JSON is external process output and is validated at runtime.
 // @ts-nocheck
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,9 +25,11 @@ assert(apacheLicense.includes("Apache License"), "repository", "LICENSE-APACHE m
 const packDirectory = mkdtempSync(join(tmpdir(), "vooya-pack-check-"));
 
 try {
+  const packedPackages = new Map();
   for (const name of expectedPackages) {
     const manifest = readManifest(name);
     const packed = pack(name);
+    packedPackages.set(name, packed);
     const files = new Set(packed.files.map(({ path }) => path));
 
     assert(files.has("package.json"), name, "archive is missing package.json");
@@ -43,10 +45,31 @@ try {
     for (const target of exportTargets(manifest.exports)) {
       assert(files.has(target), name, `archive is missing exported file ${target}`);
     }
+    for (const [subpath, definition] of Object.entries(manifest.exports ?? {})) {
+      if (!definition || typeof definition !== "object" || !("import" in definition)) continue;
+      assert(typeof definition.import === "string" && definition.import.endsWith(".js"), name, `${subpath} must export executable JavaScript`);
+      assert(typeof definition.types === "string" && definition.types.endsWith(".d.ts"), name, `${subpath} must export TypeScript declarations`);
+      assert(files.has(stripPrefix(definition.import)), name, `archive is missing JavaScript for ${subpath}`);
+      assert(files.has(stripPrefix(definition.types)), name, `archive is missing declarations for ${subpath}`);
+    }
 
     if (name === "@vooya/core") {
       assert(files.has("dist/vooya_app_bg.wasm"), name, "archive is missing runtime WASM");
       assert(files.has("dist/vooya_app.d.ts"), name, "archive is missing runtime types");
+    }
+    if (name === "@vooya/compiler") {
+      assert(files.has("dist/index.js"), name, "archive is missing compiler JavaScript");
+      assert(files.has("dist/index.d.ts"), name, "archive is missing compiler types");
+    }
+    if (name === "@vooya/vite-plugin") {
+      for (const file of [
+        "dist/index.d.ts",
+        "dist/build-core.d.ts",
+        "dist/voo-format.d.ts",
+        "dist/runtime.d.ts",
+      ]) {
+        assert(files.has(file), name, `archive is missing public plugin types ${file}`);
+      }
     }
     if (name === "@vooya/vue" || name === "@vooya/react") {
       assert(files.has("dist/index.js"), name, "archive is missing adapter JavaScript");
@@ -60,8 +83,73 @@ try {
 
     console.log(`Verified ${name}@${packed.version}: ${files.size} archive files.`);
   }
+  verifyTypeConsumer(packedPackages);
 } finally {
   rmSync(packDirectory, { force: true, recursive: true });
+}
+
+function verifyTypeConsumer(packedPackages) {
+  const consumer = join(packDirectory, "type-consumer");
+  mkdirSync(consumer, { recursive: true });
+  writeFileSync(
+    join(consumer, "package.json"),
+    `${JSON.stringify({
+      private: true,
+      type: "module",
+      dependencies: Object.fromEntries(
+        expectedPackages.map((name) => [name, `file:${packedPackages.get(name).archivePath}`]),
+      ),
+      devDependencies: {
+        typescript: "~5.5.4",
+        vite: "^7.0.0",
+      },
+    }, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(consumer, "tsconfig.json"),
+    `${JSON.stringify({
+      compilerOptions: {
+        target: "ES2022",
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        strict: true,
+        noEmit: true,
+        skipLibCheck: false,
+      },
+      include: ["consumer.ts"],
+    }, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(consumer, "consumer.ts"),
+    `import { parseVooComponent } from "@vooya/compiler";
+import { vooya } from "@vooya/vite-plugin";
+import { buildPrecompiledVueArtifact } from "@vooya/vite-plugin/build";
+import { formatVooComponent } from "@vooya/vite-plugin/format";
+import { assertVooAbiVersion, initializeWasm } from "@vooya/vite-plugin/runtime";
+
+void parseVooComponent;
+void vooya;
+void buildPrecompiledVueArtifact;
+void formatVooComponent;
+void assertVooAbiVersion;
+void initializeWasm;
+`,
+  );
+
+  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  const install = spawnSync(npm, ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--package-lock=false"], {
+    cwd: consumer,
+    encoding: "utf8",
+  });
+  if (install.status !== 0) {
+    throw new Error(`packed type consumer install failed:\n${install.stderr || install.stdout}`);
+  }
+  const tsc = join(consumer, "node_modules", ".bin", process.platform === "win32" ? "tsc.cmd" : "tsc");
+  const typecheck = spawnSync(tsc, ["--project", "tsconfig.json"], { cwd: consumer, encoding: "utf8" });
+  if (typecheck.status !== 0) {
+    throw new Error(`packed type consumer failed:\n${typecheck.stderr || typecheck.stdout}`);
+  }
+  console.log("Verified packed compiler and Vite plugin declarations in a clean TypeScript consumer.");
 }
 
 function readManifest(name) {

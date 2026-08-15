@@ -4,7 +4,7 @@ import test from "node:test";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
-import { createRustBuildProgress, vooya } from "./index.js";
+import { createRustBuildProgress, vooya } from "../dist/index.js";
 
 test("reports stable Rust/WASM build stages with their elapsed duration", () => {
   const messages = [];

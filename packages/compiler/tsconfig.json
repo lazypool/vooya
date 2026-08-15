@@ -6,8 +6,8 @@
     "strict": true,
     "skipLibCheck": true,
     "rootDir": "source",
-    "outDir": "src",
-    "declaration": false,
+    "outDir": "dist",
+    "declaration": true,
     "noEmitOnError": true,
     "sourceMap": false
   },

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { formatToolchainReport, inspectToolchain } from "../src/doctor.js";
+import { formatToolchainReport, inspectToolchain } from "../dist/doctor.js";
 
 const [command] = process.argv.slice(2);
 if (command !== "doctor") {

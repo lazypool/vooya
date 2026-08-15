@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { VooParseError, parseVooComponent } from "../src/index.js";
+import { VooParseError, parseVooComponent } from "../dist/index.js";
 
 test("parses transitional manifests", () => {
   const component = parseVooComponent(`

@@ -1,0 +1,83 @@
+name: Bug report
+description: Report a reproducible problem in Vooya
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Remove secrets, usernames, and private paths from logs before posting them.
+  - type: input
+    id: version
+    attributes:
+      label: Vooya version
+      description: Include the exact versions of the adapter, plugin, compiler, and core when possible.
+      placeholder: "@vooya/vite-plugin 0.1.0-alpha.7"
+    validations:
+      required: true
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Host framework
+      options:
+        - Vue
+        - React
+        - Framework-independent tooling
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, Node, package manager, bundler, browser, rustc, Cargo, and wasm-bindgen versions.
+      placeholder: |
+        OS: Windows 11 x64
+        Node: 22.x
+        Vite: 7.x
+        rustc: ...
+        wasm-bindgen: 0.2.115
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Link a small repository or provide the smallest .voo component and configuration that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Install ...
+        2. Run ...
+        3. Open ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and logs
+      description: Include the relevant browser, Vite, Rust, and `vooya doctor` output after removing private information.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed secrets and private information from logs and paths.
+          required: true
+        - label: This is not a private security vulnerability.
+          required: true

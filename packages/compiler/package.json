@@ -13,15 +13,19 @@
     "access": "public"
   },
   "files": [
-    "src/*.js",
+    "dist",
     "LICENSE-MIT",
     "LICENSE-APACHE"
   ],
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && rm -f src/types.js",
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.js"
   },

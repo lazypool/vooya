@@ -18,20 +18,31 @@
   },
   "files": [
     "bin",
-    "src/*.js",
-    "src/*.mjs",
-    "!src/*.test.js",
+    "dist",
     "LICENSE-MIT",
     "LICENSE-APACHE"
   ],
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.js",
-    "./build": "./src/build-core.js",
-    "./format": "./src/voo-format.js",
-    "./runtime": "./src/runtime.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./build": {
+      "types": "./dist/build-core.d.ts",
+      "import": "./dist/build-core.js"
+    },
+    "./format": {
+      "types": "./dist/voo-format.d.ts",
+      "import": "./dist/voo-format.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build --prefix ../compiler && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "npm run build && node --test src/*.test.js"
   },
