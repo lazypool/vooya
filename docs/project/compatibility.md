@@ -16,6 +16,17 @@ SSR and hydration. Each entry is evidence for the named test path only.
 | Vue precompiled build fixture | Generated WASM in a clean Vite consumer without Rust tooling; mount and prop update | `npm run test:precompiled-vue` |
 | Vue 3 source `.voo` in Firefox | Mount, prop updates, typed events, scoped styles, failed-mount cleanup, lifecycle diagnostics, repeated unmount/remount | `npm run test:e2e:firefox` |
 
+## Verified bundler/toolchain matrix
+
+These entries run against packed Vooya packages in a fresh temporary consumer;
+they cover production output, browser WASM loading, Rust dependency rebuilds,
+full-reload behavior, failed Rust builds, recovery, and coalesced rapid saves.
+
+| Toolchain | Verified version | Evidence | Boundary |
+| --- | --- | --- | --- |
+| Vite | 8.2.1 | `npm run test:vite8` | Supported Vite 8 path; Vite 7 remains covered by the repository fixtures and release gate |
+| Vite+ | 0.2.9 | `npm run test:vite-plus` | Compatibility smoke path using Vite+'s Vite core alias; not a separate Vooya bundler adapter |
+
 ## Not verified / not supported yet
 
 - WebKit/Safari, mobile browsers, SSR, and hydration have no current
@@ -25,6 +36,9 @@ SSR and hydration. Each entry is evidence for the named test path only.
   build-contract evidence only.
 - Webpack, Rspack, Rollup, and other non-Vite bundlers have no current `.voo`
   compatibility claim.
+- Vite+ adds a CLI, runtime/package-manager management, and a Vite core alias;
+  it does not remove the need for the normal `vooya()` Vite plugin. Its smoke
+  path is intentionally tracked separately from the Vite support promise.
 - Alpha ABI revisions may be breaking; use one exact coordinated `@vooya`
   package version.
 

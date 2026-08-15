@@ -15,6 +15,10 @@ may remain JavaScript when Node or a consumer tool must execute them directly.
 
 The public plugin entry is `vooya()` from `@vooya/vite-plugin`.
 
+The plugin peer range covers Vite 7 and Vite 8. Vite+ is tested as a separate
+toolchain because it aliases `vite` to `@voidzero-dev/vite-plus-core`; it still
+uses the same `vooya()` plugin and does not create a second Vooya adapter API.
+
 ```ts
 vooya({
   framework: "vue",
