@@ -1,6 +1,7 @@
 // This package has no bundled Rspack runtime dependency. It uses Rspack's
 // public plugin and loader protocols and is currently verified against 2.1.x.
 import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -118,8 +119,13 @@ export class VooyaRspackPlugin implements RspackPluginLike {
           framework: this.framework,
         });
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
+        const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
         setBuildState(this.instanceId, {
-          runtimeModule: result.runtimeModule,
+          // The generated wasm-bindgen JavaScript is often byte-for-byte
+          // stable when only a Rust path dependency changes. Version its
+          // module identity with the WASM content so Rspack emits an HMR
+          // update instead of leaving the browser on the previous instance.
+          runtimeModule: `${result.runtimeModule}?vooya-build=${buildId}`,
           wasm: result.wasm.bytes,
           styleModules,
           watchedFiles: result.watchedFiles,
