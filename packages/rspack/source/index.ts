@@ -66,6 +66,20 @@ interface RspackConfigLike {
 
 interface RsbuildApiLike {
   modifyRspackConfig(callback: (config: RspackConfigLike) => RspackConfigLike): void;
+  onBeforeStartDevServer(
+    callback: (context: { server: RsbuildDevServerLike }) => void | (() => void),
+  ): void;
+  onAfterDevCompile(
+    callback: (context: { isFirstCompile: boolean; stats: RspackStatsLike }) => void,
+  ): void;
+}
+
+interface RsbuildDevServerLike {
+  sockWrite(type: "full-reload", data?: { path?: string }): void;
+}
+
+interface RspackStatsLike {
+  hasErrors(): boolean;
 }
 
 export interface VooyaRsbuildPlugin {
@@ -83,6 +97,8 @@ export class VooyaRspackPlugin implements RspackPluginLike {
   cacheRoot?: string;
   instanceId: string;
   buildError?: Error;
+  buildId?: string;
+  runtimeChanged: boolean;
 
   constructor({ framework = "vue", rust = {}, cacheRoot }: VooyaRspackOptions = {}) {
     if (framework !== "vue" && framework !== "react") throw new Error(`Unknown Vooya framework ${framework}.`);
@@ -91,6 +107,8 @@ export class VooyaRspackPlugin implements RspackPluginLike {
     this.cacheRoot = cacheRoot;
     this.instanceId = `vooya-rspack-${nextInstance++}`;
     this.buildError = undefined;
+    this.buildId = undefined;
+    this.runtimeChanged = false;
   }
 
   rule(): VooyaRspackRule {
@@ -104,6 +122,7 @@ export class VooyaRspackPlugin implements RspackPluginLike {
   apply(input: unknown): void {
     const compiler = input as RspackCompilerLike;
     compiler.hooks.beforeCompile.tapPromise("vooya", async () => {
+      this.runtimeChanged = false;
       try {
         const applicationRoot = compiler.context;
         const components = readVooComponents(applicationRoot);
@@ -120,6 +139,8 @@ export class VooyaRspackPlugin implements RspackPluginLike {
         });
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
         const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
+        this.runtimeChanged = this.buildId !== undefined && this.buildId !== buildId;
+        this.buildId = buildId;
         setBuildState(this.instanceId, {
           // The generated wasm-bindgen JavaScript is often byte-for-byte
           // stable when only a Rust path dependency changes. Version its
@@ -153,12 +174,23 @@ export class VooyaRspackPlugin implements RspackPluginLike {
         new compiler.rspack.sources.RawSource(Buffer.from(state.wasm)),
       );
     });
-    compiler.hooks.watchClose.tap("vooya", () => deleteBuildState(this.instanceId));
+    compiler.hooks.watchClose.tap("vooya", () => {
+      deleteBuildState(this.instanceId);
+      this.buildId = undefined;
+      this.runtimeChanged = false;
+    });
+  }
+
+  consumeRuntimeChange(): boolean {
+    const changed = this.runtimeChanged;
+    this.runtimeChanged = false;
+    return changed;
   }
 }
 
 export function vooyaRsbuild(options: VooyaRspackOptions = {}): VooyaRsbuildPlugin {
   const plugin = vooyaRspack(options);
+  let devServer: RsbuildDevServerLike | undefined;
   return {
     name: "vooya-rsbuild",
     setup(api) {
@@ -169,6 +201,21 @@ export function vooyaRsbuild(options: VooyaRspackOptions = {}): VooyaRsbuildPlug
         config.module.rules ??= [];
         config.module.rules.push(plugin.rule());
         return config;
+      });
+      api.onBeforeStartDevServer(({ server }) => {
+        devServer = server;
+        return () => {
+          devServer = undefined;
+        };
+      });
+      api.onAfterDevCompile(({ isFirstCompile, stats }) => {
+        const runtimeChanged = plugin.consumeRuntimeChange();
+        if (!isFirstCompile && runtimeChanged && !stats.hasErrors()) {
+          // Rsbuild exposes an explicit dev-server reload channel. Use it for
+          // rebuilt WASM so behavior does not depend on platform-specific HMR
+          // inference for generated wasm-bindgen modules.
+          devServer?.sockWrite("full-reload", { path: "*" });
+        }
       });
     },
   };
