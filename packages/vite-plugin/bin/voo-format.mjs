@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-import "../src/voo-format-cli.js";
+import "../dist/voo-format-cli.js";

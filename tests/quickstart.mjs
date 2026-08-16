@@ -40,10 +40,19 @@ function verifyGettingStarted() {
     "npm run build",
     greeting.trim(),
   ];
+  const pnpm = [
+    "pnpm approve-builds esbuild",
+    "pnpm ignored-builds",
+    "pnpm exec vooya doctor",
+    "pnpm run dev",
+    "pnpm run build",
+    "pnpm add --save-dev @vooya/vite-plugin@alpha",
+  ];
   const frameworkSpecific = {
     vue: [
       "## Vue",
       'npm install @vooya/vue@alpha',
+      'pnpm add @vooya/vue@alpha',
       'npm install --save-dev @vooya/vite-plugin@alpha',
       "plugins: [vue(), vooya()]",
       'import Greeting from "./Greeting.voo";',
@@ -52,13 +61,14 @@ function verifyGettingStarted() {
     react: [
       "## React",
       'npm install @vooya/react@alpha',
+      'pnpm add @vooya/react@alpha',
       'npm install --save-dev @vooya/vite-plugin@alpha',
       "plugins: [react(), vooya({ framework: \"react\" })]",
       "return <Greeting name=\"Rust\" />;",
       "[React counter](../../examples/react-counter)",
     ],
   };
-  for (const expected of [...shared, ...frameworkSpecific.vue, ...frameworkSpecific.react]) {
+  for (const expected of [...shared, ...pnpm, ...frameworkSpecific.vue, ...frameworkSpecific.react]) {
     if (!guide.includes(expected)) throw new Error(`Getting Started drifted from a tested quickstart: missing ${JSON.stringify(expected)}.`);
   }
 }

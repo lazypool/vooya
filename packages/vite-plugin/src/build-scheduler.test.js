@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createBuildScheduler } from "./build-scheduler.js";
+import { createBuildScheduler } from "../dist/build-scheduler.js";
 
 test("coalesces rapid changes into one build", async () => {
   let builds = 0;

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 
-import { buildPrecompiledVueArtifact } from "./build-core.js";
+import { buildPrecompiledVueArtifact } from "../dist/build-core.js";
 
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
 const counterSource = resolve(repositoryRoot, "tests/fixtures/precompiled-vue/artifact/component/PortableCounter.voo");

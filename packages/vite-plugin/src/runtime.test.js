@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { VOO_ABI_VERSION, assertVooAbiVersion, initializeWasm } from "./runtime.js";
+import { VOO_ABI_VERSION, assertVooAbiVersion, initializeWasm } from "../dist/runtime.js";
 
 test("accepts the compiler ABI version", () => {
   assert.doesNotThrow(() => assertVooAbiVersion(VOO_ABI_VERSION));

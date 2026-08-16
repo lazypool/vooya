@@ -19,10 +19,13 @@
     "LICENSE-APACHE"
   ],
   "exports": {
-    ".": "./dist/vooya_app.js",
+    ".": {
+      "types": "./dist/vooya_app.d.ts",
+      "import": "./dist/vooya_app.js"
+    },
     "./rust/Cargo.toml": "./rust/Cargo.toml"
   },
   "scripts": {
-    "build": "npm run build:scripts --prefix ../.. && node ../../scripts/generated/build-core.js"
+    "build": "npm run build:core --prefix ../.."
   }
 }

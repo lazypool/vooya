@@ -1,4 +1,4 @@
-import { parseVooComponent } from "./parse.js";
+import { findCommentIndex, parseVooComponent } from "./parse.js";
 import type { SourceComponent } from "./types.js";
 
 type ExtractedBlock = { content: string; start: number; end: number };
@@ -30,7 +30,7 @@ function formatContract(source: string, component: SourceComponent): string[] {
     if (!line) { appendBlank(lines); continue; }
     if (line.startsWith("//")) { lines.push(`${section ? "  " : ""}${line}`); continue; }
     if (line === "props:" || line === "events:") { if (lines.length > 0) appendBlank(lines); section = line.slice(0, -1) as typeof section; lines.push(line); continue; }
-    const commentAt = line.indexOf("//");
+    const commentAt = findCommentIndex(line);
     const comment = commentAt === -1 ? "" : ` ${line.slice(commentAt).trim()}`;
     if (section === "props") {
       const prop = component.props[propIndex++];
