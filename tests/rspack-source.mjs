@@ -87,6 +87,11 @@ async function verifyDevRecovery(project) {
       60_000,
       () => `Rsbuild did not complete the recovery compilation.\n${output}`,
     );
+    // Rsbuild may navigate while applying the recovery compilation. Let that
+    // navigation settle before establishing the dependency-change baseline,
+    // otherwise a late recovery navigation can be mistaken for the reload
+    // caused by the Rust path dependency below.
+    await waitForStableValue(() => mainFrameNavigations);
     const buildsBeforeDependency = successfulBuildCount(output);
     const navigationsBeforeDependency = mainFrameNavigations;
     const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
@@ -189,6 +194,23 @@ async function waitFor(predicate, timeout = 30_000, details = () => "") {
     await new Promise((resolveWait) => setTimeout(resolveWait, 50));
   }
   throw new Error(`Timed out waiting for Rsbuild.\n${details()}`);
+}
+
+async function waitForStableValue(readValue, stableFor = 1_000, timeout = 10_000) {
+  const deadline = Date.now() + timeout;
+  let value = readValue();
+  let stableSince = Date.now();
+  while (Date.now() < deadline) {
+    await new Promise((resolveWait) => setTimeout(resolveWait, 50));
+    const nextValue = readValue();
+    if (nextValue !== value) {
+      value = nextValue;
+      stableSince = Date.now();
+    } else if (Date.now() - stableSince >= stableFor) {
+      return;
+    }
+  }
+  throw new Error("Timed out waiting for Rsbuild browser navigation to settle.");
 }
 
 function availablePort() {
