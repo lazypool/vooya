@@ -16,6 +16,7 @@ import {
   generatedComponentPrelude,
   parseVooComponent,
 } from "@vooya/compiler";
+import { buildApplication as buildSharedApplication } from "@vooya/build-core";
 
 const require = createRequire(import.meta.url);
 
@@ -32,88 +33,18 @@ export function resolveRustDependencyRoots(rust = {}, applicationRoot) {
     .map((specification) => resolve(applicationRoot, specification.path));
 }
 
-export function buildApplication({
-  applicationRoot,
-  components = [],
-  rust = {},
-  runtimeCrateRoot = resolveRuntimeCrateRoot(),
-  cacheRoot = resolve(applicationRoot, ".voo-cache"),
-  outputDir = resolve(cacheRoot, "dist"),
-  onRustBuildStart = () => {},
-}) {
-  const sourceDir = resolve(cacheRoot, "src/components");
-  const targetDir = resolve(cacheRoot, "target");
-  const sourcePaths = new Map();
-  const diagnosticMappings = new Map();
-
-  mkdirSync(sourceDir, { recursive: true });
-  for (const [index, component] of components.entries()) {
-    const sourcePath = resolve(sourceDir, `${index}-${component.name}.rs`);
-    const prelude = generatedComponentPrelude(component);
-    writeIfChanged(sourcePath, `${prelude}${component.rust.content}\n`);
-    sourcePaths.set(component.id, sourcePath);
-    diagnosticMappings.set(sourcePath, {
-      id: component.id,
-      startLine: component.rust.startLine,
-      generatedLineOffset: prelude.split(/\r?\n/).length - 1,
-    });
-  }
-
-  writeIfChanged(
-    resolve(cacheRoot, "Cargo.toml"),
-    generatedCargoManifest({ applicationRoot, runtimeCrateRoot, rust }),
-  );
-  writeIfChanged(
-    resolve(cacheRoot, "src/lib.rs"),
-    `pub use vooya_core::*;\n\n${generateRustComponents(components, sourcePaths)}`,
-  );
-
-  // Keep this callback immediately adjacent to Cargo. Consumers use it to
-  // report work that has actually begun, rather than merely a queued rebuild.
-  onRustBuildStart();
-  runCargo(
-    applicationRoot,
-    [
-      "build",
-      "--manifest-path",
-      resolve(cacheRoot, "Cargo.toml"),
-      "--release",
-      "--target",
-      "wasm32-unknown-unknown",
-      "--target-dir",
-      targetDir,
-    ],
-    diagnosticMappings,
-  );
-
-  rmSync(outputDir, { force: true, recursive: true });
-  mkdirSync(outputDir, { recursive: true });
-  execFileSync(
-    "wasm-bindgen",
-    [
-      resolve(targetDir, "wasm32-unknown-unknown/release/vooya_app.wasm"),
-      "--target",
-      "web",
-      "--out-dir",
-      outputDir,
-    ],
-    { cwd: applicationRoot, stdio: "inherit" },
-  );
-
-  return {
-    cacheRoot,
-    runtimeModule: resolve(outputDir, "vooya_app.js"),
-  };
-}
-
 // Builds the empty runtime artifact shipped by @vooya/core.
 export function buildCore(root = repositoryRoot) {
-  return buildApplication({
+  return buildSharedApplication({
     applicationRoot: root,
     cacheRoot: resolve(root, "target/vooya-package"),
     outputDir: resolve(root, "packages/core/dist"),
   });
 }
+
+// Compatibility subpath: Cargo and wasm-bindgen execution lives only in the
+// bundler-neutral package, including for artifact production.
+export { buildApplication } from "@vooya/build-core";
 
 /**
  * Builds one Vue component source file into the distributable contents of one
@@ -153,12 +84,13 @@ export function buildPrecompiledVueArtifact({ packageRoot, source, outputDir } =
 
   rmSync(distribution, { force: true, recursive: true });
   mkdirSync(distribution, { recursive: true });
-  buildApplication({
+  buildSharedApplication({
     applicationRoot: root,
     components: [component],
     cacheRoot: resolve(root, ".artifact-build"),
     outputDir: resolve(distribution, "wasm"),
     rust: { webSysFeatures: ["Node", "NodeList"] },
+    framework: "vue",
   });
   writeFileSync(resolve(distribution, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   writeFileSync(resolve(distribution, "index.js"), generatePrecompiledVueEntry({ manifest, definition, binding }));

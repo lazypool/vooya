@@ -5,15 +5,38 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
-import { generateRustComponents, generatedAdapterDefinition, generatedComponentPrelude } from "@vooya/compiler";
+import { compileVooStyle, generateRustComponents, generateVooDeclaration, generatedAdapterDefinition, generatedComponentPrelude } from "@vooya/compiler";
+import type { SourceComponent } from "@vooya/compiler";
 
 const require = createRequire(import.meta.url);
+
+export type RustDependency = string | {
+  version?: string; path?: string; git?: string; branch?: string; tag?: string; rev?: string;
+  package?: string; defaultFeatures?: boolean; features?: string[];
+};
+export interface RustBuildOptions { dependencies?: Record<string, RustDependency>; webSysFeatures?: string[]; }
+export interface MappedDiagnostic { level?: string; message: string; rendered?: string; spans?: Array<{ file_name: string; line_start: number; column_start: number }>; }
+export interface BuildAsset { path: string; code: string; }
+export interface WasmAsset { path: string; bytes: Uint8Array; }
+export interface GeneratedCss { componentId: string; code: string; }
+export interface GeneratedDeclaration { componentId: string; framework: "vue" | "react"; code: string; }
+export interface BuildMetadata { buildMode: "production" | "development"; abiVersions: number[]; wasmBindgenTarget: "web"; }
+export interface BuildApplicationOptions {
+  applicationRoot: string; components?: SourceComponent[]; rust?: RustBuildOptions;
+  runtimeCrateRoot?: string; cacheRoot?: string; workspacePath?: string; outputDir?: string;
+  buildMode?: "production" | "development"; framework?: "vue" | "react"; onRustBuildStart?: () => void;
+}
+export interface BuildApplicationResult {
+  cacheRoot: string; runtimeModule: string; javascript: BuildAsset; wasm: WasmAsset;
+  css: GeneratedCss[]; declarations: GeneratedDeclaration[]; watchedFiles: string[];
+  diagnostics: MappedDiagnostic[]; metadata: BuildMetadata;
+}
 
 export function resolveRuntimeCrateRoot() {
   return dirname(require.resolve("@vooya/core/rust/Cargo.toml"));
 }
 
-export function resolveRustDependencyRoots(rust = {}, applicationRoot) {
+export function resolveRustDependencyRoots(rust: RustBuildOptions = {}, applicationRoot: string): string[] {
   if (!isPlainObject(rust.dependencies)) return [];
   return Object.values(rust.dependencies)
     .filter((specification) => isPlainObject(specification) && specification.path)
@@ -33,8 +56,9 @@ export function buildApplication({
   workspacePath = cacheRoot,
   outputDir = resolve(cacheRoot, "dist"),
   buildMode = "production",
+  framework = "vue",
   onRustBuildStart = () => {},
-} = {}) {
+}: BuildApplicationOptions): BuildApplicationResult {
   if (typeof applicationRoot !== "string" || !applicationRoot) throw new Error("Vooya build requires applicationRoot.");
   if (!Array.isArray(components)) throw new Error("Vooya build requires compiler result components as an array.");
   const sourceDir = resolve(workspacePath, "src/components");
@@ -60,7 +84,9 @@ export function buildApplication({
   return {
     cacheRoot: workspacePath, runtimeModule,
     javascript: { path: runtimeModule, code: readFileSync(runtimeModule, "utf8") },
-    wasm: { path: wasm, bytes: readFileSync(wasm) }, css: [], declarations: [],
+    wasm: { path: wasm, bytes: new Uint8Array(readFileSync(wasm)) },
+    css: components.filter((component) => component.style).map((component) => ({ componentId: component.id ?? component.name, code: compileVooStyle(component) })),
+    declarations: components.map((component) => ({ componentId: component.id ?? component.name, framework, code: generateVooDeclaration(component, framework) })),
     watchedFiles: [resolve(runtimeCrateRoot, "src"), ...resolveRustDependencyRoots(rust, applicationRoot)],
     diagnostics, metadata: { buildMode, abiVersions: components.map((component) => generatedAdapterDefinition(component).abiVersion), wasmBindgenTarget: "web" },
   };
@@ -68,7 +94,7 @@ export function buildApplication({
 
 // Builds the empty runtime artifact shipped by @vooya/core without depending on
 // the Vite package. The root is supplied by the repository build script.
-export function buildCore(root = process.cwd()) {
+export function buildCore(root = process.cwd()): BuildApplicationResult {
   return buildApplication({
     applicationRoot: root,
     cacheRoot: resolve(root, "target/vooya-package"),
@@ -76,7 +102,7 @@ export function buildCore(root = process.cwd()) {
   });
 }
 
-export function generatedCargoManifest({ applicationRoot, runtimeCrateRoot, rust = {} }) {
+export function generatedCargoManifest({ applicationRoot, runtimeCrateRoot, rust = {} }: { applicationRoot: string; runtimeCrateRoot: string; rust?: RustBuildOptions }): string {
   const dependencies = generatedUserDependencies(rust.dependencies, applicationRoot);
   return `[package]\nname = "vooya-app"\nversion = "0.0.0"\nedition = "2024"\n\n[workspace]\n\n[lib]\ncrate-type = ["cdylib"]\n\n[dependencies]\nvooya-core = { path = ${JSON.stringify(runtimeCrateRoot)} }\njs-sys = "=0.3.92"\nwasm-bindgen = "=0.2.115"\nweb-sys = { version = "=0.3.92", features = [\n${mergedWebSysFeatures(rust.webSysFeatures).map((feature) => `  ${JSON.stringify(feature)},`).join("\n")}\n] }\n${dependencies}\n`;
 }

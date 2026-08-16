@@ -127,6 +127,7 @@ function verifyTypeConsumer(packedPackages) {
   writeFileSync(
     join(consumer, "consumer.ts"),
     `import { parseVooComponent } from "@vooya/compiler";
+import type { SourceComponent } from "@vooya/compiler";
 import { vooya } from "@vooya/vite-plugin";
 import { buildApplication } from "@vooya/build-core";
 import { buildPrecompiledVueArtifact } from "@vooya/vite-plugin/build";
@@ -135,7 +136,22 @@ import { assertVooAbiVersion, initializeWasm } from "@vooya/vite-plugin/runtime"
 
 void parseVooComponent;
 void vooya;
-void buildApplication;
+const component: SourceComponent = {
+  format: "source", id: "/consumer/Counter.voo", name: "Counter", props: [], events: [],
+  rust: { content: "", startLine: 1 },
+};
+function verifyBuildCoreContract() {
+  const result = buildApplication({
+    applicationRoot: "/consumer", components: [component], rust: { webSysFeatures: ["Node"] },
+    cacheRoot: "/consumer/.voo-cache", workspacePath: "/consumer/.voo-cache", outputDir: "/consumer/.voo-cache/dist",
+    buildMode: "production", framework: "vue",
+  });
+  const wasm: Uint8Array = result.wasm.bytes;
+  const css: string = result.css[0]?.code ?? "";
+  const declaration: string = result.declarations[0]?.code ?? "";
+  return [wasm, css, declaration];
+}
+void verifyBuildCoreContract;
 void buildPrecompiledVueArtifact;
 void formatVooComponent;
 void assertVooAbiVersion;

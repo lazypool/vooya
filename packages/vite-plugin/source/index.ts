@@ -54,6 +54,7 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
         applicationRoot,
         components: sourceComponents,
         rust,
+        framework,
         onRustBuildStart: progress.start,
       }));
       progress.complete();
