@@ -8,6 +8,7 @@ import {
   resolveRuntimeCrateRoot,
   resolveRustDependencyRoots,
 } from "./build-core.js";
+import { clearToolchainCache, formatResolvedToolchain, resolveToolchain } from "./toolchain.js";
 import { createBuildScheduler } from "./build-scheduler.js";
 import {
   compileVooStyle,
@@ -26,6 +27,7 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
   let applicationRoot;
   let buildScheduler;
   let runtimeModule;
+  let toolchain;
   let sourceComponents = [];
   let watchedRustRoots = [];
   let logger;
@@ -50,14 +52,26 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
     writeVooDeclarations(components, framework);
     const progress = createRustBuildProgress(logger);
     try {
+      if (!toolchain) {
+        toolchain = resolveToolchain({ cwd: applicationRoot });
+        logger?.info(`Vooya: selected Rust/WASM toolchain: ${formatResolvedToolchain(toolchain)}.`);
+        if (toolchain.cargoPathWarning) {
+          logger?.warn(`Vooya: WARNING: ${toolchain.cargoPathWarning} This may differ from the toolchain you intended to use.`);
+        }
+      }
       ({ runtimeModule } = buildApplication({
         applicationRoot,
         components: sourceComponents,
         rust,
+        toolchain,
         onRustBuildStart: progress.start,
       }));
       progress.complete();
     } catch (error) {
+      if (isToolchainExecutionError(error)) {
+        toolchain = undefined;
+        clearToolchainCache();
+      }
       // Cargo has already rendered source-mapped .voo diagnostics. Keep this
       // summary separate so Vite can preserve those diagnostics verbatim.
       progress.fail();
@@ -211,6 +225,10 @@ function writeVooDeclarations(components, framework) {
 function isPathInside(file, directory) {
   const path = relative(directory, file);
   return path === "" || (!path.startsWith("..") && !isAbsolute(path));
+}
+
+function isToolchainExecutionError(error) {
+  return error && ["EACCES", "ENOENT", "EPERM"].includes(error.code);
 }
 
 function componentMetadata(component) {

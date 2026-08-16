@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
+  buildApplication,
   generatedCargoManifest,
   remapRustDiagnostic,
   resolveRustDependencyRoots,
@@ -14,6 +17,82 @@ test("resolves the Rust runtime shipped by @vooya/core", () => {
 
   assert.equal(existsSync(`${runtime}/Cargo.toml`), true);
   assert.equal(existsSync(`${runtime}/src/lib.rs`), true);
+});
+
+test("build uses the paths selected by the resolved toolchain", () => {
+  const root = mkdtempSync(join(tmpdir(), "vooya-build-test-"));
+  const calls = { cargo: null, wasmBindgen: null };
+  const environment = { PATH: "/selected/toolchain/bin" };
+  const toolchain = {
+    environment,
+    cargo: { path: "/selected/toolchain/bin/cargo", version: "cargo 1.94.0" },
+    rustc: {
+      path: "/selected/toolchain/bin/rustc",
+      version: "rustc 1.94.0",
+      verboseVersion: "rustc 1.94.0",
+      sysroot: "/selected/toolchain",
+    },
+    target: { triple: "wasm32-unknown-unknown", libdir: "/selected/toolchain/wasm" },
+    wasmBindgen: { path: "/selected/toolchain/bin/wasm-bindgen", version: "0.2.115" },
+  };
+
+  try {
+    buildApplication({
+      applicationRoot: root,
+      runtimeCrateRoot: "/runtime",
+      cacheRoot: join(root, "cache"),
+      outputDir: join(root, "dist"),
+      toolchain,
+      spawn(command, args, options) {
+        calls.cargo = { command, args, options };
+        return { status: 0, stdout: "", stderr: "" };
+      },
+      exec(command, args, options) {
+        calls.wasmBindgen = { command, args, options };
+      },
+    });
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+
+  assert.equal(calls.cargo.command, toolchain.cargo.path);
+  assert.equal(calls.wasmBindgen.command, toolchain.wasmBindgen.path);
+  assert.equal(calls.cargo.options.env.PATH, environment.PATH);
+  assert.equal(calls.wasmBindgen.options.env, environment);
+  assert.equal(calls.cargo.args.includes("--target"), true);
+  assert.equal(calls.cargo.args.includes("wasm32-unknown-unknown"), true);
+});
+
+test("preserves Cargo process startup errors", () => {
+  const root = mkdtempSync(join(tmpdir(), "vooya-build-error-test-"));
+  const startupError = Object.assign(new Error("cargo could not start"), { code: "ENOENT" });
+  const toolchain = {
+    environment: {},
+    cargo: { path: "/missing/cargo", version: "cargo 1.94.0" },
+    rustc: { path: "/missing/rustc", version: "rustc 1.94.0", verboseVersion: "rustc 1.94.0", sysroot: "/missing" },
+    target: { triple: "wasm32-unknown-unknown", libdir: "/missing/wasm" },
+    wasmBindgen: { path: "/missing/wasm-bindgen", version: "0.2.115" },
+  };
+
+  try {
+    assert.throws(
+      () =>
+        buildApplication({
+          applicationRoot: root,
+          runtimeCrateRoot: "/runtime",
+          cacheRoot: join(root, "cache"),
+          outputDir: join(root, "dist"),
+          toolchain,
+          spawn() {
+            return { error: startupError, status: null, stdout: null, stderr: null };
+          },
+          exec() {},
+        }),
+      (error) => error === startupError,
+    );
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
 });
 
 test("generates a standalone application crate", () => {

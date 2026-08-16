@@ -110,7 +110,7 @@ export default defineConfig({
 });
 ```
 
-Check the exact Rust tools inherited by Vite:
+Check the exact Rust toolchain Vooya will select for Vite:
 
 ```sh
 npm exec -- vooya doctor

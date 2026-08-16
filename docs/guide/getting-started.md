@@ -25,18 +25,19 @@ cargo install wasm-bindgen-cli --version 0.2.115 --locked
 wasm-bindgen --version
 ```
 
-After installing the Vite plugin, verify the exact programs that Vite will
-inherit from `PATH`:
+After installing the Vite plugin, verify the exact toolchain that Vooya will
+select for Vite:
 
 ```sh
 npm exec -- vooya doctor
 ```
 
-The command checks `cargo`, `rustc`, the `wasm32-unknown-unknown` target, and
-the pinned `wasm-bindgen` CLI. On Windows MSVC toolchains, it also checks for
-`link.exe`. It reports the executable paths and warns when the active Rust
-sysroot is not managed by rustup, which commonly means a Homebrew toolchain is
-taking precedence.
+The command checks a coherent Cargo-selected toolchain: `cargo`, the exact
+`rustc` that Cargo invokes, the `wasm32-unknown-unknown` target, and the pinned
+`wasm-bindgen` CLI. On Windows MSVC toolchains, it also checks for `link.exe`.
+It reports the selected executable paths, warns when the active Rust sysroot is
+not managed by rustup, and warns when it had to select a later Cargo than the
+first Cargo on `PATH`.
 
 All `@vooya` packages must use the same alpha version. The repository `main`
 branch can lead the npm `alpha` tag while a breaking prerelease is being

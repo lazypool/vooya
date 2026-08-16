@@ -41,16 +41,21 @@ overriding `web-sys`.
 
 ## Doctor
 
-`vooya doctor` diagnoses the Rust programs visible to the Vite process:
+`vooya doctor` resolves and diagnoses the same coherent Rust/WASM toolchain used
+by the Vite process:
 
 ```sh
 npx vooya doctor
 ```
 
-It exits unsuccessfully when Cargo, rustc, the WASM target, or the exact
-`wasm-bindgen-cli` version required by the alpha are absent. A non-rustup
-sysroot is a warning rather than an error, but the report explains how to put
-`$HOME/.cargo/bin` ahead of Homebrew when that causes a missing-target build.
+It checks every `cargo` found on `PATH` in order. For each candidate, Cargo's
+verbose `cargo rustc` invocation identifies the rustc that Cargo will use; that
+rustc must provide the `wasm32-unknown-unknown` standard library, and the
+selected `wasm-bindgen-cli` must be exactly the version required by the alpha.
+The report prints all selected executable paths. A non-rustup sysroot is a
+warning rather than an error. If a later Cargo candidate is selected because
+the first one is incomplete, doctor also warns that this may differ from the
+user's PATH preference.
 
 ## Generated application
 

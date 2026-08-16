@@ -8,6 +8,7 @@ import { createRequire } from "node:module";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { resolveToolchain } from "./toolchain.js";
 import {
   generateRustComponents,
   generateVooDeclaration,
@@ -40,6 +41,9 @@ export function buildApplication({
   cacheRoot = resolve(applicationRoot, ".voo-cache"),
   outputDir = resolve(cacheRoot, "dist"),
   onRustBuildStart = () => {},
+  toolchain = resolveToolchain({ cwd: applicationRoot }),
+  spawn = spawnSync,
+  exec = execFileSync,
 }) {
   const sourceDir = resolve(cacheRoot, "src/components");
   const targetDir = resolve(cacheRoot, "target");
@@ -72,6 +76,7 @@ export function buildApplication({
   // report work that has actually begun, rather than merely a queued rebuild.
   onRustBuildStart();
   runCargo(
+    toolchain,
     applicationRoot,
     [
       "build",
@@ -79,25 +84,26 @@ export function buildApplication({
       resolve(cacheRoot, "Cargo.toml"),
       "--release",
       "--target",
-      "wasm32-unknown-unknown",
+      toolchain.target.triple,
       "--target-dir",
       targetDir,
     ],
     diagnosticMappings,
+    spawn,
   );
 
   rmSync(outputDir, { force: true, recursive: true });
   mkdirSync(outputDir, { recursive: true });
-  execFileSync(
-    "wasm-bindgen",
+  exec(
+    toolchain.wasmBindgen.path,
     [
-      resolve(targetDir, "wasm32-unknown-unknown/release/vooya_app.wasm"),
+      resolve(targetDir, `${toolchain.target.triple}/release/vooya_app.wasm`),
       "--target",
       "web",
       "--out-dir",
       outputDir,
     ],
-    { cwd: applicationRoot, stdio: "inherit" },
+    { cwd: applicationRoot, env: toolchain.environment ?? process.env, stdio: "inherit" },
   );
 
   return {
@@ -474,15 +480,17 @@ export function remapRustDiagnostic(message, mappings) {
   return rendered;
 }
 
-function runCargo(root, args, mappings) {
-  const result = spawnSync("cargo", [...args, "--message-format=json"], {
+function runCargo(toolchain, root, args, mappings, spawn) {
+  const result = spawn(toolchain.cargo.path, [...args, "--message-format=json"], {
     cwd: root,
     encoding: "utf8",
-    env: { ...process.env, CARGO_TERM_COLOR: "never" },
+    env: { ...(toolchain.environment ?? process.env), CARGO_TERM_COLOR: "never" },
   });
 
-  if (result.stderr) process.stderr.write(result.stderr);
-  for (const line of result.stdout.split(/\r?\n/)) {
+  const stderr = result.stderr ?? "";
+  const stdout = result.stdout ?? "";
+  if (stderr) process.stderr.write(stderr);
+  for (const line of stdout.split(/\r?\n/)) {
     if (!line) continue;
     try {
       const message = JSON.parse(line);
@@ -494,7 +502,11 @@ function runCargo(root, args, mappings) {
     }
   }
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`Cargo build failed with exit code ${result.status}.`);
+  if (result.status !== 0) {
+    throw new Error(
+      `Cargo build failed with exit code ${result.status} using cargo ${toolchain.cargo.path} and rustc ${toolchain.rustc.path}.`,
+    );
+  }
 }
 
 function writeIfChanged(path, content) {
