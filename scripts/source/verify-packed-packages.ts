@@ -149,7 +149,8 @@ function verifyBuildCoreContract() {
   const wasm: Uint8Array = result.wasm.bytes;
   const css: string = result.css[0]?.code ?? "";
   const declaration: string = result.declarations[0]?.code ?? "";
-  return [wasm, css, declaration];
+  const diagnostic: string = result.diagnostics[0] ?? "";
+  return [wasm, css, declaration, diagnostic];
 }
 void verifyBuildCoreContract;
 void buildPrecompiledVueArtifact;

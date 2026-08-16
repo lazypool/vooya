@@ -15,7 +15,7 @@ export type RustDependency = string | {
   package?: string; defaultFeatures?: boolean; features?: string[];
 };
 export interface RustBuildOptions { dependencies?: Record<string, RustDependency>; webSysFeatures?: string[]; }
-export interface MappedDiagnostic { level?: string; message: string; rendered?: string; spans?: Array<{ file_name: string; line_start: number; column_start: number }>; }
+export type MappedDiagnostic = string;
 export interface BuildAsset { path: string; code: string; }
 export interface WasmAsset { path: string; bytes: Uint8Array; }
 export interface GeneratedCss { componentId: string; code: string; }
