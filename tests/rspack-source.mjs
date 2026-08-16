@@ -51,8 +51,21 @@ async function verifyDevRecovery(project) {
     await waitFor(async () => (await fetch(`http://127.0.0.1:${port}`)).ok);
     browser = await chromium.launch();
     const page = await browser.newPage();
+    const errors = [];
+    page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+    page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
     await page.getByRole("button", { name: "Increment" }).waitFor();
+    if (await page.locator("[data-count]").textContent() !== "2") throw new Error("Rspack Vue island did not mount its initial prop.");
+    if (await page.locator(".counter").evaluate((node) => getComputedStyle(node).color) !== "rgb(5, 103, 89)") throw new Error("Rspack Vue scoped style was not applied.");
+    await page.locator("[data-inc]").click();
+    if (await page.locator("[data-event]").textContent() !== "3") throw new Error("Rspack Vue event forwarding failed.");
+    await page.locator("[data-host-update]").click();
+    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack Vue prop update failed.");
+    await page.locator("[data-host-toggle]").click();
+    await page.locator("[data-count]").waitFor({ state: "detached" });
+    await page.locator("[data-host-toggle]").click();
+    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack Vue dispose/remount failed.");
 
     const componentPath = resolve(project, "src/Counter.voo");
     const source = readFileSync(componentPath, "utf8");
@@ -66,6 +79,7 @@ async function verifyDevRecovery(project) {
     const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
     writeFileSync(dependencyPath, 'pub fn button_label() -> &\'static str { "Increment dependency" }\n');
     await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
+    if (errors.length) throw new Error(`Rspack Vue browser errors:\n${errors.join("\n")}`);
     console.log("Verified Rsbuild Rust failure recovery without restarting the dev server.");
   } finally {
     await browser?.close();
