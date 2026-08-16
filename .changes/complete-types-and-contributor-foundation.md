@@ -5,6 +5,7 @@ vooya-build-core: "patch:feat"
 vooya-vite-plugin: "patch:fix"
 vooya-vue: "patch:fix"
 vooya-react: "patch:fix"
+vooya-rspack: "patch:feat"
 ---
 
 Publish complete TypeScript declarations for the compiler and Vite plugin,

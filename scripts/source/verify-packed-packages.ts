@@ -14,6 +14,7 @@ const expectedPackages = [
   "@vooya/vite-plugin",
   "@vooya/vue",
   "@vooya/react",
+  "@vooya/rspack",
 ];
 const license = "MIT OR Apache-2.0";
 const repositoryUrl = "git+https://github.com/vooyajs/vooya.git";
@@ -80,6 +81,9 @@ try {
       assert(files.has("dist/index.js"), name, "archive is missing adapter JavaScript");
       assert(files.has("dist/index.d.ts"), name, "archive is missing adapter types");
     }
+    if (name === "@vooya/rspack") {
+      for (const file of ["dist/index.js", "dist/index.d.ts", "dist/runtime.js", "dist/runtime.d.ts"]) assert(files.has(file), name, `archive is missing Rspack output ${file}`);
+    }
     for (const file of files) {
       assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
       assert(!file.includes("VOOYA_PRODUCT_OPERATING_PLAN"), name, `archive leaks internal planning file ${file}`);
@@ -133,6 +137,7 @@ import { buildApplication } from "@vooya/build-core";
 import { buildPrecompiledVueArtifact } from "@vooya/vite-plugin/build";
 import { formatVooComponent } from "@vooya/vite-plugin/format";
 import { assertVooAbiVersion, initializeWasm } from "@vooya/vite-plugin/runtime";
+import { vooyaRsbuild, vooyaRspack } from "@vooya/rspack";
 
 void parseVooComponent;
 void vooya;
@@ -157,6 +162,8 @@ void buildPrecompiledVueArtifact;
 void formatVooComponent;
 void assertVooAbiVersion;
 void initializeWasm;
+void vooyaRsbuild;
+void vooyaRspack;
 `,
   );
 
