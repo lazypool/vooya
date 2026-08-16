@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "rspack build" },
+  "dependencies": {
+    "@rspack/cli": "2.1.10",
+    "@rspack/core": "2.1.10",
+    "@vooya/build-core": "file:../../../packages/build-core",
+    "@vooya/compiler": "file:../../../packages/compiler",
+    "@vooya/core": "file:../../../packages/core",
+    "@vooya/rspack": "file:../../../packages/rspack",
+    "@vooya/vue": "file:../../../packages/vue",
+    "vue": "3.5.40"
+  }
+}

@@ -12,12 +12,14 @@ const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 try {
   mkdirSync(packageDirectory, { recursive: true });
   run(npmCommand, ["run", "build:core"], repositoryRoot);
+  run(npmCommand, ["run", "build", "--workspace", "@vooya/vite-plugin"], repositoryRoot);
   run(npmCommand, ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
   run(npmCommand, ["run", "build", "--workspace", "@vooya/react"], repositoryRoot);
   const packages = {
     common: [
       pack("@vooya/compiler"),
       pack("@vooya/core"),
+      pack("@vooya/build-core"),
       pack("@vooya/vite-plugin"),
     ],
     vue: pack("@vooya/vue"),

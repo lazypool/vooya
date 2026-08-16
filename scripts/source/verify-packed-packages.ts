@@ -10,9 +10,11 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const expectedPackages = [
   "@vooya/compiler",
   "@vooya/core",
+  "@vooya/build-core",
   "@vooya/vite-plugin",
   "@vooya/vue",
   "@vooya/react",
+  "@vooya/rspack",
 ];
 const license = "MIT OR Apache-2.0";
 const repositoryUrl = "git+https://github.com/vooyajs/vooya.git";
@@ -61,6 +63,10 @@ try {
       assert(files.has("dist/index.js"), name, "archive is missing compiler JavaScript");
       assert(files.has("dist/index.d.ts"), name, "archive is missing compiler types");
     }
+    if (name === "@vooya/build-core") {
+      assert(files.has("dist/index.js"), name, "archive is missing build-core JavaScript");
+      assert(files.has("dist/index.d.ts"), name, "archive is missing build-core types");
+    }
     if (name === "@vooya/vite-plugin") {
       for (const file of [
         "dist/index.d.ts",
@@ -74,6 +80,9 @@ try {
     if (name === "@vooya/vue" || name === "@vooya/react") {
       assert(files.has("dist/index.js"), name, "archive is missing adapter JavaScript");
       assert(files.has("dist/index.d.ts"), name, "archive is missing adapter types");
+    }
+    if (name === "@vooya/rspack") {
+      for (const file of ["dist/index.js", "dist/index.d.ts", "dist/runtime.js", "dist/runtime.d.ts"]) assert(files.has(file), name, `archive is missing Rspack output ${file}`);
     }
     for (const file of files) {
       assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
@@ -122,17 +131,39 @@ function verifyTypeConsumer(packedPackages) {
   writeFileSync(
     join(consumer, "consumer.ts"),
     `import { parseVooComponent } from "@vooya/compiler";
+import type { SourceComponent } from "@vooya/compiler";
 import { vooya } from "@vooya/vite-plugin";
+import { buildApplication } from "@vooya/build-core";
 import { buildPrecompiledVueArtifact } from "@vooya/vite-plugin/build";
 import { formatVooComponent } from "@vooya/vite-plugin/format";
 import { assertVooAbiVersion, initializeWasm } from "@vooya/vite-plugin/runtime";
+import { vooyaRsbuild, vooyaRspack } from "@vooya/rspack";
 
 void parseVooComponent;
 void vooya;
+const component: SourceComponent = {
+  format: "source", id: "/consumer/Counter.voo", name: "Counter", props: [], events: [],
+  rust: { content: "", startLine: 1 },
+};
+function verifyBuildCoreContract() {
+  const result = buildApplication({
+    applicationRoot: "/consumer", components: [component], rust: { webSysFeatures: ["Node"] },
+    cacheRoot: "/consumer/.voo-cache", workspacePath: "/consumer/.voo-cache", outputDir: "/consumer/.voo-cache/dist",
+    buildMode: "production", framework: "vue",
+  });
+  const wasm: Uint8Array = result.wasm.bytes;
+  const css: string = result.css[0]?.code ?? "";
+  const declaration: string = result.declarations[0]?.code ?? "";
+  const diagnostic: string = result.diagnostics[0] ?? "";
+  return [wasm, css, declaration, diagnostic];
+}
+void verifyBuildCoreContract;
 void buildPrecompiledVueArtifact;
 void formatVooComponent;
 void assertVooAbiVersion;
 void initializeWasm;
+void vooyaRsbuild;
+void vooyaRspack;
 `,
   );
 

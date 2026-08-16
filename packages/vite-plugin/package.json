@@ -42,7 +42,7 @@
     }
   },
   "scripts": {
-    "build": "npm run build --prefix ../compiler && tsc -p tsconfig.json",
+    "build": "npm run build --prefix ../compiler && npm run build --prefix ../build-core && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "npm run build && node --test src/*.test.js"
   },
@@ -50,6 +50,7 @@
     "vite": "^7.0.0 || ^8.0.0"
   },
   "dependencies": {
+    "@vooya/build-core": "0.1.0-alpha.7",
     "@vooya/core": "0.1.0-alpha.7",
     "@vooya/compiler": "0.1.0-alpha.7"
   }

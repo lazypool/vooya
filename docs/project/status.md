@@ -2,16 +2,18 @@
 
 Vooya is a public alpha and an architecture-validation project. It is not a
 stable compiler or a production compatibility promise. The latest published
-coordinated release is `v0.1.0-alpha.5`; use the npm `alpha` tag to resolve the
+coordinated release is `v0.1.0-alpha.7`; use the npm `alpha` tag to resolve the
 latest published set.
 
-The five packages form one coordinated release unit:
+The seven packages form one coordinated release unit:
 
 - `@vooya/compiler`
 - `@vooya/core`
+- `@vooya/build-core`
 - `@vooya/vite-plugin`
 - `@vooya/vue`
 - `@vooya/react`
+- `@vooya/rspack`
 
 Use the same exact version for every package. The npm `alpha` dist-tag identifies
 the latest published set, while `main` can contain changes queued for the next
@@ -41,8 +43,9 @@ prerelease.
 ## Current limits
 
 - Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`.
-- Vite 7 and Vite 8 are the supported source-authoring bundler paths. Webpack,
-  Rspack, Rollup, and other bundlers currently have no `.voo` adapter.
+- Vite 7 and Vite 8 are the stable source-authoring bundler paths. Rspack 2.1
+  has an experimental first-party adapter with Rsbuild, Rslib, and direct
+  Rspack fixtures. Webpack, Rollup, and other bundlers remain unsupported.
 - Vite+ has a compatibility smoke path because it aliases Vite to its bundled
   Vite core; it is not a separate Vooya bundler integration or a promise that
   every Vite+ workflow is supported.

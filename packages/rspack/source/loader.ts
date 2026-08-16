@@ -1,0 +1,29 @@
+// Rspack loads this file as an ESM loader. It intentionally owns only the
+// framework wrapper; Rust/WASM compilation is performed by build-core in the plugin.
+// @ts-nocheck
+import { parseVooComponent } from "@vooya/compiler";
+
+import { renderVooModule } from "./module.js";
+import { getBuildState } from "./state.js";
+
+export default function vooyaRspackLoader(source) {
+  const { framework = "vue", instanceId } = this.getOptions();
+  const state = getBuildState(instanceId);
+  if (!state) {
+    throw new Error("Vooya Rspack loader ran before its build plugin prepared the Rust/WASM artifact.");
+  }
+  const component = parseVooComponent(source.toString(), this.resourcePath);
+  if (component.format !== "source") {
+    throw new Error(`Rspack source integration requires a source .voo component, received ${component.format}.`);
+  }
+  component.id = this.resourcePath;
+  this.addDependency(this.resourcePath);
+  for (const dependency of state.watchedRoots) this.addContextDependency(dependency);
+  for (const dependency of state.watchedFiles) this.addDependency(dependency);
+  return renderVooModule({
+    component,
+    framework,
+    runtimeModule: state.runtimeModule,
+    styleModule: state.styleModules.get(this.resourcePath),
+  });
+}

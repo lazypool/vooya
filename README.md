@@ -29,8 +29,9 @@ Vooya generates the framework adapter, TypeScript declarations, WASM lifecycle,
 event forwarding, and diagnostic mappings.
 
 > [!IMPORTANT]
-> Vooya is a public alpha. Source `.voo` authoring currently requires Vite 7 or
-> Vite 8 and a local Rust/WASM toolchain. Published alpha APIs may still change.
+> Vooya is a public alpha. Source `.voo` authoring supports Vite 7/8 and an
+> experimental Rspack 2.1 path, with a local Rust/WASM toolchain. Published
+> alpha APIs may still change.
 
 ## Why Vooya?
 
@@ -264,6 +265,8 @@ APIs when necessary.
 ## What works today
 
 - source `.voo` components in Vite 7 and Vite 8;
+- experimental source `.voo` components in Rspack 2.1 through Rsbuild or the
+  first-party Rspack plugin;
 - Vue 3.5 and React 19 adapters;
 - typed primitive props and component events;
 - generated mount, prop-update, error, dispose, and ABI bindings;
@@ -278,9 +281,10 @@ APIs when necessary.
 
 Current boundaries:
 
-- Vite is the only supported bundler integration; Vite+ is tested as a
-  Vite-core alias, not as a separate adapter;
-- Webpack, Rspack, Turbopack, Rollup, SSR, and hydration are not supported;
+- Rspack support is experimental and currently verified only against the
+  recorded 2.1 fixtures; Vite+ remains a Vite-core alias rather than a second
+  adapter;
+- Webpack, Turbopack, Rollup, SSR, and hydration are not supported;
 - successful Rust HMR currently performs a full reload and loses local state;
 - component contracts are intentionally limited and will evolve during alpha;
 - the precompiled artifact path is not yet a published component product.
@@ -322,12 +326,14 @@ CLI shown in the quick start above.
 | --- | --- |
 | [`@vooya/compiler`](packages/compiler) | Pure `.voo` parser, IR, code generation, formatting, and scoped styles |
 | [`@vooya/core`](packages/core) | Rust component runtime source and ownership primitives |
+| [`@vooya/build-core`](packages/build-core) | Bundler-neutral Cargo, wasm-bindgen, asset, declaration, watch, and diagnostic pipeline |
 | [`@vooya/vite-plugin`](packages/vite-plugin) | Vite integration, Rust/WASM build orchestration, diagnostics, and CLI |
+| [`@vooya/rspack`](packages/rspack) | Experimental Rspack 2.1 and Rsbuild source `.voo` integration |
 | [`@vooya/vue`](packages/vue) | Vue lifecycle and event adapter |
 | [`@vooya/react`](packages/react) | React lifecycle and event adapter |
 
-All public packages use one coordinated alpha version. Install the adapter and
-Vite plugin from the same `alpha` channel.
+All public packages use one coordinated alpha version. Install the framework
+adapter and selected bundler integration from the same `alpha` channel.
 
 ## Contributing
 
