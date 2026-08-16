@@ -34,7 +34,13 @@ for (const package_ of packages) {
       encoding: "utf8",
     });
     if (result.error) throw result.error;
-    if (result.status !== 0) throw new Error(`npm view ${package_.name} dist-tags failed.`);
+    if (result.status !== 0) {
+      if (checkPublished && isUnpublishedPackage(result.stdout, result.stderr)) {
+        console.log(`Verified ${package_.name} has no published alpha yet; the next release may create it.`);
+        continue;
+      }
+      throw new Error(`npm view ${package_.name} dist-tags failed.`);
+    }
     const tags = JSON.parse(result.stdout);
     if (check && tags.alpha !== package_.version) {
       throw new Error(
@@ -68,3 +74,7 @@ for (const package_ of packages) {
 }
 
 if (!dryRun && !check && !checkPublished) console.log("Synchronized alpha dist-tags for all @vooya packages.");
+
+function isUnpublishedPackage(stdout: string, stderr: string): boolean {
+  return /(?:\bE404\b|404 Not Found)/.test(`${stdout}\n${stderr}`);
+}
