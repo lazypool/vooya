@@ -98,7 +98,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
   instanceId: string;
   buildError?: Error;
   buildId?: string;
-  runtimeChanged: boolean;
 
   constructor({ framework = "vue", rust = {}, cacheRoot }: VooyaRspackOptions = {}) {
     if (framework !== "vue" && framework !== "react") throw new Error(`Unknown Vooya framework ${framework}.`);
@@ -108,7 +107,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
     this.instanceId = `vooya-rspack-${nextInstance++}`;
     this.buildError = undefined;
     this.buildId = undefined;
-    this.runtimeChanged = false;
   }
 
   rule(): VooyaRspackRule {
@@ -122,7 +120,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
   apply(input: unknown): void {
     const compiler = input as RspackCompilerLike;
     compiler.hooks.beforeCompile.tapPromise("vooya", async () => {
-      this.runtimeChanged = false;
       try {
         const applicationRoot = compiler.context;
         const components = readVooComponents(applicationRoot);
@@ -139,7 +136,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
         });
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
         const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
-        this.runtimeChanged = this.buildId !== undefined && this.buildId !== buildId;
         this.buildId = buildId;
         setBuildState(this.instanceId, {
           // The generated wasm-bindgen JavaScript is often byte-for-byte
@@ -177,20 +173,18 @@ export class VooyaRspackPlugin implements RspackPluginLike {
     compiler.hooks.watchClose.tap("vooya", () => {
       deleteBuildState(this.instanceId);
       this.buildId = undefined;
-      this.runtimeChanged = false;
     });
   }
 
-  consumeRuntimeChange(): boolean {
-    const changed = this.runtimeChanged;
-    this.runtimeChanged = false;
-    return changed;
+  currentBuildId(): string | undefined {
+    return this.buildId;
   }
 }
 
 export function vooyaRsbuild(options: VooyaRspackOptions = {}): VooyaRsbuildPlugin {
   const plugin = vooyaRspack(options);
   let devServer: RsbuildDevServerLike | undefined;
+  let deliveredBuildId: string | undefined;
   return {
     name: "vooya-rsbuild",
     setup(api) {
@@ -209,8 +203,13 @@ export function vooyaRsbuild(options: VooyaRspackOptions = {}): VooyaRsbuildPlug
         };
       });
       api.onAfterDevCompile(({ isFirstCompile, stats }) => {
-        const runtimeChanged = plugin.consumeRuntimeChange();
-        if (!isFirstCompile && runtimeChanged && !stats.hasErrors()) {
+        const buildId = plugin.currentBuildId();
+        if (isFirstCompile) {
+          deliveredBuildId = buildId;
+          return;
+        }
+        if (buildId && buildId !== deliveredBuildId && !stats.hasErrors()) {
+          deliveredBuildId = buildId;
           // Rsbuild exposes an explicit dev-server reload channel. Use it for
           // rebuilt WASM so behavior does not depend on platform-specific HMR
           // inference for generated wasm-bindgen modules.
