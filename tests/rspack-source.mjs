@@ -61,8 +61,11 @@ async function verifyDevRecovery(project) {
     if (!/Counter\.voo:\d+/.test(output)) throw new Error(`Rspack did not retain the mapped .voo Rust diagnostic.\n${output}`);
     if (server.exitCode !== null) throw new Error("Rsbuild exited after a failed Rust rebuild.");
 
-    writeFileSync(componentPath, source.replace('text("Increment")', 'text("Increment recovered")'));
-    await page.getByRole("button", { name: "Increment recovered" }).waitFor({ timeout: 30_000 });
+    writeFileSync(componentPath, source);
+    await page.getByRole("button", { name: "Increment" }).waitFor({ timeout: 30_000 });
+    const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
+    writeFileSync(dependencyPath, 'pub fn button_label() -> &\'static str { "Increment dependency" }\n');
+    await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
     console.log("Verified Rsbuild Rust failure recovery without restarting the dev server.");
   } finally {
     await browser?.close();

@@ -3,5 +3,5 @@ import { pluginVue } from "@rsbuild/plugin-vue";
 import { vooyaRsbuild } from "@vooya/rspack";
 
 export default defineConfig({
-  plugins: [pluginVue(), vooyaRsbuild()],
+  plugins: [pluginVue(), vooyaRsbuild({ rust: { dependencies: { counter_math: { path: "rust/counter-math" } } } })],
 });
