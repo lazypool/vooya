@@ -4,6 +4,10 @@ Vooya currently targets existing Vite 7 or Vite 8 applications using Vue 3 or
 React 19. Source `.voo` components are compiled on the application author's
 machine, so both the JavaScript and Rust toolchains are required.
 
+This guide covers authoring source `.voo` components. Vooya does not currently
+publish a user-facing precompiled component product, so the Rust/WASM
+prerequisites below apply to this flow.
+
 ## Prerequisites
 
 - A Node.js version supported by your Vite version (`^20.19.0` or `>=22.12.0`
@@ -26,31 +30,49 @@ cargo install wasm-bindgen-cli --version 0.2.115 --locked
 wasm-bindgen --version
 ```
 
-After installing the Vite plugin, verify the exact programs that Vite will
-inherit from `PATH`:
-
-```sh
-npm exec -- vooya doctor
-```
-
-The command checks `cargo`, `rustc`, the `wasm32-unknown-unknown` target, and
-the pinned `wasm-bindgen` CLI. On Windows MSVC toolchains, it also checks for
-`link.exe`. It reports the executable paths and warns when the active Rust
-sysroot is not managed by rustup, which commonly means a Homebrew toolchain is
-taking precedence.
-
 All `@vooya` packages must use the same alpha version. The repository `main`
 branch can lead the npm `alpha` tag while a breaking prerelease is being
 prepared; do not mix source from `main` with older published adapters.
+
+## npm and pnpm
+
+The examples below show both npm and pnpm commands.
+
+pnpm 11 may block dependency install scripts until they are explicitly
+approved. If pnpm reports that the `esbuild` build was ignored, approve
+`esbuild` specifically:
+
+```sh
+pnpm approve-builds esbuild
+```
+
+Only do this when pnpm reports `esbuild` as blocked. The approval allows
+esbuild's install script to run. esbuild uses that script to verify or install
+the platform-specific native executable for the current system.
+
+You can inspect packages whose build scripts are currently blocked with:
+
+```sh
+pnpm ignored-builds
+```
 
 ## Vue
 
 Install the Vue adapter and Vite plugin in an existing Vue application. The
 application must already depend on `vue`, `vite`, and `@vitejs/plugin-vue`.
 
+npm:
+
 ```sh
 npm install @vooya/vue@alpha
 npm install --save-dev @vooya/vite-plugin@alpha
+```
+
+pnpm:
+
+```sh
+pnpm add @vooya/vue@alpha
+pnpm add --save-dev @vooya/vite-plugin@alpha
 ```
 
 Add `vooya()` after the Vue plugin:
@@ -65,20 +87,25 @@ export default defineConfig({
 });
 ```
 
-For a production build, run the application's normal Vite command:
-
-```sh
-npm run dev
-npm run build
-```
+Continue to [Verify before the first dev run](#verify-before-the-first-dev-run)
+before starting Vite.
 
 ## React
 
-Install the React adapter and Vite plugin:
+Install the React adapter and Vite plugin.
+
+npm:
 
 ```sh
 npm install @vooya/react@alpha
 npm install --save-dev @vooya/vite-plugin@alpha
+```
+
+pnpm:
+
+```sh
+pnpm add @vooya/react@alpha
+pnpm add --save-dev @vooya/vite-plugin@alpha
 ```
 
 Select the React adapter in Vite:
@@ -91,6 +118,51 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react(), vooya({ framework: "react" })],
 });
+```
+
+Continue to [Verify before the first dev run](#verify-before-the-first-dev-run)
+before starting Vite.
+
+## Verify before the first dev run
+
+Before starting Vite for the first time, verify the exact programs it will
+inherit from `PATH`.
+
+npm:
+
+```sh
+npm exec -- vooya doctor
+```
+
+pnpm:
+
+```sh
+pnpm exec vooya doctor
+```
+
+The command checks `cargo`, `rustc`, the `wasm32-unknown-unknown` target, and
+the pinned `wasm-bindgen` CLI. On Windows MSVC toolchains, it also checks for
+`link.exe`. It reports the executable paths and warns when the active Rust
+sysroot is not managed by rustup, which commonly means a Homebrew toolchain is
+taking precedence.
+
+If the doctor reports a Rust or WASM problem, return to
+[Prerequisites](#prerequisites) before starting the development server.
+
+Run the application's normal Vite scripts after the doctor passes.
+
+npm:
+
+```sh
+npm run dev
+npm run build
+```
+
+pnpm:
+
+```sh
+pnpm run dev
+pnpm run build
 ```
 
 ## First component
