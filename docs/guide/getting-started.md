@@ -273,3 +273,33 @@ npm run test:vite-plus
 
 This is a compatibility smoke path, not a claim that Vooya owns Vite+'s
 runtime, package manager, task runner, or every bundled tool.
+
+## Experimental Rspack 2.1 path
+
+For an existing Rsbuild Vue application, install the Vue adapter and Rspack
+integration from the same alpha channel:
+
+```sh
+npm install @vooya/vue@alpha
+npm install --save-dev @vooya/rspack@alpha
+```
+
+Add the integration beside the normal Vue plugin:
+
+```ts
+import { defineConfig } from "@rsbuild/core";
+import { pluginVue } from "@rsbuild/plugin-vue";
+import { vooyaRsbuild } from "@vooya/rspack";
+
+export default defineConfig({
+  plugins: [pluginVue(), vooyaRsbuild()],
+});
+```
+
+React projects use `vooyaRsbuild({ framework: "react" })` with their normal
+Rsbuild React plugin. Direct Rspack configuration is documented in the
+[`@vooya/rspack` package README](../../packages/rspack/README.md).
+
+This path currently requires Rspack 2.1 and the same local Rust/WASM tools as
+Vite. It is experimental; SSR, Module Federation, Rspack 1.x, and arbitrary
+Rspack 2.x releases are not yet support claims.

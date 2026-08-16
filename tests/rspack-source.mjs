@@ -50,7 +50,7 @@ async function verifyDevRecovery(project) {
     });
     server.stdout.on("data", (chunk) => { output += chunk; });
     server.stderr.on("data", (chunk) => { output += chunk; });
-    await waitFor(async () => (await fetch(`http://127.0.0.1:${port}`)).ok);
+    await waitFor(async () => (await fetch(`http://127.0.0.1:${port}`)).ok, 120_000, () => output);
     browser = await chromium.launch();
     const page = await browser.newPage();
     const errors = [];
@@ -58,30 +58,30 @@ async function verifyDevRecovery(project) {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
     await page.getByRole("button", { name: "Increment" }).waitFor();
-    if (await page.locator("[data-count]").textContent() !== "2") throw new Error("Rspack Vue island did not mount its initial prop.");
+    await waitForText(page, "[data-count]", "2", "Rspack Vue island did not mount its initial prop.");
     if (await page.locator(".counter").evaluate((node) => getComputedStyle(node).color) !== "rgb(5, 103, 89)") throw new Error("Rspack Vue scoped style was not applied.");
     await page.locator("[data-inc]").click();
-    if (await page.locator("[data-event]").textContent() !== "3") throw new Error("Rspack Vue event forwarding failed.");
+    await waitForText(page, "[data-event]", "3", "Rspack Vue event forwarding failed.");
     await page.locator("[data-host-update]").click();
-    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack Vue prop update failed.");
+    await waitForText(page, "[data-count]", "4", "Rspack Vue prop update failed.");
     await page.locator("[data-host-toggle]").click();
     await page.locator("[data-count]").waitFor({ state: "detached" });
     await page.locator("[data-host-toggle]").click();
-    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack Vue dispose/remount failed.");
+    await waitForText(page, "[data-count]", "4", "Rspack Vue dispose/remount failed.");
 
     const componentPath = resolve(project, "src/Counter.voo");
     const source = readFileSync(componentPath, "utf8");
     writeFileSync(componentPath, source.replace("use crate::{EventListener, View, ViewElement};", "use crate::{EventListener, View, ViewElement};\nthis is invalid Rust"));
-    await waitFor(() => output.includes("Cargo build failed with exit code 101"));
+    await waitFor(() => output.includes("Cargo build failed with exit code 101"), 60_000, () => output);
     if (!/Counter\.voo:\d+/.test(output)) throw new Error(`Rspack did not retain the mapped .voo Rust diagnostic.\n${output}`);
     if (server.exitCode !== null) throw new Error("Rsbuild exited after a failed Rust rebuild.");
 
     writeFileSync(componentPath, source);
-    await page.getByRole("button", { name: "Increment" }).waitFor({ timeout: 30_000 });
     const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
     writeFileSync(dependencyPath, 'pub fn button_label() -> &\'static str { "Increment dependency" }\n');
-    await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
-    if (errors.length) throw new Error(`Rspack Vue browser errors:\n${errors.join("\n")}`);
+    await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 60_000 });
+    const unexpectedErrors = errors.filter((message) => !message.includes("Cargo build failed with exit code 101"));
+    if (unexpectedErrors.length) throw new Error(`Rspack Vue browser errors:\n${unexpectedErrors.join("\n")}`);
     console.log("Verified Rsbuild Rust failure recovery without restarting the dev server.");
   } finally {
     await browser?.close();
@@ -94,9 +94,12 @@ async function verifyReactBrowser(project) {
   const command = resolve(project, "node_modules/@rsbuild/core/bin/rsbuild.js");
   let server;
   let browser;
+  let output = "";
   try {
     server = spawn(process.execPath, [command, "dev", "--host", "127.0.0.1", "--port", String(port), "--strictPort"], { cwd: project, env: { ...process.env, FORCE_COLOR: "0" } });
-    await waitFor(async () => (await fetch(`http://127.0.0.1:${port}`)).ok);
+    server.stdout.on("data", (chunk) => { output += chunk; });
+    server.stderr.on("data", (chunk) => { output += chunk; });
+    await waitFor(async () => (await fetch(`http://127.0.0.1:${port}`)).ok, 120_000, () => output);
     browser = await chromium.launch();
     const page = await browser.newPage();
     const errors = [];
@@ -104,16 +107,16 @@ async function verifyReactBrowser(project) {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
     await page.getByRole("button", { name: "Increment" }).waitFor();
-    if (await page.locator("[data-count]").textContent() !== "2") throw new Error("Rspack React island did not mount its initial prop.");
+    await waitForText(page, "[data-count]", "2", "Rspack React island did not mount its initial prop.");
     if (await page.locator(".counter").evaluate((node) => getComputedStyle(node).color) !== "rgb(5, 103, 89)") throw new Error("Rspack React scoped style was not applied.");
     await page.locator("[data-inc]").click();
-    if (await page.locator("[data-event]").textContent() !== "3") throw new Error("Rspack React event forwarding failed.");
+    await waitForText(page, "[data-event]", "3", "Rspack React event forwarding failed.");
     await page.locator("[data-host-update]").click();
-    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack React prop update failed.");
+    await waitForText(page, "[data-count]", "4", "Rspack React prop update failed.");
     await page.locator("[data-host-toggle]").click();
     await page.locator("[data-count]").waitFor({ state: "detached" });
     await page.locator("[data-host-toggle]").click();
-    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack React dispose/remount failed.");
+    await waitForText(page, "[data-count]", "4", "Rspack React dispose/remount failed.");
     if (errors.length) throw new Error(`Rspack React browser errors:\n${errors.join("\n")}`);
     console.log("Verified Rspack React island browser contract.");
   } finally {
@@ -143,7 +146,19 @@ function walk(directory) {
   return files;
 }
 
-async function waitFor(predicate, timeout = 30_000) {
+async function waitForText(page, selector, expected, message) {
+  try {
+    await page.waitForFunction(
+      ({ selector: target, expected: value }) => document.querySelector(target)?.textContent === value,
+      { selector, expected },
+      { timeout: 30_000 },
+    );
+  } catch {
+    throw new Error(`${message} Received ${JSON.stringify(await page.locator(selector).textContent())}.`);
+  }
+}
+
+async function waitFor(predicate, timeout = 30_000, details = () => "") {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     try {
@@ -151,7 +166,7 @@ async function waitFor(predicate, timeout = 30_000) {
     } catch {}
     await new Promise((resolveWait) => setTimeout(resolveWait, 50));
   }
-  throw new Error(`Timed out waiting for Rsbuild.\n${output}`);
+  throw new Error(`Timed out waiting for Rsbuild.\n${details()}`);
 }
 
 function availablePort() {

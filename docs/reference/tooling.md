@@ -81,6 +81,25 @@ through Vite and does not poison the next rebuild.
 A successful Rust rebuild currently triggers a full page reload. Component
 state is not preserved.
 
+## Rspack and Rsbuild
+
+`@vooya/rspack` exposes `vooyaRsbuild()` for Rsbuild projects and
+`vooyaRspack()` for direct Rspack configuration. Both call the same
+`@vooya/build-core` Cargo and wasm-bindgen pipeline as Vite.
+
+```ts
+import { vooyaRsbuild } from "@vooya/rspack";
+
+vooyaRsbuild({
+  framework: "vue",
+  rust: { dependencies: { "shared-engine": { path: "rust/shared-engine" } } },
+});
+```
+
+The current compatibility claim is limited to Rspack 2.1.10 and the named
+Rsbuild/Rslib fixtures. Direct Rspack users must configure their normal
+framework and CSS rules in addition to `vooyaRspack().rule()`.
+
 ## Formatting
 
 `voo-format` canonicalizes the component contract while preserving Rust and CSS

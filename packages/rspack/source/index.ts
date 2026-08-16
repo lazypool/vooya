@@ -1,12 +1,14 @@
-// This package has no Rspack runtime dependency. It uses Rspack's plugin and
-// loader protocols structurally so one built package spans the verified 1.x/2.x range.
-// @ts-nocheck
+// This package has no bundled Rspack runtime dependency. It uses Rspack's
+// public plugin and loader protocols and is currently verified against 2.1.x.
+import { Buffer } from "node:buffer";
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildApplication } from "@vooya/build-core";
-import { compileVooStyle, generateVooDeclaration, parseVooComponent } from "@vooya/compiler";
+import type { BuildApplicationResult, RustBuildOptions } from "@vooya/build-core";
+import { parseVooComponent } from "@vooya/compiler";
+import type { SourceComponent } from "@vooya/compiler";
 
 import { deleteBuildState, getBuildState, setBuildState } from "./state.js";
 
@@ -14,12 +16,74 @@ const loaderPath = fileURLToPath(new URL("./loader.js", import.meta.url));
 const ignoredDirectories = new Set([".git", ".voo-cache", ".vooya", "dist", "node_modules", "target"]);
 let nextInstance = 0;
 
-export function vooyaRspack(options = {}) {
+export interface VooyaRspackOptions {
+  framework?: "vue" | "react";
+  rust?: RustBuildOptions;
+  cacheRoot?: string;
+}
+
+export interface VooyaRspackRule {
+  test: RegExp;
+  loader: string;
+  options: {
+    framework: "vue" | "react";
+    instanceId: string;
+  };
+}
+
+interface RspackCompilationLike {
+  errors: Error[];
+  contextDependencies: { add(path: string): unknown };
+  emitAsset(name: string, source: unknown): void;
+}
+
+interface RspackCompilerLike {
+  context: string;
+  options: { mode?: string };
+  rspack: { sources: { RawSource: new (value: unknown) => unknown } };
+  hooks: {
+    beforeCompile: {
+      tapPromise(name: string, callback: () => Promise<void>): void;
+    };
+    thisCompilation: {
+      tap(name: string, callback: (compilation: RspackCompilationLike) => void): void;
+    };
+    watchClose: {
+      tap(name: string, callback: () => void): void;
+    };
+  };
+}
+
+interface RspackPluginLike {
+  apply(compiler: unknown): void;
+}
+
+interface RspackConfigLike {
+  plugins?: RspackPluginLike[];
+  module?: { rules?: VooyaRspackRule[] };
+}
+
+interface RsbuildApiLike {
+  modifyRspackConfig(callback: (config: RspackConfigLike) => RspackConfigLike): void;
+}
+
+export interface VooyaRsbuildPlugin {
+  name: string;
+  setup(api: RsbuildApiLike): void;
+}
+
+export function vooyaRspack(options: VooyaRspackOptions = {}): VooyaRspackPlugin {
   return new VooyaRspackPlugin(options);
 }
 
-export class VooyaRspackPlugin {
-  constructor({ framework = "vue", rust = {}, cacheRoot } = {}) {
+export class VooyaRspackPlugin implements RspackPluginLike {
+  framework: "vue" | "react";
+  rust: RustBuildOptions;
+  cacheRoot?: string;
+  instanceId: string;
+  buildError?: Error;
+
+  constructor({ framework = "vue", rust = {}, cacheRoot }: VooyaRspackOptions = {}) {
     if (framework !== "vue" && framework !== "react") throw new Error(`Unknown Vooya framework ${framework}.`);
     this.framework = framework;
     this.rust = rust;
@@ -28,7 +92,7 @@ export class VooyaRspackPlugin {
     this.buildError = undefined;
   }
 
-  rule() {
+  rule(): VooyaRspackRule {
     return {
       test: /\.voo$/,
       loader: loaderPath,
@@ -36,7 +100,8 @@ export class VooyaRspackPlugin {
     };
   }
 
-  apply(compiler) {
+  apply(input: unknown): void {
+    const compiler = input as RspackCompilerLike;
     compiler.hooks.beforeCompile.tapPromise("vooya", async () => {
       try {
         const applicationRoot = compiler.context;
@@ -50,8 +115,9 @@ export class VooyaRspackPlugin {
           workspacePath,
           outputDir: resolve(workspacePath, "dist"),
           buildMode: compiler.options.mode === "development" ? "development" : "production",
+          framework: this.framework,
         });
-        const styleModules = writeGeneratedFiles({ components, framework: this.framework, workspacePath });
+        const styleModules = writeGeneratedFiles({ components, result, workspacePath });
         setBuildState(this.instanceId, {
           runtimeModule: result.runtimeModule,
           wasm: result.wasm.bytes,
@@ -78,14 +144,14 @@ export class VooyaRspackPlugin {
       // paths a loadable, deterministic emitted asset.
       compilation.emitAsset(
         "vooya_app_bg.wasm",
-        new compiler.rspack.sources.RawSource(state.wasm),
+        new compiler.rspack.sources.RawSource(Buffer.from(state.wasm)),
       );
     });
     compiler.hooks.watchClose.tap("vooya", () => deleteBuildState(this.instanceId));
   }
 }
 
-export function vooyaRsbuild(options = {}) {
+export function vooyaRsbuild(options: VooyaRspackOptions = {}): VooyaRsbuildPlugin {
   const plugin = vooyaRspack(options);
   return {
     name: "vooya-rsbuild",
@@ -102,16 +168,18 @@ export function vooyaRsbuild(options = {}) {
   };
 }
 
-function readVooComponents(root) {
+type PreparedSourceComponent = SourceComponent & { id: string };
+
+function readVooComponents(root: string): PreparedSourceComponent[] {
   return readVooFiles(root).map((id) => {
     const component = parseVooComponent(readFileSync(id, "utf8"), id);
     component.id = id;
     return component;
-  }).filter((component) => component.format === "source");
+  }).filter((component): component is PreparedSourceComponent => component.format === "source");
 }
 
-function readVooFiles(directory) {
-  const files = [];
+function readVooFiles(directory: string): string[] {
+  const files: string[] = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     if (ignoredDirectories.has(entry.name)) continue;
     const path = join(directory, entry.name);
@@ -121,15 +189,40 @@ function readVooFiles(directory) {
   return files;
 }
 
-function writeGeneratedFiles({ components, framework, workspacePath }) {
-  const styles = new Map();
-  for (const component of components) {
-    writeFileSync(component.id.replace(/\.voo$/, ".d.voo.ts"), generateVooDeclaration(component, framework));
-    if (!component.style) continue;
-    const stylePath = resolve(workspacePath, "styles", `${component.name}.css`);
+function writeGeneratedFiles({
+  components,
+  result,
+  workspacePath,
+}: {
+  components: PreparedSourceComponent[];
+  result: BuildApplicationResult;
+  workspacePath: string;
+}): Map<string, string> {
+  const styles = new Map<string, string>();
+  const declarations = new Map(result.declarations.map((declaration) => [declaration.componentId, declaration.code]));
+  const css = new Map(result.css.map((style) => [style.componentId, style.code]));
+  for (const [index, component] of components.entries()) {
+    const declaration = declarations.get(component.id);
+    if (declaration === undefined) {
+      throw new Error(`Vooya build core did not return a declaration for ${component.id}.`);
+    }
+    writeIfChanged(component.id.replace(/\.voo$/, ".d.voo.ts"), declaration);
+    const style = css.get(component.id);
+    if (style === undefined) continue;
+    const stylePath = resolve(workspacePath, "styles", `${index}-${component.name}.css`);
     mkdirSync(dirname(stylePath), { recursive: true });
-    writeFileSync(stylePath, compileVooStyle(component));
+    writeIfChanged(stylePath, style);
     styles.set(component.id, stylePath);
   }
   return styles;
+}
+
+function writeIfChanged(path: string, content: string): void {
+  try {
+    if (readFileSync(path, "utf8") === content) return;
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+  }
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, content);
 }

@@ -41,8 +41,9 @@ prerelease.
 ## Current limits
 
 - Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`.
-- Vite 7 and Vite 8 are the supported source-authoring bundler paths. Webpack,
-  Rspack, Rollup, and other bundlers currently have no `.voo` adapter.
+- Vite 7 and Vite 8 are the stable source-authoring bundler paths. Rspack 2.1
+  has an experimental first-party adapter with Rsbuild, Rslib, and direct
+  Rspack fixtures. Webpack, Rollup, and other bundlers remain unsupported.
 - Vite+ has a compatibility smoke path because it aliases Vite to its bundled
   Vite core; it is not a separate Vooya bundler integration or a promise that
   every Vite+ workflow is supported.

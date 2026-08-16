@@ -1,6 +1,6 @@
 type BuildState = {
   runtimeModule: string;
-  wasm: Buffer;
+  wasm: Uint8Array;
   styleModules: Map<string, string>;
   watchedFiles: string[];
 };

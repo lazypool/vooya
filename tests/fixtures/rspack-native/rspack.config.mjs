@@ -7,6 +7,7 @@ export default {
   mode: "production",
   entry: "./src/main.js",
   output: { path: resolve(import.meta.dirname, "dist"), clean: true },
-  module: { rules: [plugin.rule()] },
+  experiments: { css: true },
+  module: { rules: [plugin.rule(), { test: /\.css$/, type: "css" }] },
   plugins: [plugin],
 };
