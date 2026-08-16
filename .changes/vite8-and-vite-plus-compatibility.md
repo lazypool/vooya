@@ -1,9 +1,11 @@
 ---
 vooya-compiler: "patch:fix"
 vooya-core: "patch:fix"
+vooya-build-core: "patch:fix"
 vooya-vite-plugin: "patch:fix"
 vooya-vue: "patch:fix"
 vooya-react: "patch:fix"
+vooya-rspack: "patch:fix"
 ---
 
 Verify Vite 8 source authoring, keep the runtime ABI entry browser-light, and
