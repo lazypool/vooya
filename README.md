@@ -29,8 +29,8 @@ Vooya generates the framework adapter, TypeScript declarations, WASM lifecycle,
 event forwarding, and diagnostic mappings.
 
 > [!IMPORTANT]
-> Vooya is a public alpha. Source `.voo` authoring currently requires Vite 7
-> and a local Rust/WASM toolchain. Published alpha APIs may still change.
+> Vooya is a public alpha. Source `.voo` authoring currently requires Vite 7 or
+> Vite 8 and a local Rust/WASM toolchain. Published alpha APIs may still change.
 
 ## Why Vooya?
 
@@ -67,15 +67,16 @@ rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli --version 0.2.115 --locked
 ```
 
-### 2. Create a Vite 7 application
+### 2. Create a Vite 7 or Vite 8 application
 
-The current Vooya alpha supports Vite 7. Pin `create-vite@7` so a new project
-does not silently select an unverified Vite major.
+The current Vooya alpha supports Vite 7 and Vite 8. Pin the matching
+`create-vite` major so a new project does not silently select an unverified Vite
+major.
 
 Using npm:
 
 ```sh
-npm create vite@7 vooya-demo -- --template vue-ts
+npm create vite@8 vooya-demo -- --template vue-ts
 cd vooya-demo
 npm install
 npm install @vooya/vue@alpha
@@ -85,7 +86,7 @@ npm install --save-dev @vooya/vite-plugin@alpha
 Using pnpm:
 
 ```sh
-pnpm create vite@7 vooya-demo --template vue-ts
+pnpm create vite@8 vooya-demo --template vue-ts
 cd vooya-demo
 pnpm install
 pnpm add @vooya/vue@alpha
@@ -193,10 +194,10 @@ source to WASM, and writes an adjacent TypeScript declaration for the component.
 
 ## Using React
 
-Create a Vite 7 React project and install the React adapter:
+Create a Vite 8 React project and install the React adapter:
 
 ```sh
-npm create vite@7 vooya-react-demo -- --template react-ts
+npm create vite@8 vooya-react-demo -- --template react-ts
 cd vooya-react-demo
 npm install
 npm install @vooya/react@alpha
@@ -262,7 +263,7 @@ APIs when necessary.
 
 ## What works today
 
-- source `.voo` components in Vite 7;
+- source `.voo` components in Vite 7 and Vite 8;
 - Vue 3.5 and React 19 adapters;
 - typed primitive props and component events;
 - generated mount, prop-update, error, dispose, and ABI bindings;
@@ -277,7 +278,8 @@ APIs when necessary.
 
 Current boundaries:
 
-- Vite is the only supported bundler integration;
+- Vite is the only supported bundler integration; Vite+ is tested as a
+  Vite-core alias, not as a separate adapter;
 - Webpack, Rspack, Turbopack, Rollup, SSR, and hydration are not supported;
 - successful Rust HMR currently performs a full reload and loses local state;
 - component contracts are intentionally limited and will evolve during alpha;
