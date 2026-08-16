@@ -12,6 +12,7 @@ import { parseVooComponent } from "@vooya/compiler";
 import type { SourceComponent } from "@vooya/compiler";
 
 import { deleteBuildState, getBuildState, setBuildState } from "./state.js";
+import { hasWatchedRustChange } from "./watch.js";
 
 const loaderPath = fileURLToPath(new URL("./loader.js", import.meta.url));
 const ignoredDirectories = new Set([".git", ".voo-cache", ".vooya", "dist", "node_modules", "target"]);
@@ -140,8 +141,7 @@ export class VooyaRspackPlugin implements RspackPluginLike {
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
         const watchedRoots = result.watchedFiles;
         const watchedFiles = readWatchedRustFiles(watchedRoots);
-        const watchedRustFiles = new Set(watchedFiles);
-        if ([...(compiler.modifiedFiles ?? [])].some((file) => watchedRustFiles.has(file))) {
+        if (hasWatchedRustChange(compiler.modifiedFiles, watchedRoots, watchedFiles, applicationRoot)) {
           // Rspack starts a compilation for Rust dependency changes, but its
           // loader cache does not consistently rebuild the unchanged .voo
           // resource on every platform. Mark the source components as part of
