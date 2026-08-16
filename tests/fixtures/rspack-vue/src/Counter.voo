@@ -1,6 +1,7 @@
 <component name="Counter">
 props:
   initial: i32 = 1
+
 events:
   change(value: i32)
 </component>
