@@ -45,6 +45,41 @@ fn mount() {
   assert.equal(formatVooComponent(formatted, "Counter.voo"), formatted);
 });
 
+test("formats quoted contract defaults containing // and preserves comments", () => {
+  const source = `<component name="Link">
+ props:
+ href:String="https://vooya.dev/docs"
+ endpoint: String = "https://vooya.dev" // public documentation
+ embedded: String = "a//b"
+ escaped: String = "quoted \\"//\\" text" // trailing comment with //
+ events:
+ navigate( target : String ) // navigate handler
+</component>
+<rust>
+fn mount() {}
+</rust>`;
+
+  const expected = `<component name="Link">
+props:
+  href: String = "https://vooya.dev/docs"
+  endpoint: String = "https://vooya.dev" // public documentation
+  embedded: String = "a//b"
+  escaped: String = "quoted \\"//\\" text" // trailing comment with //
+
+events:
+  navigate(target: String) // navigate handler
+</component>
+
+<rust>
+fn mount() {}
+</rust>
+`;
+
+  const formatted = formatVooComponent(source, "Link.voo");
+  assert.equal(formatted, expected);
+  assert.equal(formatVooComponent(formatted, "Link.voo"), expected);
+});
+
 test("formats components without contracts or styles", () => {
   assert.equal(
     formatVooComponent(
