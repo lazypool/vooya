@@ -1,6 +1,7 @@
 import type { CodegenComponent, VooEvent, VooEventParameter } from "./types.js";
+import { VOO_ABI_VERSION } from "./abi.js";
 
-export const VOO_ABI_VERSION = 1;
+export { VOO_ABI_VERSION } from "./abi.js";
 
 export function generateRustComponents(
   components: CodegenComponent[],

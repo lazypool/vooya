@@ -5,7 +5,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseVooComponent } from "../../packages/compiler/src/index.js";
+// verify:docs builds the compiler package before executing this generated script.
+// @ts-ignore -- dist is generated and intentionally absent from source control.
+import { parseVooComponent } from "../../packages/compiler/dist/index.js";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const docsRoot = resolve(root, "docs");

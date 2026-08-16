@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Product boundary
+    url: https://github.com/vooyajs/vooya/issues/16
+    about: Read the current 0.1 product direction before proposing a large expansion.
+  - name: Security report
+    url: https://github.com/vooyajs/vooya/security
+    about: Use the Security tab instead of publishing vulnerability details.

@@ -1,19 +1,28 @@
 # Getting Started
 
-Vooya currently targets existing Vite applications using Vue 3 or React 19.
-Source `.voo` components are compiled on the application author's machine, so
-both the JavaScript and Rust toolchains are required.
+Vooya currently targets existing Vite 7 or Vite 8 applications using Vue 3 or
+React 19. Source `.voo` components are compiled on the application author's
+machine, so both the JavaScript and Rust toolchains are required.
 
-This guide covers authoring source `.voo` components. Consuming precompiled
-artifacts is a separate path; it does not change the source-authoring
-prerequisites below.
+This guide covers authoring source `.voo` components. Vooya does not currently
+publish a user-facing precompiled component product, so the Rust/WASM
+prerequisites below apply to this flow.
 
 ## Prerequisites
 
-- A Node.js version supported by Vite 7.
+- A Node.js version supported by your Vite version (`^20.19.0` or `>=22.12.0`
+  for Vite 8).
 - A current stable Rust toolchain.
 - The `wasm32-unknown-unknown` Rust target.
 - `wasm-bindgen-cli` version `0.2.115` for the current alpha runtime.
+
+### Windows MSVC prerequisite
+
+If Rust reports a host ending in `-pc-windows-msvc`, install Visual Studio Build
+Tools before installing `wasm-bindgen-cli`. Select the **Desktop development with
+C++** workload, including MSVC C++ build tools and a Windows SDK. Cargo needs the
+MSVC linker, `link.exe`, to compile the CLI. Reopen the terminal after installation
+so the linker is available on `PATH`.
 
 ```sh
 rustup target add wasm32-unknown-unknown
@@ -38,8 +47,8 @@ pnpm approve-builds esbuild
 ```
 
 Only do this when pnpm reports `esbuild` as blocked. The approval allows
-esbuild's install script to run. esbuild uses that script to verify the
-platform-specific native executable installed for the current system.
+esbuild's install script to run. esbuild uses that script to verify or install
+the platform-specific native executable for the current system.
 
 You can inspect packages whose build scripts are currently blocked with:
 
@@ -78,6 +87,9 @@ export default defineConfig({
 });
 ```
 
+Continue to [Verify before the first dev run](#verify-before-the-first-dev-run)
+before starting Vite.
+
 ## React
 
 Install the React adapter and Vite plugin.
@@ -108,6 +120,9 @@ export default defineConfig({
 });
 ```
 
+Continue to [Verify before the first dev run](#verify-before-the-first-dev-run)
+before starting Vite.
+
 ## Verify before the first dev run
 
 Before starting Vite for the first time, verify the exact programs it will
@@ -126,9 +141,10 @@ pnpm exec vooya doctor
 ```
 
 The command checks `cargo`, `rustc`, the `wasm32-unknown-unknown` target, and
-the pinned `wasm-bindgen` CLI. It reports the executable paths and warns when
-the active Rust sysroot is not managed by rustup, which commonly means a
-Homebrew toolchain is taking precedence.
+the pinned `wasm-bindgen` CLI. On Windows MSVC toolchains, it also checks for
+`link.exe`. It reports the executable paths and warns when the active Rust
+sysroot is not managed by rustup, which commonly means a Homebrew toolchain is
+taking precedence.
 
 If the doctor reports a Rust or WASM problem, return to
 [Prerequisites](#prerequisites) before starting the development server.
@@ -229,3 +245,29 @@ See the working [Vue counter](../../examples/vue-counter) and
 larger Rust-owned rendering surface, run the
 [150,000 point Vue scatter plot](../../examples/scatter-plot) with
 `npm run dev:scatter`.
+
+## Vite+
+
+Vite+ is a unified CLI and toolchain around Vite, not a separate Vooya adapter.
+The tested Vite+ path uses Vite+ 0.2.9's Vite core alias and the same
+`vooya()` plugin configuration:
+
+```sh
+npm install --save-dev vite-plus@0.2.9
+npx vp build
+```
+
+For a project managed by Vite+, follow its installation and migration guide,
+including the documented `vite` alias to
+`@voidzero-dev/vite-plus-core`. Keep `vooya()` in the normal Vite plugin list;
+the current fixture needs npm's legacy peer resolver because the aliased core
+uses Vite+'s `0.x` version instead of Vite's peer version. This is a recorded
+Vite+ integration cost, not a requirement of the normal Vite 7/8 path. The
+Vooya compatibility check is:
+
+```sh
+npm run test:vite-plus
+```
+
+This is a compatibility smoke path, not a claim that Vooya owns Vite+'s
+runtime, package manager, task runner, or every bundled tool.

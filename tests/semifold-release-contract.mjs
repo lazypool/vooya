@@ -20,6 +20,8 @@ try {
   const currentVersion = JSON.parse(readFileSync(resolve(fixture, "packages/core/package.json"), "utf8")).version;
   const expectedVersion = nextAlphaVersion(currentVersion);
   writeFileSync(resolve(fixture, ".changes", "fixed-group.md"), `---\nvooya-compiler: "patch:chore"\nvooya-core: "patch:chore"\nvooya-vite-plugin: "patch:chore"\nvooya-vue: "patch:chore"\nvooya-react: "patch:chore"\n---\n\nVerify Vooya's coordinated release group.\n`);
+  const pushEvent = resolve(fixture, "push-event.json");
+  writeFileSync(pushEvent, JSON.stringify({ repository: { name: "vooya" } }));
   for (const args of [["init", "--quiet"], ["add", "."], ["-c", "user.name=Vooya test", "-c", "user.email=tests@vooya.dev", "commit", "--quiet", "-m", "fixture"]]) {
     const git = spawnSync("git", args, { cwd: fixture, encoding: "utf8" });
     assert.equal(git.status, 0, git.stderr || git.stdout);
@@ -28,7 +30,12 @@ try {
   const result = spawnSync(process.execPath, [resolve(root, "scripts/generated/semifold.js"), "status"], {
     cwd: fixture,
     encoding: "utf8",
-    env: process.env,
+    env: {
+      ...process.env,
+      GITHUB_ACTIONS: "true",
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_EVENT_PATH: pushEvent,
+    },
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const output = `${result.stdout}\n${result.stderr}`;

@@ -62,7 +62,7 @@ function parseContract(source: string, id: string, startLine: number): { props: 
   let section: "props" | "events" | undefined;
   for (const [index, rawLine] of source.split(/\r?\n/).entries()) {
     const lineNumber = startLine + index;
-    const line = rawLine.replace(/\/\/.*$/, "").trim();
+    const line = stripComment(rawLine).trim();
     if (!line) continue;
     const sectionMatch = line.match(/^(props|events):$/);
     if (sectionMatch) {
@@ -149,7 +149,7 @@ function assertAttributes(attributes: Attributes, allowed: Set<string>, id: stri
 }
 
 function parseManifestComponent(source: string, id: string): ManifestComponent {
-  const lines = source.split(/\r?\n/).map((raw, index) => ({ value: raw.replace(/\/\/.*$/, "").trim(), line: index + 1 })).filter(({ value }) => value);
+  const lines = source.split(/\r?\n/).map((raw, index) => ({ value: stripComment(raw).trim(), line: index + 1 })).filter(({ value }) => value);
   const declaration = lines.shift();
   const componentMatch = declaration?.value.match(/^component\s+([A-Z][A-Za-z0-9_]*)$/);
   if (!componentMatch) throw new VooParseError('Expected "component Name" or a <component> block', id, declaration?.line ?? 1);
@@ -187,6 +187,30 @@ function parseManifestComponent(source: string, id: string): ManifestComponent {
   if (!component.exportName) throw new VooParseError(`Component ${component.name} is missing "export"`, id, declarationLine);
   if (!/^[A-Za-z_$][\w$]*$/.test(component.exportName)) throw new VooParseError(`Component ${component.name} has invalid export "${component.exportName}"`, id, declarationLine);
   return component;
+}
+
+export function findCommentIndex(line: string): number {
+  let inQuotes = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (inQuotes) {
+      if (character === "\\") {
+        index += 1;
+      } else if (character === '"') {
+        inQuotes = false;
+      }
+    } else if (character === '"') {
+      inQuotes = true;
+    } else if (character === "/" && line[index + 1] === "/") {
+      return index;
+    }
+  }
+  return -1;
+}
+
+export function stripComment(line: string): string {
+  const index = findCommentIndex(line);
+  return index === -1 ? line : line.slice(0, index);
 }
 
 function trimBlock(source: string): string { return source.replace(/^\r?\n/, "").replace(/\r?\n\s*$/, ""); }

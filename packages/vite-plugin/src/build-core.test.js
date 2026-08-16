@@ -7,7 +7,7 @@ import {
   remapRustDiagnostic,
   resolveRustDependencyRoots,
   resolveRuntimeCrateRoot,
-} from "./build-core.js";
+} from "../dist/build-core.js";
 
 test("resolves the Rust runtime shipped by @vooya/core", () => {
   const runtime = resolveRuntimeCrateRoot();

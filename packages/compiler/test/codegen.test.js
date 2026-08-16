@@ -7,7 +7,7 @@ import {
   generatedComponentBinding,
   generatedComponentPrelude,
   generatedScopeId,
-} from "../src/index.js";
+} from "../dist/index.js";
 
 const counter = {
   name: "Counter",
