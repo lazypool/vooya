@@ -41,6 +41,7 @@ interface RspackCompilationLike {
 
 interface RspackCompilerLike {
   context: string;
+  modifiedFiles?: ReadonlySet<string>;
   options: { mode?: string };
   rspack: { sources: { RawSource: new (value: unknown) => unknown } };
   hooks: {
@@ -139,6 +140,19 @@ export class VooyaRspackPlugin implements RspackPluginLike {
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
         const watchedRoots = result.watchedFiles;
         const watchedFiles = readWatchedRustFiles(watchedRoots);
+        const watchedRustFiles = new Set(watchedFiles);
+        if ([...(compiler.modifiedFiles ?? [])].some((file) => watchedRustFiles.has(file))) {
+          // Rspack starts a compilation for Rust dependency changes, but its
+          // loader cache does not consistently rebuild the unchanged .voo
+          // resource on every platform. Mark the source components as part of
+          // this same native rebuild only when a registered Rust file changed.
+          // Generated wasm-bindgen output and ordinary .voo recovery builds do
+          // not enter this branch, so they cannot create a rebuild loop.
+          compiler.modifiedFiles = new Set([
+            ...(compiler.modifiedFiles ?? []),
+            ...components.map((component) => component.id),
+          ]);
+        }
         const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
         this.buildId = buildId;
         setBuildState(this.instanceId, {
