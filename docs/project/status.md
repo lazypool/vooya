@@ -2,16 +2,18 @@
 
 Vooya is a public alpha and an architecture-validation project. It is not a
 stable compiler or a production compatibility promise. The latest published
-coordinated release is `v0.1.0-alpha.5`; use the npm `alpha` tag to resolve the
+coordinated release is `v0.1.0-alpha.7`; use the npm `alpha` tag to resolve the
 latest published set.
 
-The five packages form one coordinated release unit:
+The seven packages form one coordinated release unit:
 
 - `@vooya/compiler`
 - `@vooya/core`
+- `@vooya/build-core`
 - `@vooya/vite-plugin`
 - `@vooya/vue`
 - `@vooya/react`
+- `@vooya/rspack`
 
 Use the same exact version for every package. The npm `alpha` dist-tag identifies
 the latest published set, while `main` can contain changes queued for the next
