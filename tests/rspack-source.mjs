@@ -71,15 +71,27 @@ async function verifyDevRecovery(project) {
 
     const componentPath = resolve(project, "src/Counter.voo");
     const source = readFileSync(componentPath, "utf8");
+    const buildsBeforeFailure = successfulBuildCount(output);
     writeFileSync(componentPath, source.replace("use crate::{EventListener, View, ViewElement};", "use crate::{EventListener, View, ViewElement};\nthis is invalid Rust"));
     await waitFor(() => output.includes("Cargo build failed with exit code 101"), 60_000, () => output);
     if (!/Counter\.voo:\d+/.test(output)) throw new Error(`Rspack did not retain the mapped .voo Rust diagnostic.\n${output}`);
     if (server.exitCode !== null) throw new Error("Rsbuild exited after a failed Rust rebuild.");
 
     writeFileSync(componentPath, source);
+    await waitFor(
+      () => successfulBuildCount(output) > buildsBeforeFailure,
+      60_000,
+      () => `Rsbuild did not complete the recovery compilation.\n${output}`,
+    );
+    const buildsBeforeDependency = successfulBuildCount(output);
     const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
     writeFileSync(dependencyPath, 'pub fn button_label() -> &\'static str { "Increment dependency" }\n');
-    await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 60_000 });
+    await waitFor(
+      () => successfulBuildCount(output) > buildsBeforeDependency,
+      60_000,
+      () => `Rust path dependency did not trigger an Rsbuild compilation.\n${output}`,
+    );
+    await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
     const unexpectedErrors = errors.filter((message) => !message.includes("Cargo build failed with exit code 101"));
     if (unexpectedErrors.length) throw new Error(`Rspack Vue browser errors:\n${unexpectedErrors.join("\n")}`);
     console.log("Verified Rsbuild Rust failure recovery without restarting the dev server.");
@@ -178,4 +190,8 @@ function availablePort() {
       probe.close(() => resolvePort(address.port));
     });
   });
+}
+
+function successfulBuildCount(output) {
+  return output.match(/ready\s+built in/g)?.length ?? 0;
 }
