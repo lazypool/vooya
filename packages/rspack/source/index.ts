@@ -67,11 +67,12 @@ interface RspackConfigLike {
 interface RsbuildApiLike {
   modifyRspackConfig(callback: (config: RspackConfigLike) => RspackConfigLike): void;
   onBeforeStartDevServer(
-    callback: (context: { server: RsbuildDevServerLike }) => void | (() => void),
+    callback: (context: { server: RsbuildDevServerLike }) => void,
   ): void;
   onAfterDevCompile(
     callback: (context: { isFirstCompile: boolean; stats: RspackStatsLike }) => void,
   ): void;
+  onCloseDevServer(callback: () => void): void;
 }
 
 interface RsbuildDevServerLike {
@@ -198,9 +199,10 @@ export function vooyaRsbuild(options: VooyaRspackOptions = {}): VooyaRsbuildPlug
       });
       api.onBeforeStartDevServer(({ server }) => {
         devServer = server;
-        return () => {
-          devServer = undefined;
-        };
+      });
+      api.onCloseDevServer(() => {
+        devServer = undefined;
+        deliveredBuildId = undefined;
       });
       api.onAfterDevCompile(({ isFirstCompile, stats }) => {
         const buildId = plugin.currentBuildId();

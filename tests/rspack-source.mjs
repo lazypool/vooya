@@ -54,6 +54,10 @@ async function verifyDevRecovery(project) {
     browser = await chromium.launch();
     const page = await browser.newPage();
     const errors = [];
+    let mainFrameNavigations = 0;
+    page.on("framenavigated", (frame) => {
+      if (frame === page.mainFrame()) mainFrameNavigations += 1;
+    });
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
@@ -84,12 +88,18 @@ async function verifyDevRecovery(project) {
       () => `Rsbuild did not complete the recovery compilation.\n${output}`,
     );
     const buildsBeforeDependency = successfulBuildCount(output);
+    const navigationsBeforeDependency = mainFrameNavigations;
     const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
     writeFileSync(dependencyPath, 'pub fn button_label() -> &\'static str { "Increment dependency" }\n');
     await waitFor(
       () => successfulBuildCount(output) > buildsBeforeDependency,
       60_000,
       () => `Rust path dependency did not trigger an Rsbuild compilation.\n${output}`,
+    );
+    await waitFor(
+      () => mainFrameNavigations > navigationsBeforeDependency,
+      30_000,
+      () => `Rsbuild did not reload the browser after the WASM build changed.\n${output}`,
     );
     await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
     const unexpectedErrors = errors.filter((message) => !message.includes("Cargo build failed with exit code 101"));
