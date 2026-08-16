@@ -52,11 +52,13 @@ let output = "";
 try {
   mkdirSync(packageDirectory, { recursive: true });
   run("npm", ["run", "build:core"], repositoryRoot);
+  run("npm", ["run", "build", "--workspace", "@vooya/vite-plugin"], repositoryRoot);
   run("npm", ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
 
   const packages = {
     compiler: pack("@vooya/compiler"),
     core: pack("@vooya/core"),
+    buildCore: pack("@vooya/build-core"),
     plugin: pack("@vooya/vite-plugin"),
     vue: pack("@vooya/vue"),
   };
@@ -113,6 +115,7 @@ function configureProject(packages) {
     vite: targetName === "vite8" ? target.version : "npm:@voidzero-dev/vite-plus-core@0.2.9",
     "@vooya/compiler": `file:${packages.compiler}`,
     "@vooya/core": `file:${packages.core}`,
+    "@vooya/build-core": `file:${packages.buildCore}`,
     "@vooya/vite-plugin": `file:${packages.plugin}`,
     ...(target.install.length ? { "vite-plus": target.version } : {}),
   };
