@@ -188,7 +188,10 @@ npx vp build
 For a project managed by Vite+, follow its installation and migration guide,
 including the documented `vite` alias to
 `@voidzero-dev/vite-plus-core`. Keep `vooya()` in the normal Vite plugin list;
-the Vooya compatibility check is:
+the current fixture needs npm's legacy peer resolver because the aliased core
+uses Vite+'s `0.x` version instead of Vite's peer version. This is a recorded
+Vite+ integration cost, not a requirement of the normal Vite 7/8 path. The
+Vooya compatibility check is:
 
 ```sh
 npm run test:vite-plus

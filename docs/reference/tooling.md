@@ -18,6 +18,8 @@ The public plugin entry is `vooya()` from `@vooya/vite-plugin`.
 The plugin peer range covers Vite 7 and Vite 8. Vite+ is tested as a separate
 toolchain because it aliases `vite` to `@voidzero-dev/vite-plus-core`; it still
 uses the same `vooya()` plugin and does not create a second Vooya adapter API.
+The current Vite+ fixture uses npm legacy peer resolution because its aliased
+core has a `0.x` package version; normal Vite 7/8 fixtures install strictly.
 
 ```ts
 vooya({

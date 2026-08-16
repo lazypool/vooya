@@ -8,9 +8,10 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { createServer as createHttpServer } from "node:http";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
@@ -45,6 +46,7 @@ const packageDirectory = resolve(temporaryRoot, "packages");
 const project = resolve(temporaryRoot, "app");
 let browser;
 let server;
+let productionServer;
 let output = "";
 
 try {
@@ -60,32 +62,30 @@ try {
   };
   cpSync(resolve(repositoryRoot, "tests/fixtures/portable-vue"), project, { recursive: true });
   configureProject(packages);
-  run(
-    "npm",
-    [
-      "install",
-      "--ignore-scripts",
-      "--no-audit",
-      "--no-fund",
-      "--legacy-peer-deps",
-      ...target.install,
-    ],
-    project,
-  );
+  const installArguments = ["install", "--ignore-scripts", "--no-audit", "--no-fund"];
+  if (targetName === "vite-plus") installArguments.push("--legacy-peer-deps");
+  installArguments.push(...target.install);
+  run("npm", installArguments, project);
 
   run(process.execPath, target.build.map((entry, index) => (index === 0 ? resolve(project, entry) : entry)), project);
   const assets = readdirSync(resolve(project, "dist/assets"));
   if (!assets.some((asset) => /^vooya_app_bg-.*\.wasm$/.test(asset))) {
     throw new Error(`${target.label} production build did not emit application WASM.`);
   }
+  await exerciseProductionBuild();
   if (targetName === "vite8") {
     await exerciseDevelopmentServer();
-    console.log(`${target.label} production, browser, rebuild, HMR, and error-recovery checks passed.`);
+    console.log(`${target.label} production browser, rebuild, HMR, and error-recovery checks passed.`);
   } else {
-    console.log(`${target.label} production and browser compatibility smoke passed; full HMR remains covered by the Vite 8 path.`);
+    console.log(`${target.label} production browser compatibility smoke passed; full HMR remains covered by the Vite 8 path.`);
   }
 } finally {
   await browser?.close();
+  if (productionServer) {
+    await new Promise((resolveClose, rejectClose) => {
+      productionServer.close((error) => (error ? rejectClose(error) : resolveClose()));
+    });
+  }
   if (server && server.exitCode === null) {
     server.kill("SIGTERM");
     await Promise.race([
@@ -109,7 +109,7 @@ function configureProject(packages) {
     "@vooya/vue": `file:${packages.vue}`,
   };
   manifest.devDependencies = {
-    "@vitejs/plugin-vue": "6.0.0",
+    "@vitejs/plugin-vue": "6.0.8",
     vite: targetName === "vite8" ? target.version : "npm:@voidzero-dev/vite-plus-core@0.2.9",
     "@vooya/compiler": `file:${packages.compiler}`,
     "@vooya/core": `file:${packages.core}`,
@@ -119,6 +119,50 @@ function configureProject(packages) {
   if (Object.keys(target.overrides).length > 0) manifest.overrides = target.overrides;
   manifest.scripts = { build: targetName === "vite8" ? "vite build" : "vp build" };
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+async function exerciseProductionBuild() {
+  const port = await availablePort();
+  const dist = resolve(project, "dist");
+  productionServer = createHttpServer((request, response) => {
+    const pathname = new URL(request.url ?? "/", `http://${request.headers.host}`).pathname;
+    const requestedPath = pathname === "/" ? "index.html" : pathname.slice(1);
+    const filePath = resolve(dist, requestedPath);
+    const relativePath = relative(dist, filePath);
+    if (relativePath.startsWith("..") || isAbsolute(relativePath)) {
+      response.writeHead(403).end("Forbidden");
+      return;
+    }
+    try {
+      const body = readFileSync(filePath);
+      response.writeHead(200, { "Content-Type": contentType(filePath) }).end(body);
+    } catch {
+      response.writeHead(404).end("Not found");
+    }
+  });
+  await new Promise((resolveListen, rejectListen) => {
+    productionServer.once("error", rejectListen);
+    productionServer.listen(port, "127.0.0.1", resolveListen);
+  });
+
+  browser ??= await chromium.launch();
+  const page = await browser.newPage();
+  const browserErrors = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+  await page.goto(`http://127.0.0.1:${port}`);
+  await expectText(page, "6");
+  await page.close();
+  if (browserErrors.length > 0) {
+    throw new Error(`${target.label} production browser errors:\n${browserErrors.join("\n")}`);
+  }
+
+  await new Promise((resolveClose, rejectClose) => {
+    productionServer.close((error) => (error ? rejectClose(error) : resolveClose()));
+  });
+  productionServer = undefined;
 }
 
 async function exerciseDevelopmentServer() {
@@ -132,7 +176,7 @@ async function exerciseDevelopmentServer() {
   server.stderr.on("data", collectOutput);
   await waitForServer(`http://127.0.0.1:${port}`);
 
-  browser = await chromium.launch();
+  browser ??= await chromium.launch();
   const page = await browser.newPage();
   const browserWarnings = [];
   page.on("console", (message) => {
@@ -184,6 +228,14 @@ async function exerciseDevelopmentServer() {
   if (failuresAfterRapidSave !== failuresBeforeRapidSave) {
     throw new Error(`${target.label} compiled a superseded rapid save instead of coalescing it.`);
   }
+}
+
+function contentType(filePath) {
+  if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
+  if (filePath.endsWith(".js")) return "text/javascript; charset=utf-8";
+  if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
+  if (filePath.endsWith(".wasm")) return "application/wasm";
+  return "application/octet-stream";
 }
 
 function pack(workspace) {

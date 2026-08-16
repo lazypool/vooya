@@ -18,14 +18,14 @@ SSR and hydration. Each entry is evidence for the named test path only.
 
 ## Verified bundler/toolchain matrix
 
-These entries run against packed Vooya packages in a fresh temporary consumer;
-they cover production output, browser WASM loading, Rust dependency rebuilds,
-full-reload behavior, failed Rust builds, recovery, and coalesced rapid saves.
+These entries run against packed Vooya packages in a fresh temporary consumer.
+The evidence and boundary columns state the exact checks exercised by each
+toolchain; a production smoke does not imply development-server or HMR support.
 
 | Toolchain | Verified version | Evidence | Boundary |
 | --- | --- | --- | --- |
-| Vite | 8.2.1 | `npm run test:vite8` | Supported Vite 8 path; Vite 7 remains covered by the repository fixtures and release gate |
-| Vite+ | 0.2.9 | `npm run test:vite-plus` | Compatibility smoke path using Vite+'s Vite core alias; not a separate Vooya bundler adapter |
+| Vite | 8.2.1 | `npm run test:vite8` | Strict install, production output and browser WASM loading, development mount, Rust dependency rebuilds, full reload, failed-build recovery, and coalesced rapid saves; Vite 7 remains covered by the repository fixtures and release gate |
+| Vite+ | 0.2.9 | `npm run test:vite-plus` | Production output and browser WASM loading using Vite+'s Vite core alias; the alias currently requires npm legacy peer resolution, and development rebuild and HMR behavior are not claimed |
 
 ## Not verified / not supported yet
 
