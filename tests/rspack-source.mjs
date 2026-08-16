@@ -16,9 +16,11 @@ try {
   for (const workspace of ["@vooya/vue", "@vooya/react", "@vooya/rspack"]) run("npm", ["run", "build", "--workspace", workspace], root);
   const packages = ["@vooya/compiler", "@vooya/core", "@vooya/build-core", "@vooya/vue", "@vooya/react", "@vooya/rspack"].map(pack);
   const vueProject = verify("rspack-vue", packages, true);
-  verify("rspack-react", packages, true);
+  verify("rspack-native", packages, true);
+  const reactProject = verify("rspack-react", packages, true);
   verify("rslib-vue", packages, true);
   await verifyDevRecovery(vueProject);
+  await verifyReactBrowser(reactProject);
 } finally {
   if (!process.env.VOOYA_KEEP_RSPACK_FIXTURES) rmSync(temporaryRoot, { force: true, recursive: true });
 }
@@ -84,6 +86,39 @@ async function verifyDevRecovery(project) {
   } finally {
     await browser?.close();
     if (server && server.exitCode === null) server.kill("SIGTERM");
+  }
+}
+
+async function verifyReactBrowser(project) {
+  const port = await availablePort();
+  const command = resolve(project, "node_modules/@rsbuild/core/bin/rsbuild.js");
+  let server;
+  let browser;
+  try {
+    server = spawn(process.execPath, [command, "dev", "--host", "127.0.0.1", "--port", String(port), "--strictPort"], { cwd: project, env: { ...process.env, FORCE_COLOR: "0" } });
+    await waitFor(async () => (await fetch(`http://127.0.0.1:${port}`)).ok);
+    browser = await chromium.launch();
+    const page = await browser.newPage();
+    const errors = [];
+    page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(`http://127.0.0.1:${port}`);
+    await page.getByRole("button", { name: "Increment" }).waitFor();
+    if (await page.locator("[data-count]").textContent() !== "2") throw new Error("Rspack React island did not mount its initial prop.");
+    if (await page.locator(".counter").evaluate((node) => getComputedStyle(node).color) !== "rgb(5, 103, 89)") throw new Error("Rspack React scoped style was not applied.");
+    await page.locator("[data-inc]").click();
+    if (await page.locator("[data-event]").textContent() !== "3") throw new Error("Rspack React event forwarding failed.");
+    await page.locator("[data-host-update]").click();
+    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack React prop update failed.");
+    await page.locator("[data-host-toggle]").click();
+    await page.locator("[data-count]").waitFor({ state: "detached" });
+    await page.locator("[data-host-toggle]").click();
+    if (await page.locator("[data-count]").textContent() !== "4") throw new Error("Rspack React dispose/remount failed.");
+    if (errors.length) throw new Error(`Rspack React browser errors:\n${errors.join("\n")}`);
+    console.log("Verified Rspack React island browser contract.");
+  } finally {
+    await browser?.close();
+    if (server?.exitCode === null) server.kill("SIGTERM");
   }
 }
 
