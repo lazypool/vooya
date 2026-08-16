@@ -87,17 +87,12 @@ async function verifyDevRecovery(project) {
       60_000,
       () => `Rsbuild did not complete the recovery compilation.\n${output}`,
     );
-    // Rsbuild may navigate while applying the recovery compilation. Let that
-    // navigation settle before establishing the dependency-change baseline,
-    // otherwise a late recovery navigation can be mistaken for the reload
-    // caused by the Rust path dependency below.
-    await waitForStableValue(() => mainFrameNavigations);
-    const buildsBeforeDependency = successfulBuildCount(output);
     const navigationsBeforeDependency = mainFrameNavigations;
+    const dependencyOutputOffset = output.length;
     const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
     writeFileSync(dependencyPath, 'pub fn button_label() -> &\'static str { "Increment dependency" }\n');
     await waitFor(
-      () => successfulBuildCount(output) > buildsBeforeDependency,
+      () => completedDependencyBuild(output.slice(dependencyOutputOffset)),
       60_000,
       () => `Rust path dependency did not trigger an Rsbuild compilation.\n${output}`,
     );
@@ -106,7 +101,19 @@ async function verifyDevRecovery(project) {
       30_000,
       () => `Rsbuild did not reload the browser after the WASM build changed.\n${output}`,
     );
-    await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
+    try {
+      await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
+    } catch {
+      const buttonLabelsBeforeManualReload = await page.locator("button").allTextContents();
+      await page.reload();
+      const buttonLabelsAfterManualReload = await page.locator("button").allTextContents();
+      throw new Error(
+        `Rspack reloaded without the rebuilt Rust dependency. ` +
+        `Builds: ${successfulBuildCount(output)}, navigations: ${mainFrameNavigations}, ` +
+        `buttons before manual reload: ${JSON.stringify(buttonLabelsBeforeManualReload)}, ` +
+        `after: ${JSON.stringify(buttonLabelsAfterManualReload)}.\n${output}`,
+      );
+    }
     const unexpectedErrors = errors.filter((message) => !message.includes("Cargo build failed with exit code 101"));
     if (unexpectedErrors.length) throw new Error(`Rspack Vue browser errors:\n${unexpectedErrors.join("\n")}`);
     console.log("Verified Rsbuild Rust failure recovery without restarting the dev server.");
@@ -196,23 +203,6 @@ async function waitFor(predicate, timeout = 30_000, details = () => "") {
   throw new Error(`Timed out waiting for Rsbuild.\n${details()}`);
 }
 
-async function waitForStableValue(readValue, stableFor = 1_000, timeout = 10_000) {
-  const deadline = Date.now() + timeout;
-  let value = readValue();
-  let stableSince = Date.now();
-  while (Date.now() < deadline) {
-    await new Promise((resolveWait) => setTimeout(resolveWait, 50));
-    const nextValue = readValue();
-    if (nextValue !== value) {
-      value = nextValue;
-      stableSince = Date.now();
-    } else if (Date.now() - stableSince >= stableFor) {
-      return;
-    }
-  }
-  throw new Error("Timed out waiting for Rsbuild browser navigation to settle.");
-}
-
 function availablePort() {
   return new Promise((resolvePort, reject) => {
     const probe = createServer();
@@ -226,4 +216,9 @@ function availablePort() {
 
 function successfulBuildCount(output) {
   return output.match(/ready\s+built in/g)?.length ?? 0;
+}
+
+function completedDependencyBuild(output) {
+  const compilation = output.lastIndexOf("Compiling counter-math");
+  return compilation !== -1 && /ready\s+built in/.test(output.slice(compilation));
 }
