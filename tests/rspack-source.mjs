@@ -58,6 +58,7 @@ async function verifyDevRecovery(project) {
     const source = readFileSync(componentPath, "utf8");
     writeFileSync(componentPath, source.replace("use crate::{EventListener, View, ViewElement};", "use crate::{EventListener, View, ViewElement};\nthis is invalid Rust"));
     await waitFor(() => output.includes("Cargo build failed with exit code 101"));
+    if (!/Counter\.voo:\d+/.test(output)) throw new Error(`Rspack did not retain the mapped .voo Rust diagnostic.\n${output}`);
     if (server.exitCode !== null) throw new Error("Rsbuild exited after a failed Rust rebuild.");
 
     writeFileSync(componentPath, source.replace('text("Increment")', 'text("Increment recovered")'));
