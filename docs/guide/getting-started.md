@@ -5,8 +5,9 @@ React 19. Source `.voo` components are compiled on the application author's
 machine, so both the JavaScript and Rust toolchains are required.
 
 This guide covers authoring source `.voo` components. Vooya does not currently
-publish a user-facing precompiled component product, so the Rust/WASM
-prerequisites below apply to this flow.
+publish a user-facing precompiled component product. The repository's test-only
+precompiled Vue consumer is build-contract evidence, so the Rust/WASM
+prerequisites below apply to source authoring.
 
 ## Prerequisites
 
@@ -49,6 +50,7 @@ pnpm approve-builds esbuild
 Only do this when pnpm reports `esbuild` as blocked. The approval allows
 esbuild's install script to run. esbuild uses that script to verify or install
 the platform-specific native executable for the current system.
+Do not approve unrelated packages merely to remove the warning.
 
 You can inspect packages whose build scripts are currently blocked with:
 
