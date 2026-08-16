@@ -2,6 +2,7 @@ type BuildState = {
   runtimeModule: string;
   wasm: Uint8Array;
   styleModules: Map<string, string>;
+  watchedRoots: string[];
   watchedFiles: string[];
 };
 

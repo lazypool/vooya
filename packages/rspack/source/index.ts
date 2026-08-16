@@ -35,6 +35,7 @@ export interface VooyaRspackRule {
 interface RspackCompilationLike {
   errors: Error[];
   contextDependencies: { add(path: string): unknown };
+  fileDependencies: { add(path: string): unknown };
   emitAsset(name: string, source: unknown): void;
 }
 
@@ -136,6 +137,8 @@ export class VooyaRspackPlugin implements RspackPluginLike {
           framework: this.framework,
         });
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
+        const watchedRoots = result.watchedFiles;
+        const watchedFiles = readWatchedRustFiles(watchedRoots);
         const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
         this.buildId = buildId;
         setBuildState(this.instanceId, {
@@ -146,7 +149,8 @@ export class VooyaRspackPlugin implements RspackPluginLike {
           runtimeModule: `${result.runtimeModule}?vooya-build=${buildId}`,
           wasm: result.wasm.bytes,
           styleModules,
-          watchedFiles: result.watchedFiles,
+          watchedRoots,
+          watchedFiles,
         });
         this.buildError = undefined;
       } catch (error) {
@@ -161,7 +165,8 @@ export class VooyaRspackPlugin implements RspackPluginLike {
       if (this.buildError) compilation.errors.push(this.buildError);
       const state = getBuildState(this.instanceId);
       if (!state) return;
-      for (const dependency of state.watchedFiles) compilation.contextDependencies.add(dependency);
+      for (const dependency of state.watchedRoots) compilation.contextDependencies.add(dependency);
+      for (const dependency of state.watchedFiles) compilation.fileDependencies.add(dependency);
       // wasm-bindgen's web target references `vooya_app_bg.wasm` relative to
       // its JavaScript module. Rsbuild discovers that asset itself, while
       // Rslib's bundled-library path does not; registering it here gives both
@@ -239,6 +244,21 @@ function readVooFiles(directory: string): string[] {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) files.push(...readVooFiles(path));
     else if (entry.isFile() && entry.name.endsWith(".voo")) files.push(path);
+  }
+  return files;
+}
+
+function readWatchedRustFiles(roots: string[]): string[] {
+  return roots.flatMap((root) => readFilesRecursively(root));
+}
+
+function readFilesRecursively(directory: string): string[] {
+  const files: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (ignoredDirectories.has(entry.name)) continue;
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...readFilesRecursively(path));
+    else if (entry.isFile()) files.push(path);
   }
   return files;
 }
