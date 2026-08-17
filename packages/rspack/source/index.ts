@@ -136,14 +136,15 @@ export class VooyaRspackPlugin implements RspackPluginLike {
         });
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
         const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
+        const versionedRuntime = writeVersionedRuntime(result, buildId);
         this.buildId = buildId;
         setBuildState(this.instanceId, {
-          // The generated wasm-bindgen JavaScript is often byte-for-byte
-          // stable when only a Rust path dependency changes. Version its
-          // module identity with the WASM content so Rspack emits an HMR
-          // update instead of leaving the browser on the previous instance.
-          runtimeModule: `${result.runtimeModule}?vooya-build=${buildId}`,
+          // wasm-bindgen's JavaScript is often byte-for-byte stable across
+          // Rust edits. Give both it and its WASM child content-addressed file
+          // identities so Rspack cannot retain an older module graph.
+          runtimeModule: versionedRuntime.runtimeModule,
           wasm: result.wasm.bytes,
+          wasmAssetName: versionedRuntime.wasmAssetName,
           styleModules,
         });
         this.buildError = undefined;
@@ -164,7 +165,7 @@ export class VooyaRspackPlugin implements RspackPluginLike {
       // Rslib's bundled-library path does not; registering it here gives both
       // paths a loadable, deterministic emitted asset.
       compilation.emitAsset(
-        "vooya_app_bg.wasm",
+        state.wasmAssetName,
         new compiler.rspack.sources.RawSource(Buffer.from(state.wasm)),
       );
     });
@@ -238,6 +239,25 @@ function readVooFiles(directory: string): string[] {
     else if (entry.isFile() && entry.name.endsWith(".voo")) files.push(path);
   }
   return files;
+}
+
+function writeVersionedRuntime(
+  result: BuildApplicationResult,
+  buildId: string,
+): { runtimeModule: string; wasmAssetName: string } {
+  const outputDirectory = dirname(result.runtimeModule);
+  const runtimeModule = resolve(outputDirectory, `vooya_app-${buildId}.js`);
+  const wasmAssetName = `vooya_app_bg-${buildId}.wasm`;
+  const runtimeCode = result.javascript.code.replace(
+    /(["'])vooya_app_bg\.wasm\1/g,
+    JSON.stringify(wasmAssetName),
+  );
+  if (runtimeCode === result.javascript.code) {
+    throw new Error("Vooya could not version the wasm-bindgen WASM reference for Rspack.");
+  }
+  writeFileSync(runtimeModule, runtimeCode);
+  writeFileSync(resolve(outputDirectory, wasmAssetName), result.wasm.bytes);
+  return { runtimeModule, wasmAssetName };
 }
 
 function writeGeneratedFiles({

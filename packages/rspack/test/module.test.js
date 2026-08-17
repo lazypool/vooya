@@ -30,6 +30,7 @@ test("disables loader caching because the wrapper depends on the current WASM bu
   setBuildState(instanceId, {
     runtimeModule: "/cache/vooya_app.js?vooya-build=next",
     wasm: new Uint8Array(),
+    wasmAssetName: "vooya_app_bg-next.wasm",
     styleModules: new Map(),
   });
   try {

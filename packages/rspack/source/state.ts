@@ -1,6 +1,7 @@
 type BuildState = {
   runtimeModule: string;
   wasm: Uint8Array;
+  wasmAssetName: string;
   styleModules: Map<string, string>;
 };
 
