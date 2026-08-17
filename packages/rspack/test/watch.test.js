@@ -1,54 +1,36 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import test from "node:test";
 
-import { hasWatchedRustChange } from "../dist/watch.js";
+import { fingerprintWatchedRustFiles } from "../dist/watch.js";
 
-const applicationRoot = resolve("/workspace/application");
-const watchedRoot = resolve(applicationRoot, "rust/counter-math");
-const watchedFile = resolve(watchedRoot, "src/lib.rs");
-
-test("recognizes absolute Rust dependency paths", () => {
-  assert.equal(
-    hasWatchedRustChange(new Set([watchedFile]), [watchedRoot], [watchedFile], applicationRoot),
-    true,
-  );
+test("fingerprints watched Rust content independently of file order", () => {
+  const root = mkdtempSync(resolve(tmpdir(), "vooya-rspack-watch-"));
+  try {
+    const first = resolve(root, "first.rs");
+    const second = resolve(root, "second.rs");
+    writeFileSync(first, "pub fn first() {}\n");
+    writeFileSync(second, "pub fn second() {}\n");
+    assert.equal(
+      fingerprintWatchedRustFiles([first, second]),
+      fingerprintWatchedRustFiles([second, first]),
+    );
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
 });
 
-test("recognizes paths relative to the application root", () => {
-  assert.equal(
-    hasWatchedRustChange(
-      new Set(["rust/counter-math/src/lib.rs"]),
-      [watchedRoot],
-      [watchedFile],
-      applicationRoot,
-    ),
-    true,
-  );
-});
-
-test("recognizes Rspack paths relative to the watched root parent", () => {
-  assert.equal(
-    hasWatchedRustChange(new Set(["counter-math/src/lib.rs"]), [watchedRoot], [watchedFile], applicationRoot),
-    true,
-  );
-});
-
-test("recognizes paths relative to the watched root", () => {
-  assert.equal(
-    hasWatchedRustChange(new Set(["src/lib.rs"]), [watchedRoot], [watchedFile], applicationRoot),
-    true,
-  );
-});
-
-test("ignores files outside registered Rust roots", () => {
-  assert.equal(
-    hasWatchedRustChange(
-      new Set(["src/App.vue", "rust/another-crate/src/lib.rs"]),
-      [watchedRoot],
-      [watchedFile],
-      applicationRoot,
-    ),
-    false,
-  );
+test("changes the fingerprint when a watched Rust file changes", () => {
+  const root = mkdtempSync(resolve(tmpdir(), "vooya-rspack-watch-"));
+  try {
+    const file = resolve(root, "lib.rs");
+    writeFileSync(file, 'pub fn label() -> &\'static str { "before" }\n');
+    const before = fingerprintWatchedRustFiles([file]);
+    writeFileSync(file, 'pub fn label() -> &\'static str { "after" }\n');
+    assert.notEqual(fingerprintWatchedRustFiles([file]), before);
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
 });

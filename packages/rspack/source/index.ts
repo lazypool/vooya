@@ -12,7 +12,7 @@ import { parseVooComponent } from "@vooya/compiler";
 import type { SourceComponent } from "@vooya/compiler";
 
 import { deleteBuildState, getBuildState, setBuildState } from "./state.js";
-import { hasWatchedRustChange } from "./watch.js";
+import { fingerprintWatchedRustFiles } from "./watch.js";
 
 const loaderPath = fileURLToPath(new URL("./loader.js", import.meta.url));
 const ignoredDirectories = new Set([".git", ".voo-cache", ".vooya", "dist", "node_modules", "target"]);
@@ -125,6 +125,7 @@ export class VooyaRspackPlugin implements RspackPluginLike {
     const compiler = input as RspackCompilerLike;
     compiler.hooks.beforeCompile.tapPromise("vooya", async () => {
       try {
+        const previousState = getBuildState(this.instanceId);
         const applicationRoot = compiler.context;
         const components = readVooComponents(applicationRoot);
         const workspacePath = resolve(this.cacheRoot ?? resolve(applicationRoot, ".voo-cache"), "rspack");
@@ -141,11 +142,13 @@ export class VooyaRspackPlugin implements RspackPluginLike {
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
         const watchedRoots = result.watchedFiles;
         const watchedFiles = readWatchedRustFiles(watchedRoots);
-        if (hasWatchedRustChange(compiler.modifiedFiles, watchedRoots, watchedFiles, applicationRoot)) {
+        const watchedFingerprint = fingerprintWatchedRustFiles(watchedFiles);
+        if (previousState && previousState.watchedFingerprint !== watchedFingerprint) {
           // Rspack starts a compilation for Rust dependency changes, but its
-          // loader cache does not consistently rebuild the unchanged .voo
-          // resource on every platform. Mark the source components as part of
-          // this same native rebuild only when a registered Rust file changed.
+          // modified-file paths differ by platform and its loader cache does
+          // not consistently rebuild the unchanged .voo resource. Compare the
+          // registered Rust inputs directly and mark the source components as
+          // part of this same native rebuild only when their content changed.
           // Generated wasm-bindgen output and ordinary .voo recovery builds do
           // not enter this branch, so they cannot create a rebuild loop.
           compiler.modifiedFiles = new Set([
@@ -165,6 +168,7 @@ export class VooyaRspackPlugin implements RspackPluginLike {
           styleModules,
           watchedRoots,
           watchedFiles,
+          watchedFingerprint,
         });
         this.buildError = undefined;
       } catch (error) {
