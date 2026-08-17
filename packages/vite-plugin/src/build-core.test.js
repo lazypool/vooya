@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { CargoBuildError, VooyaUserError } from "../dist/errors.js";
 import {
   buildApplication,
   generatedCargoManifest,
@@ -88,7 +89,50 @@ test("preserves Cargo process startup errors", () => {
           },
           exec() {},
         }),
-      (error) => error === startupError,
+      (error) => {
+        assert.equal(error instanceof VooyaUserError, true);
+        assert.equal(error.kind, "cargo-start");
+        assert.equal(error.debugCause, startupError);
+        assert.equal(error.stack, `${error.name}: ${error.message}\n`);
+        return true;
+      },
+    );
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
+
+test("suppresses JavaScript stack details for Cargo build failures", () => {
+  const root = mkdtempSync(join(tmpdir(), "vooya-build-failure-test-"));
+  const toolchain = {
+    environment: {},
+    cargo: { path: "/selected/cargo", version: "cargo 1.94.0" },
+    rustc: { path: "/selected/rustc", version: "rustc 1.94.0", verboseVersion: "rustc 1.94.0", sysroot: "/selected" },
+    target: { triple: "wasm32-unknown-unknown", libdir: "/selected/wasm" },
+    wasmBindgen: { path: "/selected/wasm-bindgen", version: "0.2.115" },
+  };
+
+  try {
+    assert.throws(
+      () =>
+        buildApplication({
+          applicationRoot: root,
+          runtimeCrateRoot: "/runtime",
+          cacheRoot: join(root, "cache"),
+          outputDir: join(root, "dist"),
+          toolchain,
+          spawn() {
+            return { status: 101, stdout: "", stderr: "error: invalid Rust\n" };
+          },
+          exec() {},
+        }),
+      (error) => {
+        assert.equal(error instanceof CargoBuildError, true);
+        assert.equal(error.stack, `${error.name}: ${error.message}\n`);
+        assert.match(error.debugStack, /runCargo/);
+        assert.equal(error.exitCode, 101);
+        return true;
+      },
     );
   } finally {
     rmSync(root, { force: true, recursive: true });

@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, platform as hostPlatform, tmpdir } from "node:os";
 import { join, posix, win32 } from "node:path";
+import { VooyaUserError } from "./errors.js";
 
 export const WASM_BINDGEN_VERSION = "0.2.115";
 export const WASM_TARGET = "wasm32-unknown-unknown";
@@ -145,10 +146,11 @@ export function resolveToolchain({
   );
 }
 
-export class ToolchainResolutionError extends Error {
+export class ToolchainResolutionError extends VooyaUserError {
   constructor(message, attempts, cargoCandidates) {
-    super(message);
+    super(message, { kind: "toolchain" });
     this.name = "ToolchainResolutionError";
+    this.stack = `${this.name}: ${this.message}\n`;
     this.attempts = attempts;
     this.cargoCandidates = cargoCandidates;
   }

@@ -8,6 +8,7 @@ import { createRequire } from "node:module";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { CargoBuildError, VooyaUserError } from "./errors.js";
 import { resolveToolchain } from "./toolchain.js";
 import {
   generateRustComponents,
@@ -94,17 +95,25 @@ export function buildApplication({
 
   rmSync(outputDir, { force: true, recursive: true });
   mkdirSync(outputDir, { recursive: true });
-  exec(
-    toolchain.wasmBindgen.path,
-    [
-      resolve(targetDir, `${toolchain.target.triple}/release/vooya_app.wasm`),
-      "--target",
-      "web",
-      "--out-dir",
-      outputDir,
-    ],
-    { cwd: applicationRoot, env: toolchain.environment ?? process.env, stdio: "inherit" },
-  );
+  try {
+    exec(
+      toolchain.wasmBindgen.path,
+      [
+        resolve(targetDir, `${toolchain.target.triple}/release/vooya_app.wasm`),
+        "--target",
+        "web",
+        "--out-dir",
+        outputDir,
+      ],
+      { cwd: applicationRoot, env: toolchain.environment ?? process.env, stdio: "inherit" },
+    );
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new VooyaUserError(
+      `wasm-bindgen failed using ${toolchain.wasmBindgen.path}: ${detail}`,
+      { kind: "wasm-bindgen", cause },
+    );
+  }
 
   return {
     cacheRoot,
@@ -501,10 +510,21 @@ function runCargo(toolchain, root, args, mappings, spawn) {
       process.stderr.write(`${line}\n`);
     }
   }
-  if (result.error) throw result.error;
+  if (result.error) {
+    const detail = result.error instanceof Error ? result.error.message : String(result.error);
+    throw new VooyaUserError(
+      `Could not start Cargo at ${toolchain.cargo.path}: ${detail}`,
+      { kind: "cargo-start", cause: result.error },
+    );
+  }
   if (result.status !== 0) {
-    throw new Error(
+    throw new CargoBuildError(
       `Cargo build failed with exit code ${result.status} using cargo ${toolchain.cargo.path} and rustc ${toolchain.rustc.path}.`,
+      {
+        cargoPath: toolchain.cargo.path,
+        rustcPath: toolchain.rustc.path,
+        exitCode: result.status,
+      },
     );
   }
 }

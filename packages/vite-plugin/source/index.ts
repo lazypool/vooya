@@ -8,6 +8,7 @@ import {
   resolveRuntimeCrateRoot,
   resolveRustDependencyRoots,
 } from "./build-core.js";
+import { isVooyaUserError } from "./errors.js";
 import { clearToolchainCache, formatResolvedToolchain, resolveToolchain } from "./toolchain.js";
 import { createBuildScheduler } from "./build-scheduler.js";
 import {
@@ -182,10 +183,11 @@ export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOption
         },
         onError(cause) {
           const error = cause instanceof Error ? cause : new Error(String(cause));
-          server.config.logger.error(error.stack ?? error.message);
+          const stack = isVooyaUserError(error) ? "" : error.stack ?? "";
+          server.config.logger.error(isVooyaUserError(error) ? error.message : stack);
           server.ws.send({
             type: "error",
-            err: { message: error.message, stack: error.stack ?? "" },
+            err: { message: error.message, stack },
           });
         },
       });
@@ -231,7 +233,10 @@ function isPathInside(file, directory) {
 }
 
 function isToolchainExecutionError(error) {
-  return error && ["EACCES", "ENOENT", "EPERM"].includes(error.code);
+  return (
+    (error && ["EACCES", "ENOENT", "EPERM"].includes(error.code)) ||
+    (isVooyaUserError(error) && ["cargo-start", "wasm-bindgen"].includes(error.kind))
+  );
 }
 
 function componentMetadata(component) {
