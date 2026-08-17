@@ -107,7 +107,7 @@ function configureProject(packages) {
   const manifestPath = resolve(project, "package.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   manifest.dependencies = {
-    vue: "3.5.0",
+    vue: "3.5.2",
     "@vooya/vue": `file:${packages.vue}`,
   };
   manifest.devDependencies = {

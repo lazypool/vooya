@@ -29,9 +29,9 @@ Vooya generates the framework adapter, TypeScript declarations, WASM lifecycle,
 event forwarding, and diagnostic mappings.
 
 > [!IMPORTANT]
-> Vooya is a public alpha. Source `.voo` authoring supports Vite 7/8 and an
-> experimental Rspack 2.1 path, with a local Rust/WASM toolchain. Published
-> alpha APIs may still change.
+> Vooya is a public alpha. Source `.voo` authoring supports Vite 7/8, with
+> experimental Rspack 2.1 and Webpack 5 paths and a local Rust/WASM toolchain.
+> Published alpha APIs may still change.
 
 ## Why Vooya?
 
@@ -285,6 +285,7 @@ APIs when necessary.
 - source `.voo` components in Vite 7 and Vite 8;
 - experimental source `.voo` components in Rspack 2.1 through Rsbuild or the
   first-party Rspack plugin;
+- experimental source `.voo` components in Webpack `>=5.101.0 <6`;
 - Vue 3.5 and React 19 adapters;
 - typed primitive props and component events;
 - generated mount, prop-update, error, dispose, and ABI bindings;
@@ -297,12 +298,30 @@ APIs when necessary.
   waterfall examples;
 - a test-only precompiled Vue consumer proof that runs without Rust tools.
 
+### Compatibility at a glance
+
+| Layer | Version range | Status | Exact evidence |
+| --- | --- | --- | --- |
+| Node.js | `^20.19.0 || >=22.12.0` | supported | Vite 7/8 toolchain floor |
+| Vue | `>=3.5.2 <3.6` | supported | adapter checks through 3.5.41; browser fixtures at 3.5.40/3.5.41 |
+| React | `>=19.0.0 <20` | supported | browser fixtures at 19.0.0 and 19.2.0 |
+| Vite | `>=7 <9` | supported | repository Vite 7 path and packed Vite 8.2.1 fixture |
+| Vite+ | `0.2.9` | tested only | Vite-core alias production smoke |
+| Rspack / Rsbuild | Rspack `2.1.x`; Rsbuild `2.1.13` | experimental | Rspack 2.1.10 with Rsbuild, Rslib, and native Rspack fixtures |
+| Webpack | `>=5.101.0 <6` | experimental | 5.101.0 production lower bound; 5.109.2 Vue/React browser and watch recovery |
+
+“Supported” and “experimental” describe Vooya's tested integration boundary,
+not every feature of the host framework or bundler. See the detailed
+[compatibility matrix](docs/project/compatibility.md) before relying on SSR,
+hydration, HMR state preservation, Vue Vapor, or a toolchain not listed here.
+
 Current boundaries:
 
 - Rspack support is experimental and currently verified only against the
   recorded 2.1 fixtures; Vite+ remains a Vite-core alias rather than a second
   adapter;
-- Webpack, Turbopack, Rollup, SSR, and hydration are not supported;
+- Webpack 5 support is experimental; Webpack 4, Turbopack, Rollup, SSR, and
+  hydration are not supported;
 - successful Rust HMR currently performs a full reload and loses local state;
 - component contracts are intentionally limited and will evolve during alpha;
 - the precompiled artifact path is not yet a published component product.
@@ -347,6 +366,7 @@ CLI shown in the quick start above.
 | [`@vooya/build-core`](packages/build-core) | Bundler-neutral Cargo, wasm-bindgen, asset, declaration, watch, and diagnostic pipeline |
 | [`@vooya/vite`](packages/vite) | Vite integration, Rust/WASM build orchestration, diagnostics, and CLI |
 | [`@vooya/rspack`](packages/rspack) | Experimental Rspack 2.1 and Rsbuild source `.voo` integration |
+| [`@vooya/webpack`](packages/webpack) | Experimental Webpack 5 source `.voo` integration |
 | [`@vooya/vue`](packages/vue) | Vue lifecycle and event adapter |
 | [`@vooya/react`](packages/react) | React lifecycle and event adapter |
 
