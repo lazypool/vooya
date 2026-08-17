@@ -5,7 +5,7 @@
 ### Features
 
 - Publish complete TypeScript declarations for the compiler and Vite plugin, remove duplicated generated JavaScript from source control, and add the first public contribution and issue-reporting workflow.
-- Add the first experimental Rspack 2.1 source `.voo` integration for Vue and React, backed by the shared Rust/WASM build core, strict packed fixtures, browser lifecycle checks, mapped diagnostics, and Rust path-dependency watch.
+- Add the first experimental Rspack 2.1 source `.voo` integration for Vue and React, backed by the shared Rust/WASM build core, strict packed fixtures, browser lifecycle checks, mapped diagnostics, and configured Rust path dependencies.
 
 ### Fixes
 

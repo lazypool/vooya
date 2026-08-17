@@ -12,7 +12,6 @@ import { parseVooComponent } from "@vooya/compiler";
 import type { SourceComponent } from "@vooya/compiler";
 
 import { deleteBuildState, getBuildState, setBuildState } from "./state.js";
-import { fingerprintWatchedRustFiles } from "./watch.js";
 
 const loaderPath = fileURLToPath(new URL("./loader.js", import.meta.url));
 const ignoredDirectories = new Set([".git", ".voo-cache", ".vooya", "dist", "node_modules", "target"]);
@@ -35,14 +34,11 @@ export interface VooyaRspackRule {
 
 interface RspackCompilationLike {
   errors: Error[];
-  contextDependencies: { add(path: string): unknown };
-  fileDependencies: { add(path: string): unknown };
   emitAsset(name: string, source: unknown): void;
 }
 
 interface RspackCompilerLike {
   context: string;
-  modifiedFiles?: ReadonlySet<string>;
   options: { mode?: string };
   rspack: { sources: { RawSource: new (value: unknown) => unknown } };
   hooks: {
@@ -125,7 +121,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
     const compiler = input as RspackCompilerLike;
     compiler.hooks.beforeCompile.tapPromise("vooya", async () => {
       try {
-        const previousState = getBuildState(this.instanceId);
         const applicationRoot = compiler.context;
         const components = readVooComponents(applicationRoot);
         const workspacePath = resolve(this.cacheRoot ?? resolve(applicationRoot, ".voo-cache"), "rspack");
@@ -140,22 +135,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
           framework: this.framework,
         });
         const styleModules = writeGeneratedFiles({ components, result, workspacePath });
-        const watchedRoots = result.watchedFiles;
-        const watchedFiles = readWatchedRustFiles(watchedRoots);
-        const watchedFingerprint = fingerprintWatchedRustFiles(watchedFiles);
-        if (previousState && previousState.watchedFingerprint !== watchedFingerprint) {
-          // Rspack starts a compilation for Rust dependency changes, but its
-          // modified-file paths differ by platform and its loader cache does
-          // not consistently rebuild the unchanged .voo resource. Compare the
-          // registered Rust inputs directly and mark the source components as
-          // part of this same native rebuild only when their content changed.
-          // Generated wasm-bindgen output and ordinary .voo recovery builds do
-          // not enter this branch, so they cannot create a rebuild loop.
-          compiler.modifiedFiles = new Set([
-            ...(compiler.modifiedFiles ?? []),
-            ...components.map((component) => component.id),
-          ]);
-        }
         const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
         this.buildId = buildId;
         setBuildState(this.instanceId, {
@@ -166,9 +145,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
           runtimeModule: `${result.runtimeModule}?vooya-build=${buildId}`,
           wasm: result.wasm.bytes,
           styleModules,
-          watchedRoots,
-          watchedFiles,
-          watchedFingerprint,
         });
         this.buildError = undefined;
       } catch (error) {
@@ -183,8 +159,6 @@ export class VooyaRspackPlugin implements RspackPluginLike {
       if (this.buildError) compilation.errors.push(this.buildError);
       const state = getBuildState(this.instanceId);
       if (!state) return;
-      for (const dependency of state.watchedRoots) compilation.contextDependencies.add(dependency);
-      for (const dependency of state.watchedFiles) compilation.fileDependencies.add(dependency);
       // wasm-bindgen's web target references `vooya_app_bg.wasm` relative to
       // its JavaScript module. Rsbuild discovers that asset itself, while
       // Rslib's bundled-library path does not; registering it here gives both
@@ -262,21 +236,6 @@ function readVooFiles(directory: string): string[] {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) files.push(...readVooFiles(path));
     else if (entry.isFile() && entry.name.endsWith(".voo")) files.push(path);
-  }
-  return files;
-}
-
-function readWatchedRustFiles(roots: string[]): string[] {
-  return roots.flatMap((root) => readFilesRecursively(root));
-}
-
-function readFilesRecursively(directory: string): string[] {
-  const files: string[] = [];
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (ignoredDirectories.has(entry.name)) continue;
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...readFilesRecursively(path));
-    else if (entry.isFile()) files.push(path);
   }
   return files;
 }

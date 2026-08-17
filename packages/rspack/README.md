@@ -67,8 +67,11 @@ entry, HTML, and CSS configuration.
 - Rsbuild 2.1.13 with Vue and React browser lifecycle checks;
 - Rslib 0.23.2 production library output;
 - production WASM/CSS emission;
-- source Rust rebuild, mapped diagnostics, failed-build recovery, and watched
-  Rust path dependencies.
+- source `.voo` rebuild, mapped Rust diagnostics, and failed-build recovery.
 
 SSR, hydration, Module Federation, state-preserving HMR, Rspack 1.x, and other
 Rspack 2.x releases are not yet compatibility claims.
+
+Configured Rust path dependencies participate in builds, but editing one while
+the Rspack development server is running currently requires restarting that
+server. Dependency-triggered live rebuilds remain a future compatibility goal.

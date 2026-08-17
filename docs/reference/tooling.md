@@ -72,7 +72,7 @@ The plugin creates `.voo-cache` under the Vite root. It contains:
 Git. Rust compiler diagnostics from extracted files are remapped to the source
 line in the original `.voo` file.
 
-## Development rebuilds
+## Vite development rebuilds
 
 Changes to `.voo`, the bundled Rust runtime, or configured path dependencies
 schedule a rebuild. Rapid saves are coalesced. A failed Rust build is reported
@@ -99,6 +99,10 @@ vooyaRsbuild({
 The current compatibility claim is limited to Rspack 2.1.10 and the named
 Rsbuild/Rslib fixtures. Direct Rspack users must configure their normal
 framework and CSS rules in addition to `vooyaRspack().rule()`.
+
+Rspack rebuilds edited `.voo` files and recovers after mapped Rust compilation
+errors. Configured Rust path dependencies participate in builds, but editing a
+path dependency currently requires restarting the Rspack development server.
 
 ## Formatting
 

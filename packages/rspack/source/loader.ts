@@ -18,8 +18,6 @@ export default function vooyaRspackLoader(source) {
   }
   component.id = this.resourcePath;
   this.addDependency(this.resourcePath);
-  for (const dependency of state.watchedRoots) this.addContextDependency(dependency);
-  for (const dependency of state.watchedFiles) this.addDependency(dependency);
   return renderVooModule({
     component,
     framework,
