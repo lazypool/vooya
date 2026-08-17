@@ -5,8 +5,12 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import {
   buildApplication,
+  clearToolchainCache,
+  formatResolvedToolchain,
+  isVooyaUserError,
   resolveRuntimeCrateRoot,
   resolveRustDependencyRoots,
+  resolveToolchain,
 } from "@vooya/build-core";
 import { createBuildScheduler } from "./build-scheduler.js";
 import {
@@ -22,10 +26,11 @@ const componentExtension = ".voo";
 const runtimeId = "virtual:vooya-runtime";
 const stylePrefix = "virtual:vooya-style:";
 
-export function vooya({ framework = "vue", rust = {} } = {}) {
+export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOptions = {} } = {}) {
   let applicationRoot;
   let buildScheduler;
   let runtimeModule;
+  let toolchain;
   let sourceComponents = [];
   let watchedRustRoots = [];
   let logger;
@@ -50,15 +55,30 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
     writeVooDeclarations(components, framework);
     const progress = createRustBuildProgress(logger);
     try {
+      if (!toolchain) {
+        toolchain = resolveToolchain({
+          cwd: applicationRoot,
+          cargoPath: toolchainOptions?.cargoPath,
+        });
+        logger?.info(`Vooya: selected Rust/WASM toolchain: ${formatResolvedToolchain(toolchain)}.`);
+        if (toolchain.cargoPathWarning) {
+          logger?.warn(`Vooya: WARNING: ${toolchain.cargoPathWarning} This may differ from the toolchain you intended to use.`);
+        }
+      }
       ({ runtimeModule } = buildApplication({
         applicationRoot,
         components: sourceComponents,
         rust,
         framework,
+        toolchain,
         onRustBuildStart: progress.start,
       }));
       progress.complete();
     } catch (error) {
+      if (isToolchainExecutionError(error)) {
+        toolchain = undefined;
+        clearToolchainCache();
+      }
       // Cargo has already rendered source-mapped .voo diagnostics. Keep this
       // summary separate so Vite can preserve those diagnostics verbatim.
       progress.fail();
@@ -166,10 +186,11 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
         },
         onError(cause) {
           const error = cause instanceof Error ? cause : new Error(String(cause));
-          server.config.logger.error(error.stack ?? error.message);
+          const stack = isVooyaUserError(error) ? "" : error.stack ?? "";
+          server.config.logger.error(isVooyaUserError(error) ? error.message : stack);
           server.ws.send({
             type: "error",
-            err: { message: error.message, stack: error.stack ?? "" },
+            err: { message: error.message, stack },
           });
         },
       });
@@ -212,6 +233,13 @@ function writeVooDeclarations(components, framework) {
 function isPathInside(file, directory) {
   const path = relative(directory, file);
   return path === "" || (!path.startsWith("..") && !isAbsolute(path));
+}
+
+function isToolchainExecutionError(error) {
+  return (
+    (error && ["EACCES", "ENOENT", "EPERM"].includes(error.code)) ||
+    (isVooyaUserError(error) && ["cargo-start", "wasm-bindgen"].includes(error.kind))
+  );
 }
 
 function componentMetadata(component) {

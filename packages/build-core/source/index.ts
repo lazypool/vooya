@@ -5,6 +5,9 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 
+import { CargoBuildError, VooyaUserError } from "./errors.js";
+import { resolveToolchain } from "./toolchain.js";
+import type { ResolvedToolchain } from "./toolchain.js";
 import {
   compileVooStyle,
   generateRustComponents,
@@ -15,6 +18,9 @@ import {
 import type { SourceComponent } from "@vooya/compiler";
 
 const require = createRequire(import.meta.url);
+
+export * from "./errors.js";
+export * from "./toolchain.js";
 
 export type RustDependency =
   | string
@@ -61,6 +67,9 @@ export interface BuildApplicationOptions {
   buildMode?: "production" | "development";
   framework?: "vue" | "react";
   onRustBuildStart?: () => void;
+  toolchain?: ResolvedToolchain;
+  spawn?: typeof spawnSync;
+  exec?: typeof execFileSync;
 }
 
 export interface BuildApplicationResult {
@@ -123,6 +132,9 @@ export function buildApplication({
   buildMode = "production",
   framework = "vue",
   onRustBuildStart = () => {},
+  toolchain = resolveToolchain({ cwd: applicationRoot }),
+  spawn = spawnSync,
+  exec = execFileSync,
 }: BuildApplicationOptions): BuildApplicationResult {
   if (!applicationRoot) throw new Error("Vooya build requires applicationRoot.");
 
@@ -155,6 +167,7 @@ export function buildApplication({
 
   onRustBuildStart();
   const diagnostics = runCargo(
+    toolchain,
     applicationRoot,
     [
       "build",
@@ -167,24 +180,33 @@ export function buildApplication({
       targetDir,
     ],
     diagnosticMappings,
+    spawn,
   );
 
   rmSync(outputDir, { force: true, recursive: true });
   mkdirSync(outputDir, { recursive: true });
-  execFileSync(
-    "wasm-bindgen",
-    [
-      resolve(
-        targetDir,
-        `wasm32-unknown-unknown/${buildMode === "development" ? "debug" : "release"}/vooya_app.wasm`,
-      ),
-      "--target",
-      "web",
-      "--out-dir",
-      outputDir,
-    ],
-    { cwd: applicationRoot, stdio: "inherit" },
-  );
+  try {
+    exec(
+      toolchain.wasmBindgen.path,
+      [
+        resolve(
+          targetDir,
+          `${toolchain.target.triple}/${buildMode === "development" ? "debug" : "release"}/vooya_app.wasm`,
+        ),
+        "--target",
+        "web",
+        "--out-dir",
+        outputDir,
+      ],
+      { cwd: applicationRoot, env: toolchain.environment, stdio: "inherit" },
+    );
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new VooyaUserError(
+      `wasm-bindgen failed using ${toolchain.wasmBindgen.path}: ${detail}`,
+      { kind: "wasm-bindgen", cause },
+    );
+  }
 
   const runtimeModule = resolve(outputDir, "vooya_app.js");
   const wasm = resolve(outputDir, "vooya_app_bg.wasm");
@@ -405,14 +427,16 @@ export function remapRustDiagnostic(
 }
 
 function runCargo(
+  toolchain: ResolvedToolchain,
   root: string,
   args: string[],
   mappings: Map<string, DiagnosticMapping>,
+  spawn: typeof spawnSync,
 ): MappedDiagnostic[] {
-  const result = spawnSync("cargo", [...args, "--message-format=json"], {
+  const result = spawn(toolchain.cargo.path, [...args, "--message-format=json"], {
     cwd: root,
     encoding: "utf8",
-    env: { ...process.env, CARGO_TERM_COLOR: "never" },
+    env: { ...toolchain.environment, CARGO_TERM_COLOR: "never" },
   });
   const diagnostics: MappedDiagnostic[] = [];
   if (result.stderr) process.stderr.write(result.stderr);
@@ -429,9 +453,23 @@ function runCargo(
       process.stderr.write(`${line}\n`);
     }
   }
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`Cargo build failed with exit code ${result.status}.`);
+  if (result.error) {
+    const detail = result.error instanceof Error ? result.error.message : String(result.error);
+    throw new VooyaUserError(
+      `Could not start Cargo at ${toolchain.cargo.path}: ${detail}`,
+      { kind: "cargo-start", cause: result.error },
+    );
+  }
+  const exitCode = result.status ?? -1;
+  if (exitCode !== 0) {
+    throw new CargoBuildError(
+      `Cargo build failed with exit code ${exitCode} using cargo ${toolchain.cargo.path} and rustc ${toolchain.rustc.path}.`,
+      {
+        cargoPath: toolchain.cargo.path,
+        rustcPath: toolchain.rustc.path,
+        exitCode,
+      },
+    );
   }
   return diagnostics;
 }
