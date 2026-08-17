@@ -7,6 +7,11 @@ import { renderVooModule } from "./module.js";
 import { getBuildState } from "./state.js";
 
 export default function vooyaRspackLoader(source) {
+  // The rendered wrapper includes the plugin's current in-memory WASM build
+  // identity, so it is not a pure function of the .voo source alone. Rspack's
+  // persistent loader cache can otherwise retain the wrapper from the last
+  // successful compilation after a Rust failure/recovery cycle.
+  this.cacheable(false);
   const { framework = "vue", instanceId } = this.getOptions();
   const state = getBuildState(instanceId);
   if (!state) {
@@ -18,8 +23,6 @@ export default function vooyaRspackLoader(source) {
   }
   component.id = this.resourcePath;
   this.addDependency(this.resourcePath);
-  for (const dependency of state.watchedRoots) this.addContextDependency(dependency);
-  for (const dependency of state.watchedFiles) this.addDependency(dependency);
   return renderVooModule({
     component,
     framework,

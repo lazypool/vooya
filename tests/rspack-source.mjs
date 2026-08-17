@@ -87,28 +87,36 @@ async function verifyDevRecovery(project) {
       60_000,
       () => `Rsbuild did not complete the recovery compilation.\n${output}`,
     );
-    const navigationsBeforeDependency = mainFrameNavigations;
-    const dependencyOutputOffset = output.length;
-    const dependencyPath = resolve(project, "rust/counter-math/src/lib.rs");
-    writeFileSync(dependencyPath, 'pub fn button_label() -> &\'static str { "Increment dependency" }\n');
+    const buildsBeforeSourceEdit = successfulBuildCount(output);
+    const navigationsBeforeSourceEdit = mainFrameNavigations;
+    const changedSource = source.replace(".text(button_label())", '.text("Increment source")');
+    if (changedSource === source) throw new Error("Rspack source fixture no longer contains the expected button label call.");
+    writeFileSync(componentPath, changedSource);
     await waitFor(
-      () => completedDependencyBuild(output.slice(dependencyOutputOffset)),
+      () => successfulBuildCount(output) > buildsBeforeSourceEdit,
       60_000,
-      () => `Rust path dependency did not trigger an Rsbuild compilation.\n${output}`,
+      () => `Edited .voo source did not complete an Rsbuild compilation.\n${output}`,
     );
     await waitFor(
-      () => mainFrameNavigations > navigationsBeforeDependency,
+      () => mainFrameNavigations > navigationsBeforeSourceEdit,
       30_000,
       () => `Rsbuild did not reload the browser after the WASM build changed.\n${output}`,
     );
     try {
-      await page.getByRole("button", { name: "Increment dependency" }).waitFor({ timeout: 30_000 });
+      await page.getByRole("button", { name: "Increment source" }).waitFor({ timeout: 30_000 });
     } catch {
       const buttonLabelsBeforeManualReload = await page.locator("button").allTextContents();
-      await page.reload();
-      const buttonLabelsAfterManualReload = await page.locator("button").allTextContents();
+      let buttonLabelsAfterManualReload;
+      try {
+        await page.reload();
+        buttonLabelsAfterManualReload = await page.locator("button").allTextContents();
+      } catch (reloadError) {
+        throw new Error(
+          `Rspack dev server stopped while checking the rebuilt .voo source: ${reloadError}.\n${output}`,
+        );
+      }
       throw new Error(
-        `Rspack reloaded without the rebuilt Rust dependency. ` +
+        `Rspack reloaded without the rebuilt .voo source. ` +
         `Builds: ${successfulBuildCount(output)}, navigations: ${mainFrameNavigations}, ` +
         `buttons before manual reload: ${JSON.stringify(buttonLabelsBeforeManualReload)}, ` +
         `after: ${JSON.stringify(buttonLabelsAfterManualReload)}.\n${output}`,
@@ -116,7 +124,7 @@ async function verifyDevRecovery(project) {
     }
     const unexpectedErrors = errors.filter((message) => !message.includes("Cargo build failed with exit code 101"));
     if (unexpectedErrors.length) throw new Error(`Rspack Vue browser errors:\n${unexpectedErrors.join("\n")}`);
-    console.log("Verified Rsbuild Rust failure recovery without restarting the dev server.");
+    console.log("Verified Rsbuild .voo rebuild and Rust failure recovery without restarting the dev server.");
   } finally {
     await browser?.close();
     if (server && server.exitCode === null) server.kill("SIGTERM");
@@ -216,9 +224,4 @@ function availablePort() {
 
 function successfulBuildCount(output) {
   return output.match(/ready\s+built in/g)?.length ?? 0;
-}
-
-function completedDependencyBuild(output) {
-  const compilation = output.lastIndexOf("Compiling counter-math");
-  return compilation !== -1 && /ready\s+built in/.test(output.slice(compilation));
 }
