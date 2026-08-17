@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@vooya/vite-plugin"><img src="https://img.shields.io/npm/v/@vooya/vite-plugin/alpha?label=alpha" alt="npm alpha version"></a>
+  <a href="https://www.npmjs.com/package/@vooya/vite"><img src="https://img.shields.io/npm/v/@vooya/vite/alpha?label=alpha" alt="npm alpha version"></a>
   <a href="https://github.com/vooyajs/vooya/actions/workflows/verify.yml"><img src="https://github.com/vooyajs/vooya/actions/workflows/verify.yml/badge.svg?branch=main" alt="build status"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/github/license/vooyajs/vooya" alt="license"></a>
 </p>
@@ -81,7 +81,7 @@ npm create vite@8 vooya-demo -- --template vue-ts
 cd vooya-demo
 npm install
 npm install @vooya/vue@alpha
-npm install --save-dev @vooya/vite-plugin@alpha
+npm install --save-dev @vooya/vite@alpha
 ```
 
 Using pnpm:
@@ -91,7 +91,7 @@ pnpm create vite@8 vooya-demo --template vue-ts
 cd vooya-demo
 pnpm install
 pnpm add @vooya/vue@alpha
-pnpm add --save-dev @vooya/vite-plugin@alpha
+pnpm add --save-dev @vooya/vite@alpha
 ```
 
 If pnpm reports that the `esbuild` install script was blocked, run
@@ -104,7 +104,7 @@ Update `vite.config.ts`:
 
 ```ts
 import vue from "@vitejs/plugin-vue";
-import { vooya } from "@vooya/vite-plugin";
+import { vooya } from "@vooya/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -202,14 +202,14 @@ npm create vite@8 vooya-react-demo -- --template react-ts
 cd vooya-react-demo
 npm install
 npm install @vooya/react@alpha
-npm install --save-dev @vooya/vite-plugin@alpha
+npm install --save-dev @vooya/vite@alpha
 ```
 
 Use the React mode in `vite.config.ts`:
 
 ```ts
 import react from "@vitejs/plugin-react";
-import { vooya } from "@vooya/vite-plugin";
+import { vooya } from "@vooya/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -327,13 +327,28 @@ CLI shown in the quick start above.
 | [`@vooya/compiler`](packages/compiler) | Pure `.voo` parser, IR, code generation, formatting, and scoped styles |
 | [`@vooya/core`](packages/core) | Rust component runtime source and ownership primitives |
 | [`@vooya/build-core`](packages/build-core) | Bundler-neutral Cargo, wasm-bindgen, asset, declaration, watch, and diagnostic pipeline |
-| [`@vooya/vite-plugin`](packages/vite-plugin) | Vite integration, Rust/WASM build orchestration, diagnostics, and CLI |
+| [`@vooya/vite`](packages/vite) | Vite integration, Rust/WASM build orchestration, diagnostics, and CLI |
 | [`@vooya/rspack`](packages/rspack) | Experimental Rspack 2.1 and Rsbuild source `.voo` integration |
 | [`@vooya/vue`](packages/vue) | Vue lifecycle and event adapter |
 | [`@vooya/react`](packages/react) | React lifecycle and event adapter |
 
 All public packages use one coordinated alpha version. Install the framework
 adapter and selected bundler integration from the same `alpha` channel.
+
+### Migration from `@vooya/vite-plugin`
+
+The Vite integration package is named `@vooya/vite`. Update existing installs
+and imports:
+
+```diff
+-npm install --save-dev @vooya/vite-plugin@alpha
++npm install --save-dev @vooya/vite@alpha
+```
+
+```diff
+-import { vooya } from "@vooya/vite-plugin";
++import { vooya } from "@vooya/vite";
+```
 
 ## Contributing
 

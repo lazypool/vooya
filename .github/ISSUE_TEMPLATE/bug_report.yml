@@ -13,7 +13,7 @@ body:
     attributes:
       label: Vooya version
       description: Include the exact versions of the adapter, plugin, compiler, and core when possible.
-      placeholder: "@vooya/vite-plugin 0.1.0-alpha.7"
+      placeholder: "@vooya/vite 0.1.0-alpha.7"
     validations:
       required: true
   - type: dropdown

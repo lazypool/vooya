@@ -10,7 +10,7 @@ The seven packages form one coordinated release unit:
 - `@vooya/compiler`
 - `@vooya/core`
 - `@vooya/build-core`
-- `@vooya/vite-plugin`
+- `@vooya/vite`
 - `@vooya/vue`
 - `@vooya/react`
 - `@vooya/rspack`

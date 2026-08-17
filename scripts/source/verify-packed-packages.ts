@@ -11,7 +11,7 @@ const expectedPackages = [
   "@vooya/compiler",
   "@vooya/core",
   "@vooya/build-core",
-  "@vooya/vite-plugin",
+  "@vooya/vite",
   "@vooya/vue",
   "@vooya/react",
   "@vooya/rspack",
@@ -67,7 +67,7 @@ try {
       assert(files.has("dist/index.js"), name, "archive is missing build-core JavaScript");
       assert(files.has("dist/index.d.ts"), name, "archive is missing build-core types");
     }
-    if (name === "@vooya/vite-plugin") {
+    if (name === "@vooya/vite") {
       for (const file of [
         "dist/index.d.ts",
         "dist/build-core.d.ts",
@@ -132,11 +132,11 @@ function verifyTypeConsumer(packedPackages) {
     join(consumer, "consumer.ts"),
     `import { parseVooComponent } from "@vooya/compiler";
 import type { SourceComponent } from "@vooya/compiler";
-import { vooya } from "@vooya/vite-plugin";
+import { vooya } from "@vooya/vite";
 import { buildApplication } from "@vooya/build-core";
-import { buildPrecompiledVueArtifact } from "@vooya/vite-plugin/build";
-import { formatVooComponent } from "@vooya/vite-plugin/format";
-import { assertVooAbiVersion, initializeWasm } from "@vooya/vite-plugin/runtime";
+import { buildPrecompiledVueArtifact } from "@vooya/vite/build";
+import { formatVooComponent } from "@vooya/vite/format";
+import { assertVooAbiVersion, initializeWasm } from "@vooya/vite/runtime";
 import { vooyaRsbuild, vooyaRspack } from "@vooya/rspack";
 
 void parseVooComponent;

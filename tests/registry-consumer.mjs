@@ -24,7 +24,7 @@ try {
 
 function publishedVersions(tag) {
   return Object.fromEntries(
-    ["compiler", "core", "build-core", "vite-plugin", "vue", "react"].map((name) => [
+    ["compiler", "core", "build-core", "vite", "vue", "react"].map((name) => [
       name,
       npmView(`@vooya/${name}@${tag}`, "version"),
     ]),
@@ -42,12 +42,12 @@ function verifyConsumer(framework, versions) {
   const project = resolve(temporaryRoot, framework);
   cpSync(resolve(repositoryRoot, `tests/fixtures/quickstart-${framework}`), project, { recursive: true });
   const adapter = `@vooya/${framework}`;
-  const plugin = "@vooya/vite-plugin";
+  const plugin = "@vooya/vite";
   const version = versions[framework];
 
   run("npm", [
     "install", "--ignore-scripts", "--no-audit", "--no-fund", "--save-exact",
-    `${adapter}@${version}`, `${plugin}@${versions["vite-plugin"]}`,
+    `${adapter}@${version}`, `${plugin}@${versions["vite"]}`,
   ], project);
   verifyRegistryLockfile(project, framework, versions);
   run("npm", ["exec", "--no", "--", "vooya", "doctor"], project);
@@ -65,7 +65,7 @@ function verifyRegistryLockfile(project, framework, versions) {
   const expected = {
     "@vooya/compiler": versions.compiler,
     "@vooya/core": versions.core,
-    "@vooya/vite-plugin": versions["vite-plugin"],
+    "@vooya/vite": versions["vite"],
     [`@vooya/${framework}`]: versions[framework],
   };
   for (const [name, version] of Object.entries(expected)) {

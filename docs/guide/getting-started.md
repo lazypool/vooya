@@ -83,21 +83,21 @@ npm:
 
 ```sh
 npm install @vooya/vue@alpha
-npm install --save-dev @vooya/vite-plugin@alpha
+npm install --save-dev @vooya/vite@alpha
 ```
 
 pnpm:
 
 ```sh
 pnpm add @vooya/vue@alpha
-pnpm add --save-dev @vooya/vite-plugin@alpha
+pnpm add --save-dev @vooya/vite@alpha
 ```
 
 Add `vooya()` after the Vue plugin:
 
 ```js
 import vue from "@vitejs/plugin-vue";
-import { vooya } from "@vooya/vite-plugin";
+import { vooya } from "@vooya/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -116,21 +116,21 @@ npm:
 
 ```sh
 npm install @vooya/react@alpha
-npm install --save-dev @vooya/vite-plugin@alpha
+npm install --save-dev @vooya/vite@alpha
 ```
 
 pnpm:
 
 ```sh
 pnpm add @vooya/react@alpha
-pnpm add --save-dev @vooya/vite-plugin@alpha
+pnpm add --save-dev @vooya/vite@alpha
 ```
 
 Select the React adapter in Vite:
 
 ```js
 import react from "@vitejs/plugin-react";
-import { vooya } from "@vooya/vite-plugin";
+import { vooya } from "@vooya/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({

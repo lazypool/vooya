@@ -4,7 +4,7 @@ Vue 3 lifecycle adapter for Rust components compiled by Vooya.
 
 ```sh
 npm install @vooya/vue@alpha
-npm install --save-dev @vooya/vite-plugin@alpha
+npm install --save-dev @vooya/vite@alpha
 ```
 
 Configure `vooya()` after `@vitejs/plugin-vue`, then import a `.voo` file as a

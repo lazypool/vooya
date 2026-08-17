@@ -1,5 +1,5 @@
 {
-  "name": "@vooya/vite-plugin",
+  "name": "@vooya/vite",
   "version": "0.1.0-alpha.8",
   "description": "Vite integration for Vooya component islands.",
   "type": "module",
@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vooyajs/vooya.git",
-    "directory": "packages/vite-plugin"
+    "directory": "packages/vite"
   },
   "publishConfig": {
     "access": "public"

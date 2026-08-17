@@ -1,16 +1,16 @@
-# `@vooya/vite-plugin`
+# `@vooya/vite`
 
 Compile Rust implementations from `.voo` files and import them as Vue or React
 components.
 
 ```sh
-npm install --save-dev @vooya/vite-plugin@alpha
+npm install --save-dev @vooya/vite@alpha
 npm install @vooya/vue@alpha
 ```
 
 ```js
 import vue from "@vitejs/plugin-vue";
-import { vooya } from "@vooya/vite-plugin";
+import { vooya } from "@vooya/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({

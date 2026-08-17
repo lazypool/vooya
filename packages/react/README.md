@@ -4,7 +4,7 @@ React 19 lifecycle adapter for Rust components compiled by Vooya.
 
 ```sh
 npm install @vooya/react@alpha
-npm install --save-dev @vooya/vite-plugin@alpha
+npm install --save-dev @vooya/vite@alpha
 ```
 
 Configure `vooya({ framework: "react" })` after `@vitejs/plugin-react`, then

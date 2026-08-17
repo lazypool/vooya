@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 
 import { CargoBuildError, VooyaUserError } from "./errors.js";
 import { resolveToolchain } from "./toolchain.js";
-import type { ResolvedToolchain } from "./toolchain.js";
+import type { ResolvedToolchain, ToolchainEnvironment } from "./toolchain.js";
 import {
   compileVooStyle,
   generateRustComponents,
@@ -56,6 +56,33 @@ export interface BuildMetadata {
   wasmBindgenTarget: "web";
 }
 
+export interface BuildSpawnResult {
+  status: number | null;
+  stdout?: string | null;
+  stderr?: string | null;
+  error?: unknown;
+}
+
+export type BuildSpawn = (
+  command: string,
+  args: string[],
+  options: {
+    cwd: string;
+    encoding: "utf8";
+    env: ToolchainEnvironment;
+  },
+) => BuildSpawnResult;
+
+export type BuildExec = (
+  command: string,
+  args: string[],
+  options: {
+    cwd: string;
+    env: ToolchainEnvironment;
+    stdio: "inherit";
+  },
+) => unknown;
+
 export interface BuildApplicationOptions {
   applicationRoot: string;
   components?: SourceComponent[];
@@ -68,8 +95,8 @@ export interface BuildApplicationOptions {
   framework?: "vue" | "react";
   onRustBuildStart?: () => void;
   toolchain?: ResolvedToolchain;
-  spawn?: typeof spawnSync;
-  exec?: typeof execFileSync;
+  spawn?: BuildSpawn;
+  exec?: BuildExec;
 }
 
 export interface BuildApplicationResult {
@@ -431,7 +458,7 @@ function runCargo(
   root: string,
   args: string[],
   mappings: Map<string, DiagnosticMapping>,
-  spawn: typeof spawnSync,
+  spawn: BuildSpawn,
 ): MappedDiagnostic[] {
   const result = spawn(toolchain.cargo.path, [...args, "--message-format=json"], {
     cwd: root,
