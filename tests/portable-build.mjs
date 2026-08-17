@@ -19,7 +19,7 @@ try {
     pack("@vooya/compiler", packageDirectory),
     pack("@vooya/core", packageDirectory),
     pack("@vooya/build-core", packageDirectory),
-    pack("@vooya/vite-plugin", packageDirectory),
+    pack("@vooya/vite", packageDirectory),
     pack("@vooya/vue", packageDirectory),
   ];
 

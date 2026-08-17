@@ -12,7 +12,7 @@ const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 try {
   mkdirSync(packageDirectory, { recursive: true });
   run(npmCommand, ["run", "build:core"], repositoryRoot);
-  run(npmCommand, ["run", "build", "--workspace", "@vooya/vite-plugin"], repositoryRoot);
+  run(npmCommand, ["run", "build", "--workspace", "@vooya/vite"], repositoryRoot);
   run(npmCommand, ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
   run(npmCommand, ["run", "build", "--workspace", "@vooya/react"], repositoryRoot);
   const packages = {
@@ -20,7 +20,7 @@ try {
       pack("@vooya/compiler"),
       pack("@vooya/core"),
       pack("@vooya/build-core"),
-      pack("@vooya/vite-plugin"),
+      pack("@vooya/vite"),
     ],
     vue: pack("@vooya/vue"),
     react: pack("@vooya/react"),
@@ -48,14 +48,14 @@ function verifyGettingStarted() {
     "pnpm exec vooya doctor",
     "pnpm run dev",
     "pnpm run build",
-    "pnpm add --save-dev @vooya/vite-plugin@alpha",
+    "pnpm add --save-dev @vooya/vite@alpha",
   ];
   const frameworkSpecific = {
     vue: [
       "## Vue",
       'npm install @vooya/vue@alpha',
       'pnpm add @vooya/vue@alpha',
-      'npm install --save-dev @vooya/vite-plugin@alpha',
+      'npm install --save-dev @vooya/vite@alpha',
       "plugins: [vue(), vooya()]",
       'import Greeting from "./Greeting.voo";',
       "<Greeting />",
@@ -64,7 +64,7 @@ function verifyGettingStarted() {
       "## React",
       'npm install @vooya/react@alpha',
       'pnpm add @vooya/react@alpha',
-      'npm install --save-dev @vooya/vite-plugin@alpha',
+      'npm install --save-dev @vooya/vite@alpha',
       "plugins: [react(), vooya({ framework: \"react\" })]",
       "return <Greeting name=\"Rust\" />;",
       "[React counter](../../examples/react-counter)",

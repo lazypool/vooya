@@ -99,7 +99,7 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
           ${component.style ? `import "${stylePrefix}${encodeURIComponent(id)}.css";` : ""}
           import init, { ${exportName}, ${disposeName}, ${Object.values(updateNames).join(", ")}${Object.keys(updateNames).length ? ", " : ""}voo_abi_version } from "${runtimeId}";
           import { defineVooyaComponent } from "${adapter}";
-          import { assertVooAbiVersion, initializeWasm } from "@vooya/vite-plugin/runtime";
+          import { assertVooAbiVersion, initializeWasm } from "@vooya/vite/runtime";
 
           let bindings;
           async function loadBindings() {

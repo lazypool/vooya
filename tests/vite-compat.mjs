@@ -52,14 +52,14 @@ let output = "";
 try {
   mkdirSync(packageDirectory, { recursive: true });
   run("npm", ["run", "build:core"], repositoryRoot);
-  run("npm", ["run", "build", "--workspace", "@vooya/vite-plugin"], repositoryRoot);
+  run("npm", ["run", "build", "--workspace", "@vooya/vite"], repositoryRoot);
   run("npm", ["run", "build", "--workspace", "@vooya/vue"], repositoryRoot);
 
   const packages = {
     compiler: pack("@vooya/compiler"),
     core: pack("@vooya/core"),
     buildCore: pack("@vooya/build-core"),
-    plugin: pack("@vooya/vite-plugin"),
+    plugin: pack("@vooya/vite"),
     vue: pack("@vooya/vue"),
   };
   cpSync(resolve(repositoryRoot, "tests/fixtures/portable-vue"), project, { recursive: true });
@@ -116,7 +116,7 @@ function configureProject(packages) {
     "@vooya/compiler": `file:${packages.compiler}`,
     "@vooya/core": `file:${packages.core}`,
     "@vooya/build-core": `file:${packages.buildCore}`,
-    "@vooya/vite-plugin": `file:${packages.plugin}`,
+    "@vooya/vite": `file:${packages.plugin}`,
     ...(target.install.length ? { "vite-plus": target.version } : {}),
   };
   if (Object.keys(target.overrides).length > 0) manifest.overrides = target.overrides;

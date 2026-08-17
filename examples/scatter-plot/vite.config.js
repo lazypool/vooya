@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import vue from "@vitejs/plugin-vue";
-import { vooya } from "@vooya/vite-plugin";
+import { vooya } from "@vooya/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({

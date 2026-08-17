@@ -31,8 +31,8 @@ publish = true
 github-release = false
 depends-on = ["vooya-core", "vooya-compiler"]
 
-[packages.vooya-vite-plugin]
-path = "packages/vite-plugin"
+[packages.vooya-vite]
+path = "packages/vite"
 resolver = "nodejs"
 channel = "alpha"
 publish = true

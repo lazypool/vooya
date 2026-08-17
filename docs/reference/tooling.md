@@ -13,7 +13,7 @@ may remain JavaScript when Node or a consumer tool must execute them directly.
 
 ## Vite plugin
 
-The public plugin entry is `vooya()` from `@vooya/vite-plugin`.
+The public plugin entry is `vooya()` from `@vooya/vite`.
 
 The plugin peer range covers Vite 7 and Vite 8. Vite+ is tested as a separate
 toolchain because it aliases `vite` to `@voidzero-dev/vite-plus-core`; it still
