@@ -1,24 +1,32 @@
 #!/usr/bin/env node
 import { formatToolchainReport, inspectToolchain } from "../dist/doctor.js";
+import { cleanVooyaWorkspace } from "@vooya/build-core";
 
 const parsed = parseDoctorArguments(process.argv.slice(2));
 if (parsed.help) {
-  console.log("Usage: vooya doctor [--cargo-path <path>]");
+  console.log(usage());
 } else if (parsed.error) {
   console.error(parsed.error);
-  console.error("Usage: vooya doctor [--cargo-path <path>]");
+  console.error(usage());
   process.exitCode = 1;
+} else if (parsed.command === "clean") {
+  const workspace = cleanVooyaWorkspace(process.cwd(), parsed.workspaceRoot);
+  console.log(`Removed generated Vooya state from ${workspace.root}.`);
 } else {
-  const report = inspectToolchain({ cargoPath: parsed.cargoPath });
+  const report = inspectToolchain({
+    cargoPath: parsed.cargoPath,
+    workspaceRoot: parsed.workspaceRoot,
+  });
   console.log(formatToolchainReport(report));
   if (!report.ok) process.exitCode = 1;
 }
 
 export function parseDoctorArguments(args) {
   if (args[0] === "--help" || args[0] === "-h") return { help: true };
-  if (args[0] !== "doctor") return { error: "Unknown command." };
+  if (args[0] !== "doctor" && args[0] !== "clean") return { error: "Unknown command." };
 
   let cargoPath;
+  let workspaceRoot;
   for (let index = 1; index < args.length; index += 1) {
     const argument = args[index];
     if (argument === "--help" || argument === "-h") return { help: true };
@@ -37,7 +45,33 @@ export function parseDoctorArguments(args) {
       cargoPath = value;
       continue;
     }
+    if (argument === "--workspace-root") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--")) return { error: "--workspace-root requires a path." };
+      if (workspaceRoot !== undefined) return { error: "--workspace-root may be specified only once." };
+      workspaceRoot = value;
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--workspace-root=")) {
+      const value = argument.slice("--workspace-root=".length);
+      if (!value) return { error: "--workspace-root requires a path." };
+      if (workspaceRoot !== undefined) return { error: "--workspace-root may be specified only once." };
+      workspaceRoot = value;
+      continue;
+    }
     return { error: `Unknown argument: ${argument}` };
   }
-  return { command: "doctor", cargoPath };
+  if (args[0] === "clean" && cargoPath !== undefined) {
+    return { error: "--cargo-path is only available for vooya doctor." };
+  }
+  return { command: args[0], cargoPath, workspaceRoot };
+}
+
+function usage() {
+  return [
+    "Usage:",
+    "  vooya doctor [--cargo-path <path>] [--workspace-root <path>]",
+    "  vooya clean [--workspace-root <path>]",
+  ].join("\n");
 }

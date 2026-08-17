@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 
-import { writeFileSync } from "node:fs";
-import { generateVooDeclaration } from "@vooya/compiler";
+import { writeVooDeclarations } from "@vooya/build-core";
 import { readVooComponents } from "./voo-project.js";
 
 const [rootArgument, frameworkArgument = "vue"] = process.argv.slice(2);
@@ -13,10 +12,9 @@ if (frameworkArgument !== "vue" && frameworkArgument !== "react") {
 }
 
 const root = resolve(process.cwd(), rootArgument);
-for (const component of readVooComponents(root)) {
-  if (component.format !== "source") continue;
-  writeFileSync(
-    component.id.replace(/\.voo$/, ".d.voo.ts"),
-    generateVooDeclaration(component, frameworkArgument),
-  );
-}
+const written = writeVooDeclarations({
+  applicationRoot: root,
+  components: readVooComponents(root),
+  framework: frameworkArgument,
+});
+console.log(`Generated ${written.files.length} declaration(s) under ${written.typesRoot}.`);

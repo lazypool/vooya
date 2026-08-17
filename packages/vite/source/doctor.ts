@@ -7,8 +7,10 @@ import {
   WASM_BINDGEN_VERSION,
   WASM_TARGET,
   formatResolvedToolchain,
+  resolveVooyaWorkspace,
   resolveToolchain,
 } from "@vooya/build-core";
+import { inspectGeneratedTypesConfiguration } from "./typescript-config.js";
 
 export { WASM_BINDGEN_VERSION, WASM_TARGET, formatResolvedToolchain, resolveToolchain } from "@vooya/build-core";
 export type { ResolvedToolchain } from "@vooya/build-core";
@@ -27,6 +29,7 @@ export function inspectToolchain({
   exists = existsSync,
   probeManifestPath = undefined,
   cargoPath = undefined,
+  workspaceRoot = undefined,
 } = {}) {
   let toolchain;
   let resolutionError;
@@ -37,6 +40,20 @@ export function inspectToolchain({
   }
 
   const results = [];
+  const workspace = resolveVooyaWorkspace(cwd, workspaceRoot);
+  results.push({
+    name: "generated workspace",
+    status: "ok",
+    detail: workspace.root,
+  });
+  const generatedTypesProblem = inspectGeneratedTypesConfiguration(cwd, workspaceRoot);
+  if (generatedTypesProblem) {
+    results.push({
+      name: "generated TypeScript declarations",
+      status: "warning",
+      detail: generatedTypesProblem.message,
+    });
+  }
   const attempt = resolutionError?.attempts?.[0];
   const cargo = toolchain?.cargo ?? attempt?.cargo;
   const rustc = toolchain?.rustc ?? attempt?.rustc;
@@ -142,6 +159,7 @@ export function inspectToolchain({
     wasmBindgen: wasmBindgen?.version ? `wasm-bindgen ${wasmBindgen.version}` : undefined,
     wasmBindgenPath: toolchain?.wasmBindgen.path ?? wasmBindgen?.path,
     results,
+    workspaceRoot: workspace.root,
     ok: results.every((result) => result.status !== "error"),
   };
 }

@@ -6,7 +6,11 @@ import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildApplication } from "@vooya/build-core";
+import {
+  buildApplication,
+  resolveVooyaWorkspace,
+  writeVooDeclarations,
+} from "@vooya/build-core";
 import type { BuildApplicationResult, RustBuildOptions } from "@vooya/build-core";
 import { parseVooComponent } from "@vooya/compiler";
 import type { SourceComponent } from "@vooya/compiler";
@@ -20,6 +24,8 @@ let nextInstance = 0;
 export interface VooyaRspackOptions {
   framework?: "vue" | "react";
   rust?: RustBuildOptions;
+  workspaceRoot?: string;
+  /** @deprecated Use workspaceRoot. */
   cacheRoot?: string;
 }
 
@@ -94,16 +100,24 @@ export function vooyaRspack(options: VooyaRspackOptions = {}): VooyaRspackPlugin
 export class VooyaRspackPlugin implements RspackPluginLike {
   framework: "vue" | "react";
   rust: RustBuildOptions;
-  cacheRoot?: string;
+  workspaceRoot?: string;
   instanceId: string;
   buildError?: Error;
   buildId?: string;
 
-  constructor({ framework = "vue", rust = {}, cacheRoot }: VooyaRspackOptions = {}) {
+  constructor({
+    framework = "vue",
+    rust = {},
+    workspaceRoot,
+    cacheRoot,
+  }: VooyaRspackOptions = {}) {
     if (framework !== "vue" && framework !== "react") throw new Error(`Unknown Vooya framework ${framework}.`);
+    if (workspaceRoot !== undefined && cacheRoot !== undefined) {
+      throw new Error("Use either workspaceRoot or the deprecated cacheRoot option, not both.");
+    }
     this.framework = framework;
     this.rust = rust;
-    this.cacheRoot = cacheRoot;
+    this.workspaceRoot = workspaceRoot ?? cacheRoot;
     this.instanceId = `vooya-rspack-${nextInstance++}`;
     this.buildError = undefined;
     this.buildId = undefined;
@@ -123,18 +137,29 @@ export class VooyaRspackPlugin implements RspackPluginLike {
       try {
         const applicationRoot = compiler.context;
         const components = readVooComponents(applicationRoot);
-        const workspacePath = resolve(this.cacheRoot ?? resolve(applicationRoot, ".voo-cache"), "rspack");
+        const workspace = resolveVooyaWorkspace(applicationRoot, this.workspaceRoot);
+        const workspacePath = resolve(workspace.build, "rspack");
         const result = buildApplication({
           applicationRoot,
           components,
           rust: this.rust,
-          cacheRoot: workspacePath,
+          workspaceRoot: workspace.root,
           workspacePath,
-          outputDir: resolve(workspacePath, "dist"),
+          outputDir: resolve(workspace.wasm, "rspack"),
           buildMode: compiler.options.mode === "development" ? "development" : "production",
           framework: this.framework,
         });
-        const styleModules = writeGeneratedFiles({ components, result, workspacePath });
+        writeVooDeclarations({
+          applicationRoot,
+          components,
+          framework: this.framework,
+          workspaceRoot: workspace.root,
+        });
+        const styleModules = writeGeneratedFiles({
+          components,
+          result,
+          stylesRoot: resolve(workspace.cache, "rspack/styles"),
+        });
         const buildId = createHash("sha256").update(result.wasm.bytes).digest("hex").slice(0, 16);
         const versionedRuntime = writeVersionedRuntime(result, buildId);
         this.buildId = buildId;
@@ -263,24 +288,18 @@ function writeVersionedRuntime(
 function writeGeneratedFiles({
   components,
   result,
-  workspacePath,
+  stylesRoot,
 }: {
   components: PreparedSourceComponent[];
   result: BuildApplicationResult;
-  workspacePath: string;
+  stylesRoot: string;
 }): Map<string, string> {
   const styles = new Map<string, string>();
-  const declarations = new Map(result.declarations.map((declaration) => [declaration.componentId, declaration.code]));
   const css = new Map(result.css.map((style) => [style.componentId, style.code]));
   for (const [index, component] of components.entries()) {
-    const declaration = declarations.get(component.id);
-    if (declaration === undefined) {
-      throw new Error(`Vooya build core did not return a declaration for ${component.id}.`);
-    }
-    writeIfChanged(component.id.replace(/\.voo$/, ".d.voo.ts"), declaration);
     const style = css.get(component.id);
     if (style === undefined) continue;
-    const stylePath = resolve(workspacePath, "styles", `${index}-${component.name}.css`);
+    const stylePath = resolve(stylesRoot, `${index}-${component.name}.css`);
     mkdirSync(dirname(stylePath), { recursive: true });
     writeIfChanged(stylePath, style);
     styles.set(component.id, stylePath);

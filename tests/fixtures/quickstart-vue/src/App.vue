@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import Greeting from "./Greeting.voo";
 </script>
 

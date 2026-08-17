@@ -1,4 +1,5 @@
 {
   "extends": "../vue-counter/tsconfig.json",
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
+  "compilerOptions": { "rootDirs": [".", ".vooya/types"] },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", ".vooya/types/**/*.ts"]
 }

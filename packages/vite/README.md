@@ -18,9 +18,13 @@ export default defineConfig({
 });
 ```
 
-The plugin builds one application-local WASM module under `.voo-cache`. Source
-compilation currently requires Cargo, the `wasm32-unknown-unknown` target, and
-the matching `wasm-bindgen` CLI.
+The plugin builds one application-local WASM module in the disposable
+`.vooya/` workspace and mirrors declarations under `.vooya/types`. TypeScript
+projects must configure `allowArbitraryExtensions: true` and
+`rootDirs: [".", ".vooya/types"]`. Source compilation currently requires Cargo,
+the `wasm32-unknown-unknown` target, and the matching `wasm-bindgen` CLI.
+
+Use `npx vooya clean` to remove generated state.
 
 Format components with `npx voo-format src` or check them with
 `npx voo-format --check src`.

@@ -16,11 +16,17 @@ import {
   generatedComponentPrelude,
 } from "@vooya/compiler";
 import type { SourceComponent } from "@vooya/compiler";
+import {
+  ensureVooyaWorkspace,
+  resolveVooyaWorkspace,
+  writeWorkspaceMetadata,
+} from "./workspace.js";
 
 const require = createRequire(import.meta.url);
 
 export * from "./errors.js";
 export * from "./toolchain.js";
+export * from "./workspace.js";
 
 export type RustDependency =
   | string
@@ -88,6 +94,8 @@ export interface BuildApplicationOptions {
   components?: SourceComponent[];
   rust?: RustBuildOptions;
   runtimeCrateRoot?: string;
+  workspaceRoot?: string;
+  /** @deprecated Use workspaceRoot. */
   cacheRoot?: string;
   workspacePath?: string;
   outputDir?: string;
@@ -100,6 +108,8 @@ export interface BuildApplicationOptions {
 }
 
 export interface BuildApplicationResult {
+  workspaceRoot: string;
+  /** @deprecated Use workspaceRoot. */
   cacheRoot: string;
   runtimeModule: string;
   javascript: BuildAsset;
@@ -153,9 +163,10 @@ export function buildApplication({
   components = [],
   rust = {},
   runtimeCrateRoot = resolveRuntimeCrateRoot(),
-  cacheRoot = resolve(applicationRoot, ".voo-cache"),
-  workspacePath = cacheRoot,
-  outputDir = resolve(cacheRoot, "dist"),
+  workspaceRoot,
+  cacheRoot,
+  workspacePath,
+  outputDir,
   buildMode = "production",
   framework = "vue",
   onRustBuildStart = () => {},
@@ -164,6 +175,14 @@ export function buildApplication({
   exec = execFileSync,
 }: BuildApplicationOptions): BuildApplicationResult {
   if (!applicationRoot) throw new Error("Vooya build requires applicationRoot.");
+  if (workspaceRoot !== undefined && cacheRoot !== undefined) {
+    throw new Error("Use either workspaceRoot or the deprecated cacheRoot option, not both.");
+  }
+
+  const workspace = resolveVooyaWorkspace(applicationRoot, workspaceRoot ?? cacheRoot);
+  ensureVooyaWorkspace(workspace);
+  workspacePath ??= workspace.build;
+  outputDir ??= workspace.wasm;
 
   const sourceDir = resolve(workspacePath, "src/components");
   const targetDir = resolve(workspacePath, "target");
@@ -237,8 +256,21 @@ export function buildApplication({
 
   const runtimeModule = resolve(outputDir, "vooya_app.js");
   const wasm = resolve(outputDir, "vooya_app_bg.wasm");
+  const abiVersions = components.map(
+    (component) => generatedAdapterDefinition(component).abiVersion,
+  );
+  writeWorkspaceMetadata(workspace, {
+    abiVersions,
+    toolchain: {
+      cargo: toolchain.cargo.version,
+      rustc: toolchain.rustc.version,
+      target: toolchain.target.triple,
+      wasmBindgen: toolchain.wasmBindgen.version,
+    },
+  });
   return {
-    cacheRoot: workspacePath,
+    workspaceRoot: workspace.root,
+    cacheRoot: workspace.root,
     runtimeModule,
     javascript: { path: runtimeModule, code: readFileSync(runtimeModule, "utf8") },
     wasm: { path: wasm, bytes: new Uint8Array(readFileSync(wasm)) },
@@ -260,9 +292,7 @@ export function buildApplication({
     diagnostics,
     metadata: {
       buildMode,
-      abiVersions: components.map(
-        (component) => generatedAdapterDefinition(component).abiVersion,
-      ),
+      abiVersions,
       wasmBindgenTarget: "web",
     },
   };
@@ -273,7 +303,7 @@ export function buildApplication({
 export function buildCore(root = process.cwd()): BuildApplicationResult {
   return buildApplication({
     applicationRoot: root,
-    cacheRoot: resolve(root, "target/vooya-package"),
+    workspaceRoot: resolve(root, "target/vooya-package"),
     outputDir: resolve(root, "packages/core/dist"),
   });
 }

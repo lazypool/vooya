@@ -119,6 +119,22 @@ npm exec -- vooya doctor
 # or: pnpm exec vooya doctor
 ```
 
+For a TypeScript application, add the generated declaration root to the
+application config used by `tsc` or `vue-tsc` (normally `tsconfig.app.json` in
+a new Vite project):
+
+```json
+{
+  "compilerOptions": {
+    "allowArbitraryExtensions": true,
+    "rootDirs": [".", ".vooya/types"]
+  }
+}
+```
+
+Vooya does not rewrite project configuration automatically. `vooya doctor`
+reports the required change when it finds an incomplete TypeScript config.
+
 ### 4. Create your first component
 
 Create `src/Greeting.voo`:
@@ -190,8 +206,10 @@ npm run dev
 # or: pnpm dev
 ```
 
-The first run generates an application-local Cargo crate, compiles the Rust
-source to WASM, and writes an adjacent TypeScript declaration for the component.
+The first run creates a disposable `.vooya/` workspace, compiles the Rust
+source to WASM, and mirrors the component declaration under `.vooya/types`.
+Run `npm exec -- vooya clean` whenever you want to reconstruct all generated
+state.
 
 ## Using React
 

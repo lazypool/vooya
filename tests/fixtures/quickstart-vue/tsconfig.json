@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "allowArbitraryExtensions": true,
-    "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "rootDirs": [".", ".vooya/types"],
+    "skipLibCheck": true,
     "strict": true,
-    "target": "ES2020"
+    "target": "ES2020",
+    "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", ".vooya/types/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", ".vooya/types/**/*.ts"]
 }

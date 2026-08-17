@@ -3,9 +3,11 @@
     "composite": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "allowArbitraryExtensions": true,
+    "rootDirs": [".", ".vooya/types"],
     "target": "ES2022",
     "strict": true,
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.voo.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", ".vooya/types/**/*.ts"]
 }

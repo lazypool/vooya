@@ -2,8 +2,13 @@
 
 Vooya is a public alpha and an architecture-validation project. It is not a
 stable compiler or a production compatibility promise. The latest published
-coordinated release is `v0.1.0-alpha.7`; use the npm `alpha` tag to resolve the
+coordinated release is `v0.1.0-alpha.8`; use the npm `alpha` tag to resolve the
 latest published set.
+
+The published alpha.8 set still uses the former `@vooya/vite-plugin` package
+name. `main` has renamed that integration to `@vooya/vite`; the new name is
+queued for the next coordinated prerelease and is not yet available from the
+npm registry.
 
 The seven packages form one coordinated release unit:
 
@@ -24,7 +29,8 @@ prerelease.
 - Compile Rust directly from `<rust>` blocks into application-level WASM.
 - Generate typed mount, prop update, event, dispose, and ABI bindings.
 - Import one `.voo` file as a Vue 3 or React 19 component.
-- Generate adjacent TypeScript declarations from component contracts.
+- Generate mirrored TypeScript declarations under `.vooya/types` from
+  component contracts.
 - Compile optional PostCSS-based scoped styles.
 - Map extracted Rust diagnostics back to `.voo` source lines.
 - Configure registry, Git, and application-relative path dependencies.
