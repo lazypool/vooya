@@ -7,6 +7,8 @@ import type {
   VooProp,
   VooStyle,
 } from "./types.js";
+import { publicAbiTypeDiagnostic } from "./abi.js";
+
 
 const defaultRuntime = "@vooya/core";
 
@@ -60,10 +62,11 @@ function parseContract(source: string, id: string, startLine: number): { props: 
   const props: VooProp[] = [];
   const events: VooEvent[] = [];
   let section: "props" | "events" | undefined;
-  for (const [index, rawLine] of source.split(/\r?\n/).entries()) {
+  for (const [index, rawLine] of trimBlock(source).split(/\r?\n/).entries()) {
     const lineNumber = startLine + index;
-    const line = rawLine.replace(/\/\/.*$/, "").trim();
+    const line = stripComment(rawLine).trim();
     if (!line) continue;
+
     const sectionMatch = line.match(/^(props|events):$/);
     if (sectionMatch) {
       section = sectionMatch[1] as "props" | "events";
@@ -73,25 +76,41 @@ function parseContract(source: string, id: string, startLine: number): { props: 
     if (section === "props") {
       const match = line.match(/^([A-Za-z_][\w]*)\s*:\s*(.+?)(?:\s*=\s*(.+))?$/);
       if (!match) throw new VooParseError(`Invalid prop declaration "${line}"`, id, lineNumber);
-      const [, name, rustType, defaultValue] = match;
-      props.push({ name, rustType: rustType.trim(), required: defaultValue === undefined, defaultValue: defaultValue?.trim() });
+      const [, name, rawType, defaultValue] = match;
+      const rustType = rawType.trim();
+      const diagnostic = publicAbiTypeDiagnostic(rustType, `prop "${name}"`);
+      if (diagnostic) throw new VooParseError(diagnostic, id, lineNumber);
+      props.push({ name, rustType, required: defaultValue === undefined, defaultValue: defaultValue?.trim() });
       continue;
     }
     const eventMatch = line.match(/^([A-Za-z_][\w-]*)\s*\((.*)\)$/);
     if (!eventMatch) throw new VooParseError(`Invalid event declaration "${line}"`, id, lineNumber);
-    events.push({ name: eventMatch[1], parameters: parseEventParameters(eventMatch[2], id, lineNumber) });
+    events.push({
+      name: eventMatch[1],
+      parameters: parseEventParameters(eventMatch[1], eventMatch[2], id, lineNumber),
+    });
   }
   return { props, events };
 }
 
-function parseEventParameters(source: string, id: string, line: number): VooEventParameter[] {
+function parseEventParameters(
+  eventName: string,
+  source: string,
+  id: string,
+  line: number,
+): VooEventParameter[] {
   if (!source.trim()) return [];
   return splitTopLevel(source).map((parameter) => {
     const match = parameter.trim().match(/^([A-Za-z_][\w]*)\s*:\s*(.+)$/);
     if (!match) throw new VooParseError(`Invalid event parameter "${parameter.trim()}"`, id, line);
-    return { name: match[1], rustType: match[2].trim() };
+    const [, name, rawType] = match;
+    const rustType = rawType.trim();
+    const diagnostic = publicAbiTypeDiagnostic(rustType, `event "${eventName}" parameter "${name}"`);
+    if (diagnostic) throw new VooParseError(diagnostic, id, line);
+    return { name, rustType };
   });
 }
+
 
 function splitTopLevel(source: string): string[] {
   const values: string[] = [];
@@ -149,7 +168,7 @@ function assertAttributes(attributes: Attributes, allowed: Set<string>, id: stri
 }
 
 function parseManifestComponent(source: string, id: string): ManifestComponent {
-  const lines = source.split(/\r?\n/).map((raw, index) => ({ value: raw.replace(/\/\/.*$/, "").trim(), line: index + 1 })).filter(({ value }) => value);
+  const lines = source.split(/\r?\n/).map((raw, index) => ({ value: stripComment(raw).trim(), line: index + 1 })).filter(({ value }) => value);
   const declaration = lines.shift();
   const componentMatch = declaration?.value.match(/^component\s+([A-Z][A-Za-z0-9_]*)$/);
   if (!componentMatch) throw new VooParseError('Expected "component Name" or a <component> block', id, declaration?.line ?? 1);
@@ -187,6 +206,30 @@ function parseManifestComponent(source: string, id: string): ManifestComponent {
   if (!component.exportName) throw new VooParseError(`Component ${component.name} is missing "export"`, id, declarationLine);
   if (!/^[A-Za-z_$][\w$]*$/.test(component.exportName)) throw new VooParseError(`Component ${component.name} has invalid export "${component.exportName}"`, id, declarationLine);
   return component;
+}
+
+export function findCommentIndex(line: string): number {
+  let inQuotes = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (inQuotes) {
+      if (character === "\\") {
+        index += 1;
+      } else if (character === '"') {
+        inQuotes = false;
+      }
+    } else if (character === '"') {
+      inQuotes = true;
+    } else if (character === "/" && line[index + 1] === "/") {
+      return index;
+    }
+  }
+  return -1;
+}
+
+export function stripComment(line: string): string {
+  const index = findCommentIndex(line);
+  return index === -1 ? line : line.slice(0, index);
 }
 
 function trimBlock(source: string): string { return source.replace(/^\r?\n/, "").replace(/\r?\n\s*$/, ""); }

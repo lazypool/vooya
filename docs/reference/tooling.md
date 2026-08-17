@@ -15,6 +15,12 @@ may remain JavaScript when Node or a consumer tool must execute them directly.
 
 The public plugin entry is `vooya()` from `@vooya/vite-plugin`.
 
+The plugin peer range covers Vite 7 and Vite 8. Vite+ is tested as a separate
+toolchain because it aliases `vite` to `@voidzero-dev/vite-plus-core`; it still
+uses the same `vooya()` plugin and does not create a second Vooya adapter API.
+The current Vite+ fixture uses npm legacy peer resolution because its aliased
+core has a `0.x` package version; normal Vite 7/8 fixtures install strictly.
+
 ```ts
 vooya({
   framework: "vue",
@@ -81,7 +87,7 @@ The plugin creates `.voo-cache` under the Vite root. It contains:
 Git. Rust compiler diagnostics from extracted files are remapped to the source
 line in the original `.voo` file.
 
-## Development rebuilds
+## Vite development rebuilds
 
 Changes to `.voo`, the bundled Rust runtime, or configured path dependencies
 schedule a rebuild. Rapid saves are coalesced. A failed Rust build is reported
@@ -89,6 +95,29 @@ through Vite and does not poison the next rebuild.
 
 A successful Rust rebuild currently triggers a full page reload. Component
 state is not preserved.
+
+## Rspack and Rsbuild
+
+`@vooya/rspack` exposes `vooyaRsbuild()` for Rsbuild projects and
+`vooyaRspack()` for direct Rspack configuration. Both call the same
+`@vooya/build-core` Cargo and wasm-bindgen pipeline as Vite.
+
+```ts
+import { vooyaRsbuild } from "@vooya/rspack";
+
+vooyaRsbuild({
+  framework: "vue",
+  rust: { dependencies: { "shared-engine": { path: "rust/shared-engine" } } },
+});
+```
+
+The current compatibility claim is limited to Rspack 2.1.10 and the named
+Rsbuild/Rslib fixtures. Direct Rspack users must configure their normal
+framework and CSS rules in addition to `vooyaRspack().rule()`.
+
+Rspack rebuilds edited `.voo` files and recovers after mapped Rust compilation
+errors. Configured Rust path dependencies participate in builds, but editing a
+path dependency currently requires restarting the Rspack development server.
 
 ## Formatting
 

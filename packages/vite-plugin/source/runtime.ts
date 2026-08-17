@@ -1,5 +1,5 @@
-export { VOO_ABI_VERSION } from "@vooya/compiler";
-import { VOO_ABI_VERSION } from "@vooya/compiler";
+export { VOO_ABI_VERSION } from "@vooya/compiler/abi";
+import { VOO_ABI_VERSION } from "@vooya/compiler/abi";
 
 // wasm-bindgen only remembers a completed initialization. Multiple framework
 // islands can mount in the same tick, so cache the in-flight promise as well.

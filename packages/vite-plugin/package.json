@@ -1,6 +1,6 @@
 {
   "name": "@vooya/vite-plugin",
-  "version": "0.1.0-alpha.7",
+  "version": "0.1.0-alpha.8",
   "description": "Vite integration for Vooya component islands.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
@@ -42,15 +42,16 @@
     }
   },
   "scripts": {
-    "build": "npm run build --prefix ../compiler && tsc -p tsconfig.json",
+    "build": "npm run build --prefix ../compiler && npm run build --prefix ../build-core && tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "npm run build && node --test src/*.test.js"
   },
   "peerDependencies": {
-    "vite": "^7.0.0"
+    "vite": "^7.0.0 || ^8.0.0"
   },
   "dependencies": {
-    "@vooya/core": "0.1.0-alpha.7",
-    "@vooya/compiler": "0.1.0-alpha.7"
+    "@vooya/build-core": "0.1.0-alpha.8",
+    "@vooya/core": "0.1.0-alpha.8",
+    "@vooya/compiler": "0.1.0-alpha.8"
   }
 }

@@ -8,10 +8,10 @@ import {
   WASM_TARGET,
   formatResolvedToolchain,
   resolveToolchain,
-} from "./toolchain.js";
+} from "@vooya/build-core";
 
-export { WASM_BINDGEN_VERSION, WASM_TARGET, formatResolvedToolchain, resolveToolchain } from "./toolchain.js";
-export type { ResolvedToolchain } from "./toolchain.js";
+export { WASM_BINDGEN_VERSION, WASM_TARGET, formatResolvedToolchain, resolveToolchain } from "@vooya/build-core";
+export type { ResolvedToolchain } from "@vooya/build-core";
 
 /**
  * Inspect the same complete Rust toolchain that the Vite build will invoke.

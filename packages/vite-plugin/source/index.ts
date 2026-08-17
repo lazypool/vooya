@@ -5,11 +5,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import {
   buildApplication,
+  clearToolchainCache,
+  formatResolvedToolchain,
+  isVooyaUserError,
   resolveRuntimeCrateRoot,
   resolveRustDependencyRoots,
-} from "./build-core.js";
-import { isVooyaUserError } from "./errors.js";
-import { clearToolchainCache, formatResolvedToolchain, resolveToolchain } from "./toolchain.js";
+  resolveToolchain,
+} from "@vooya/build-core";
 import { createBuildScheduler } from "./build-scheduler.js";
 import {
   compileVooStyle,
@@ -67,6 +69,7 @@ export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOption
         applicationRoot,
         components: sourceComponents,
         rust,
+        framework,
         toolchain,
         onRustBuildStart: progress.start,
       }));

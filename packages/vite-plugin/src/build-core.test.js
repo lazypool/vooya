@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { CargoBuildError, VooyaUserError } from "../dist/errors.js";
+import { CargoBuildError, VooyaUserError } from "@vooya/build-core";
 import {
   buildApplication,
   generatedCargoManifest,
@@ -50,6 +50,9 @@ test("build uses the paths selected by the resolved toolchain", () => {
       },
       exec(command, args, options) {
         calls.wasmBindgen = { command, args, options };
+        const outputDir = args[args.indexOf("--out-dir") + 1];
+        writeFileSync(join(outputDir, "vooya_app.js"), "");
+        writeFileSync(join(outputDir, "vooya_app_bg.wasm"), Buffer.alloc(0));
       },
     });
   } finally {
