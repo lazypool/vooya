@@ -10,6 +10,25 @@ export const WASM_TARGET = "wasm32-unknown-unknown";
 
 const toolchainCache = new Map();
 
+export type ToolchainEnvironment = Record<string, string | undefined>;
+export type ToolchainRun = (
+  command: string,
+  args: string[],
+  options?: { cwd?: string; env?: ToolchainEnvironment },
+) => unknown;
+export type ToolchainExists = (path: string) => boolean;
+
+export interface ResolveToolchainOptions {
+  env?: ToolchainEnvironment;
+  cwd?: string;
+  platform?: string;
+  home?: string;
+  run?: ToolchainRun;
+  exists?: ToolchainExists;
+  probeManifestPath?: string;
+  cargoPath?: string;
+}
+
 export interface ResolvedToolchain {
   cargo: { path: string; version: string };
   rustc: { path: string; version: string; verboseVersion: string; sysroot: string };
@@ -20,7 +39,7 @@ export interface ResolvedToolchain {
   selectedCargoIndex: number;
   cargoSelection: "explicit" | "path";
   cargoPathWarning?: string;
-  environment: NodeJS.ProcessEnv;
+  environment: ToolchainEnvironment;
 }
 
 export function clearToolchainCache() {
@@ -41,7 +60,7 @@ export function resolveToolchain({
   exists = existsSync,
   probeManifestPath = undefined,
   cargoPath = undefined,
-} = {}): ResolvedToolchain {
+}: ResolveToolchainOptions = {}): ResolvedToolchain {
   const paths = platform === "win32" ? win32 : posix;
   const environment = { ...env };
   const cacheKey = getToolchainCacheKey({
@@ -395,7 +414,10 @@ function resolveConfiguredRustc({ cwd, env, platform, run, exists = existsSync }
 }
 
 function extractRustcToken(output) {
-  const text = String(output);
+  // Cargo honors CARGO_TERM_COLOR=always in CI, including when its output is
+  // captured instead of attached to a terminal. Strip those presentation-only
+  // sequences before looking for the verbose `Running` command.
+  const text = String(output).replace(/\u001B\[[0-?]*[ -/]*[@-~]/g, "");
   const commands = [
     ...text.matchAll(/Running\s+`([\s\S]*?)`/g),
     ...text.matchAll(/Running\s+'([\s\S]*?)'/g),

@@ -33,7 +33,10 @@ function createRunner({
       if (args[0] === "--version") return cargo.cargoVersion ?? "cargo 1.94.0";
       if (args[0] === "rustc") {
         const rustcCommand = cargo.rustcPath.includes(" ") ? `"${cargo.rustcPath}"` : cargo.rustcPath;
-        return `Compiling probe\n     Running \`CARGO=${command} ${rustcCommand} --crate-name probe --print sysroot --verbose\`\n${cargo.sysroot}\n    Finished`;
+        const running = `CARGO=${command} ${rustcCommand} --crate-name probe --print sysroot --verbose`;
+        return cargo.colorOutput
+          ? `Compiling probe\n\u001b[1m\u001b[32m     Running\u001b[0m \`${running}\`\n${cargo.sysroot}\n    Finished`
+          : `Compiling probe\n     Running \`${running}\`\n${cargo.sysroot}\n    Finished`;
       }
     }
 
@@ -100,6 +103,35 @@ test("doctor accepts a matching Cargo-selected rustup toolchain", () => {
   assert.equal(report.results.at(-1).status, "ok");
   assert.match(formatToolchainReport(report), /Resolved toolchain/);
   assert.match(formatToolchainReport(report), /stable-aarch64-apple-darwin\/bin\/rustc/);
+});
+
+test("doctor parses Cargo verbose output when terminal colors are forced", () => {
+  const cargoPath = "/Users/test/.cargo/bin/cargo";
+  const rustcPath = "/Users/test/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc";
+  const wasmBindgenPath = "/Users/test/.cargo/bin/wasm-bindgen";
+  const targetLibdir = "/Users/test/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/wasm32-unknown-unknown/lib";
+  const { cargoInfo, runner } = matchingFixture({
+    cargoPath,
+    rustcPath,
+    wasmBindgenPath,
+    sysroot: "/Users/test/.rustup/toolchains/stable-aarch64-apple-darwin",
+    targetLibdir,
+    rustcVerbose: "rustc 1.94.0\nhost: aarch64-apple-darwin",
+  });
+  cargoInfo[cargoPath].colorOutput = true;
+
+  const report = inspect({
+    env: {
+      PATH: "/Users/test/.cargo/bin",
+      RUSTUP_HOME: "/Users/test/.rustup",
+      CARGO_TERM_COLOR: "always",
+    },
+    run: runner,
+    exists: (path) => path === targetLibdir,
+  });
+
+  assert.equal(report.ok, true, formatToolchainReport(report));
+  assert.equal(report.rustcPath, rustcPath);
 });
 
 test("doctor honors an explicit Cargo path without consulting PATH Cargo candidates", () => {
