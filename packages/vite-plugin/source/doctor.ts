@@ -26,11 +26,12 @@ export function inspectToolchain({
   cwd = process.cwd(),
   exists = existsSync,
   probeManifestPath = undefined,
+  cargoPath = undefined,
 } = {}) {
   let toolchain;
   let resolutionError;
   try {
-    toolchain = resolveToolchain({ env, run, platform, home, cwd, exists, probeManifestPath });
+    toolchain = resolveToolchain({ env, run, platform, home, cwd, exists, probeManifestPath, cargoPath });
   } catch (error) {
     resolutionError = error;
   }
@@ -49,6 +50,13 @@ export function inspectToolchain({
       cargo?.version ?? firstProblem(attempt, /Cargo|cargo/) ?? "not found",
     ),
   );
+  if (toolchain?.cargoSelection === "explicit") {
+    results.push({
+      name: "cargo selection",
+      status: "ok",
+      detail: `explicit cargo path: ${toolchain.cargo.path}`,
+    });
+  }
   results.push(
     check(
       "rustc",
@@ -123,8 +131,9 @@ export function inspectToolchain({
   return {
     toolchain,
     cargo: cargo?.version,
-    cargoPath: toolchain?.cargo.path ?? cargo?.path,
+    cargoPath: toolchain?.cargo.path ?? cargo?.path ?? resolutionError?.cargoCandidates?.[0],
     cargoCandidates: toolchain?.cargoCandidates ?? resolutionError?.cargoCandidates ?? [],
+    cargoSelection: toolchain?.cargoSelection,
     rustc: rustc?.version,
     rustcPath: toolchain?.rustc.path ?? rustc?.path,
     rustcVerbose,

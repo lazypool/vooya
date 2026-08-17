@@ -25,10 +25,17 @@ vooya({
     },
     webSysFeatures: ["HtmlCanvasElement", "CanvasRenderingContext2d"],
   },
+  toolchain: {
+    cargoPath: "/opt/custom-rust/bin/cargo",
+  },
 });
 ```
 
-`framework` accepts `"vue"` or `"react"` and defaults to `"vue"`.
+`framework` accepts `"vue"` or `"react"` and defaults to `"vue"`. The optional
+`toolchain.cargoPath` explicitly selects one Cargo executable. Vooya discovers
+the rustc used by that Cargo and rejects the explicit path if its target or
+wasm-bindgen CLI is incomplete; it does not fall back to another Cargo on
+`PATH`. Relative paths resolve from the Vite project root.
 
 `rust.dependencies` maps Cargo package names to either a version string or an
 object. Supported object fields are `version`, `path`, `git`, `branch`, `tag`,
@@ -46,9 +53,12 @@ by the Vite process:
 
 ```sh
 npx vooya doctor
+npx vooya doctor --cargo-path /opt/custom-rust/bin/cargo
 ```
 
-It checks every `cargo` found on `PATH` in order. For each candidate, Cargo's
+It checks every `cargo` found on `PATH` in order unless `--cargo-path` explicitly
+selects one Cargo. An explicit path is authoritative: if it is incomplete,
+doctor fails instead of selecting another PATH candidate. For each candidate, Cargo's
 verbose `cargo rustc` invocation identifies the rustc that Cargo will use; that
 rustc must provide the `wasm32-unknown-unknown` standard library, and the
 selected `wasm-bindgen-cli` must be exactly the version required by the alpha.

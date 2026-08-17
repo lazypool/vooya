@@ -23,7 +23,7 @@ const componentExtension = ".voo";
 const runtimeId = "virtual:vooya-runtime";
 const stylePrefix = "virtual:vooya-style:";
 
-export function vooya({ framework = "vue", rust = {} } = {}) {
+export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOptions = {} } = {}) {
   let applicationRoot;
   let buildScheduler;
   let runtimeModule;
@@ -53,7 +53,10 @@ export function vooya({ framework = "vue", rust = {} } = {}) {
     const progress = createRustBuildProgress(logger);
     try {
       if (!toolchain) {
-        toolchain = resolveToolchain({ cwd: applicationRoot });
+        toolchain = resolveToolchain({
+          cwd: applicationRoot,
+          cargoPath: toolchainOptions?.cargoPath,
+        });
         logger?.info(`Vooya: selected Rust/WASM toolchain: ${formatResolvedToolchain(toolchain)}.`);
         if (toolchain.cargoPathWarning) {
           logger?.warn(`Vooya: WARNING: ${toolchain.cargoPathWarning} This may differ from the toolchain you intended to use.`);

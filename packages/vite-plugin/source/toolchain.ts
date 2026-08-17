@@ -15,8 +15,9 @@ export interface ResolvedToolchain {
   target: { triple: string; libdir: string };
   wasmBindgen: { path: string; version: string };
   cargoCandidates: string[];
-  firstCargoPath: string;
+  firstCargoPath?: string;
   selectedCargoIndex: number;
+  cargoSelection: "explicit" | "path";
   cargoPathWarning?: string;
   environment: NodeJS.ProcessEnv;
 }
@@ -38,22 +39,51 @@ export function resolveToolchain({
   run = runCommand,
   exists = existsSync,
   probeManifestPath = undefined,
+  cargoPath = undefined,
 } = {}): ResolvedToolchain {
   const paths = platform === "win32" ? win32 : posix;
   const environment = { ...env };
-  const cacheKey = getToolchainCacheKey({ environment, cwd, home, platform, probeManifestPath, run, exists });
-  if (cacheKey && toolchainCache.has(cacheKey)) return toolchainCache.get(cacheKey);
-  const cargoCandidates = findExecutableCandidates("cargo", {
-    env: environment,
+  const cacheKey = getToolchainCacheKey({
+    cargoPath,
+    environment,
     cwd,
+    home,
     platform,
+    probeManifestPath,
     run,
     exists,
   });
+  if (cacheKey && toolchainCache.has(cacheKey)) return toolchainCache.get(cacheKey);
+
+  if (cargoPath !== undefined && (typeof cargoPath !== "string" || !cargoPath.trim())) {
+    throw new ToolchainResolutionError(
+      "Vooya toolchain.cargoPath must be a non-empty string.",
+      [],
+      [],
+    );
+  }
+  const cargoSelection = cargoPath === undefined ? "path" : "explicit";
+  const explicitCargoPath =
+    cargoSelection === "explicit"
+      ? paths.isAbsolute(cargoPath)
+        ? paths.normalize(cargoPath)
+        : paths.resolve(cwd, cargoPath)
+      : undefined;
+  const cargoCandidates = explicitCargoPath
+    ? [explicitCargoPath]
+    : findExecutableCandidates("cargo", {
+        env: environment,
+        cwd,
+        platform,
+        run,
+        exists,
+      });
 
   if (cargoCandidates.length === 0) {
     throw new ToolchainResolutionError(
-      "Vooya could not find Cargo on PATH. Install Rust through rustup or another supported distribution, then reopen the terminal.",
+      cargoSelection === "explicit"
+        ? `Vooya could not execute the explicit Cargo path ${explicitCargoPath}.`
+        : "Vooya could not find Cargo on PATH. Install Rust through rustup or another supported distribution, then reopen the terminal.",
       [],
       [],
     );
@@ -91,10 +121,11 @@ export function resolveToolchain({
         const resolved = {
           ...attempt.resolved,
           cargoCandidates,
-          firstCargoPath: cargoCandidates[0],
+          firstCargoPath: cargoSelection === "path" ? cargoCandidates[0] : undefined,
           selectedCargoIndex,
+          cargoSelection,
           cargoPathWarning:
-            selectedCargoIndex > 0
+            cargoSelection === "path" && selectedCargoIndex > 0
               ? `Selected ${cargoPath}, but ${cargoCandidates[0]} is the first cargo on PATH.`
               : undefined,
           environment,
@@ -108,7 +139,7 @@ export function resolveToolchain({
   }
 
   throw new ToolchainResolutionError(
-    formatResolutionFailure(cargoCandidates, attempts),
+    formatResolutionFailure(cargoCandidates, attempts, cargoSelection),
     attempts,
     cargoCandidates,
   );
@@ -125,6 +156,7 @@ export class ToolchainResolutionError extends Error {
 
 export function formatResolvedToolchain(toolchain) {
   return [
+    `cargo selection: ${toolchain.cargoSelection}`,
     `cargo: ${toolchain.cargo.path} (${firstLine(toolchain.cargo.version)})`,
     `rustc: ${toolchain.rustc.path} (${firstLine(toolchain.rustc.version)})`,
     `target: ${toolchain.target.triple} at ${toolchain.target.libdir}`,
@@ -473,10 +505,10 @@ function describeError(error) {
   return output && !message.includes(output) ? `${message}: ${output}` : message;
 }
 
-function formatResolutionFailure(cargoCandidates, attempts) {
+function formatResolutionFailure(cargoCandidates, attempts, cargoSelection) {
   const lines = [
     "Vooya could not resolve a coherent Rust/WASM toolchain.",
-    `Cargo candidates: ${cargoCandidates.join(", ")}`,
+    `${cargoSelection === "explicit" ? "Explicit Cargo path" : "Cargo candidates"}: ${cargoCandidates.join(", ")}`,
   ];
   for (const attempt of attempts) {
     lines.push(`- ${attempt.cargoPath}: ${attempt.problems.join(" ") || "did not satisfy the toolchain requirements"}`);
@@ -487,9 +519,10 @@ function formatResolutionFailure(cargoCandidates, attempts) {
   return lines.join("\n");
 }
 
-function getToolchainCacheKey({ environment, cwd, home, platform, probeManifestPath, run, exists }) {
+function getToolchainCacheKey({ cargoPath, environment, cwd, home, platform, probeManifestPath, run, exists }) {
   if (run !== runCommand || exists !== existsSync) return undefined;
   return JSON.stringify({
+    cargoPath,
     cwd,
     home,
     platform,

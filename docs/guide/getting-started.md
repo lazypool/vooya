@@ -37,7 +37,9 @@ The command checks a coherent Cargo-selected toolchain: `cargo`, the exact
 `wasm-bindgen` CLI. On Windows MSVC toolchains, it also checks for `link.exe`.
 It reports the selected executable paths, warns when the active Rust sysroot is
 not managed by rustup, and warns when it had to select a later Cargo than the
-first Cargo on `PATH`.
+first Cargo on `PATH`. To explicitly select Cargo in the Vite plugin, configure
+`toolchain.cargoPath`; to inspect that choice from the CLI, pass the same path
+with `vooya doctor --cargo-path <path>`.
 
 All `@vooya` packages must use the same alpha version. The repository `main`
 branch can lead the npm `alpha` tag while a breaking prerelease is being

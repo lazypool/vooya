@@ -102,6 +102,66 @@ test("doctor accepts a matching Cargo-selected rustup toolchain", () => {
   assert.match(formatToolchainReport(report), /stable-aarch64-apple-darwin\/bin\/rustc/);
 });
 
+test("doctor honors an explicit Cargo path without consulting PATH Cargo candidates", () => {
+  const cargoPath = "/opt/custom-rust/bin/cargo";
+  const rustcPath = "/opt/custom-rust/toolchains/stable/bin/rustc";
+  const wasmBindgenPath = "/opt/custom-rust/bin/wasm-bindgen";
+  const targetLibdir = "/opt/custom-rust/toolchains/stable/lib/rustlib/wasm32-unknown-unknown/lib";
+  const { cargoInfo, runner: baseRunner } = matchingFixture({
+    cargoPath,
+    rustcPath,
+    wasmBindgenPath,
+    sysroot: "/opt/custom-rust/toolchains/stable",
+    targetLibdir,
+    rustcVerbose: "rustc 1.94.0\nhost: aarch64-apple-darwin",
+  });
+  const commands = [];
+  const report = inspect({
+    cargoPath,
+    env: { PATH: "/opt/homebrew/bin:/Users/test/.cargo/bin", RUSTUP_HOME: "/Users/test/.rustup" },
+    run: (command, args, options) => {
+      commands.push({ command, args });
+      return baseRunner(command, args, options);
+    },
+    exists: (path) => path === cargoInfo[cargoPath].targetLibdir,
+  });
+
+  assert.equal(report.ok, true);
+  assert.equal(report.cargoSelection, "explicit");
+  assert.equal(report.cargoPath, cargoPath);
+  assert.equal(commands.some(({ command, args }) => command === "which" && args.at(-1) === "cargo"), false);
+  const output = formatToolchainReport(report);
+  assert.match(output, /cargo selection: explicit/);
+  assert.match(output, /explicit cargo path/);
+  assert.doesNotMatch(output, /cargo PATH precedence/);
+});
+
+test("doctor does not fall back when an explicit Cargo path is invalid", () => {
+  const explicitCargoPath = "/opt/custom-rust/bin/cargo";
+  const pathCargoPath = "/Users/test/.cargo/bin/cargo";
+  const { runner: baseRunner } = matchingFixture({
+    cargoPath: pathCargoPath,
+    rustcPath: "/Users/test/.rustup/toolchains/stable/bin/rustc",
+    wasmBindgenPath: "/Users/test/.cargo/bin/wasm-bindgen",
+    sysroot: "/Users/test/.rustup/toolchains/stable",
+    targetLibdir: "/Users/test/.rustup/toolchains/stable/lib/rustlib/wasm32-unknown-unknown/lib",
+    rustcVerbose: "rustc 1.94.0\nhost: aarch64-apple-darwin",
+  });
+  const report = inspect({
+    cargoPath: explicitCargoPath,
+    env: { PATH: "/Users/test/.cargo/bin" },
+    run: baseRunner,
+    exists: () => true,
+  });
+
+  assert.equal(report.ok, false);
+  assert.equal(report.cargoPath, explicitCargoPath);
+  const output = formatToolchainReport(report);
+  assert.match(output, /Explicit Cargo path/);
+  assert.match(output, /opt\/custom-rust\/bin\/cargo/);
+  assert.doesNotMatch(output, /Users\/test\/\.cargo\/bin\/cargo/);
+});
+
 test("doctor selects the first Cargo that has a complete toolchain and warns about PATH order", () => {
   const homebrewCargo = "/opt/homebrew/bin/cargo";
   const rustupCargo = "/Users/test/.cargo/bin/cargo";
