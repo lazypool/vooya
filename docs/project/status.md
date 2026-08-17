@@ -34,7 +34,7 @@ prerelease.
   in real browsers.
 - Validate loop-created Rust listeners, cloned event dispatch, and repeated
   mount/unmount behavior in both Vue and React browser fixtures.
-- Ship `vooya doctor` for Rust target, CLI-version, and rustup-path diagnostics.
+- Ship `vooya doctor` for coherent Cargo-selected Rust target, CLI-version, and rustup-path diagnostics.
 - Demonstrate a Vue-hosted 150,000-point Rust/WASM Canvas scatter plot.
 - Build packed npm artifacts from a project outside the repository checkout.
 - Verify a test-only precompiled Vue WASM consumer in a clean Vite project
@@ -59,8 +59,9 @@ prerelease.
   checks saved `.voo` documents through a generated local rust-analyzer
   workspace. It intentionally does not provide rust-analyzer completion,
   navigation, rename, or code actions inside `.voo` documents.
-- `vooya doctor` is a local diagnostic, not a toolchain installer or an
-  automatic Homebrew/rustup selector.
+- `vooya doctor` is a local diagnostic and deterministic PATH candidate selector,
+  not a toolchain installer; it warns when its valid Cargo choice differs from
+  the first Cargo on `PATH`.
 - SSR, hydration, slots, and standalone application rendering are out of scope.
 - Alpha ABI revisions can be breaking.
 - The current browser evidence covers the repository's Playwright Chromium

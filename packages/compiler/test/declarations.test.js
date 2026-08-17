@@ -86,4 +86,3 @@ test("rejects borrowed string types in Vue and React declaration generation", ()
     }
   }
 });
-

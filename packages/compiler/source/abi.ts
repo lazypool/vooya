@@ -49,4 +49,3 @@ export function validatePublicAbi(component: CodegenComponent): void {
 function isBorrowedStringType(rustType: string): boolean {
   return /^(?:&(?:\s*'[a-zA-Z_]\w*)?\s*str|str)$/.test(rustType.trim());
 }
-

@@ -126,4 +126,3 @@ props:
     /Unsupported Voo public ABI type "&str" for prop "label"\. Use owned String\./,
   );
 });
-
