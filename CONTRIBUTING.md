@@ -53,6 +53,18 @@ builds emit executable JavaScript and declarations into `dist/`.
 - Published packages must contain JavaScript and accurate `.d.ts` declarations;
   consumers do not need TypeScript installed at runtime.
 
+### Name bundler integrations by toolchain
+
+Public bundler integration packages use the toolchain name, such as
+`@vooya/vite` and `@vooya/rspack`. Future integrations should follow
+`@vooya/<toolchain>` rather than expose internal implementation details in the
+package name. Plugin, loader, adapter, and compiler mechanisms belong inside
+the package API and architecture; they are not package-name suffixes.
+
+A new bundler package must state its experimental compatibility boundary and
+include an automated packed-consumer test for every toolchain version it
+claims to support.
+
 ### Keep claims evidence-based
 
 - Distinguish current behavior, experimental behavior, and future plans.
