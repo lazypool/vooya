@@ -143,11 +143,11 @@ async function verifyDevRecovery(project) {
       ),
     );
     await waitFor(
-      () => output.includes("Cargo build failed with exit code 101"),
+      () => plainOutput(output).includes("Cargo build failed with exit code 101"),
       60_000,
       () => output,
     );
-    if (!/Counter\.voo:\d+/.test(output)) {
+    if (!/Counter\.voo:\d+/.test(plainOutput(output))) {
       throw new Error(`Webpack did not retain the mapped .voo Rust diagnostic.\n${output}`);
     }
     if (server.exitCode !== null) throw new Error("Webpack Dev Server exited after a Rust failure.");
@@ -292,5 +292,9 @@ function availablePort() {
 }
 
 function successfulBuildCount(output) {
-  return output.match(/compiled successfully/g)?.length ?? 0;
+  return plainOutput(output).match(/compiled successfully/g)?.length ?? 0;
+}
+
+function plainOutput(output) {
+  return output.replace(/\u001b\[[0-?]*[ -\/]*[@-~]/g, "");
 }
