@@ -344,3 +344,37 @@ Rsbuild React plugin. Direct Rspack configuration is documented in the
 This path currently requires Rspack 2.1 and the same local Rust/WASM tools as
 Vite. It is experimental; SSR, Module Federation, Rspack 1.x, and arbitrary
 Rspack 2.x releases are not yet support claims.
+
+## Experimental Webpack 5 path
+
+Install the framework adapter and Webpack integration at the same exact Vooya
+version. The current experimental range is Webpack `>=5.101.0 <6`.
+
+```sh
+npm install @vooya/vue@alpha
+npm install --save-dev @vooya/webpack@alpha
+```
+
+Add the plugin's loader rule alongside the application's normal framework and
+CSS rules:
+
+```js
+import { vooyaWebpack } from "@vooya/webpack";
+
+const vooya = vooyaWebpack({ framework: "vue" });
+
+export default {
+  experiments: { asyncWebAssembly: true },
+  module: {
+    rules: [
+      vooya.rule(),
+      { test: /\.css$/, use: ["style-loader", "css-loader"] },
+    ],
+  },
+  plugins: [vooya],
+};
+```
+
+React projects select `framework: "react"`. Webpack Dev Server uses full-page
+live reload after successful Rust rebuilds; component state is not preserved.
+Webpack 4, Module Federation, SSR, and hydration are outside the current claim.

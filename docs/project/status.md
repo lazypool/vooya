@@ -10,7 +10,7 @@ name. `main` has renamed that integration to `@vooya/vite`; the new name is
 queued for the next coordinated prerelease and is not yet available from the
 npm registry.
 
-The seven packages form one coordinated release unit:
+The eight packages form one coordinated release unit:
 
 - `@vooya/compiler`
 - `@vooya/core`
@@ -19,6 +19,7 @@ The seven packages form one coordinated release unit:
 - `@vooya/vue`
 - `@vooya/react`
 - `@vooya/rspack`
+- `@vooya/webpack`
 
 Use the same exact version for every package. The npm `alpha` dist-tag identifies
 the latest published set, while `main` can contain changes queued for the next
@@ -51,7 +52,8 @@ prerelease.
 - Source consumers need Cargo, the WASM target, and `wasm-bindgen-cli`.
 - Vite 7 and Vite 8 are the stable source-authoring bundler paths. Rspack 2.1
   has an experimental first-party adapter with Rsbuild, Rslib, and direct
-  Rspack fixtures. Webpack, Rollup, and other bundlers remain unsupported.
+  Rspack fixtures. Webpack `>=5.101.0 <6` has an experimental first-party
+  adapter. Webpack 4, Rollup, Turbopack, and other bundlers remain unsupported.
 - Vite+ has a compatibility smoke path because it aliases Vite to its bundled
   Vite core; it is not a separate Vooya bundler integration or a promise that
   every Vite+ workflow is supported.

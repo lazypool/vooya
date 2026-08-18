@@ -15,6 +15,7 @@ const expectedPackages = [
   "@vooya/vue",
   "@vooya/react",
   "@vooya/rspack",
+  "@vooya/webpack",
 ];
 const license = "MIT OR Apache-2.0";
 const repositoryUrl = "git+https://github.com/vooyajs/vooya.git";
@@ -84,6 +85,16 @@ try {
     if (name === "@vooya/rspack") {
       for (const file of ["dist/index.js", "dist/index.d.ts", "dist/runtime.js", "dist/runtime.d.ts"]) assert(files.has(file), name, `archive is missing Rspack output ${file}`);
     }
+    if (name === "@vooya/webpack") {
+      for (const file of [
+        "dist/index.js",
+        "dist/index.d.ts",
+        "dist/loader.js",
+        "dist/loader.d.ts",
+        "dist/runtime.js",
+        "dist/runtime.d.ts",
+      ]) assert(files.has(file), name, `archive is missing Webpack output ${file}`);
+    }
     for (const file of files) {
       assert(!file.includes(".vooya/"), name, `archive contains application workspace state ${file}`);
       assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
@@ -111,6 +122,7 @@ function verifyTypeConsumer(packedPackages) {
       ),
       devDependencies: {
         typescript: "~5.5.4",
+        "@types/node": "22.12.0",
         vite: "^7.0.0",
       },
     }, null, 2)}\n`,
@@ -144,6 +156,7 @@ import { buildPrecompiledVueArtifact } from "@vooya/vite/build";
 import { formatVooComponent } from "@vooya/vite/format";
 import { assertVooAbiVersion, initializeWasm } from "@vooya/vite/runtime";
 import { vooyaRsbuild, vooyaRspack } from "@vooya/rspack";
+import { vooyaWebpack } from "@vooya/webpack";
 
 void parseVooComponent;
 void vooya;
@@ -173,6 +186,7 @@ void assertVooAbiVersion;
 void initializeWasm;
 void vooyaRsbuild;
 void vooyaRspack;
+void vooyaWebpack;
 `,
   );
 
@@ -189,7 +203,7 @@ void vooyaRspack;
   if (typecheck.status !== 0) {
     throw new Error(`packed type consumer failed:\n${typecheck.stderr || typecheck.stdout}`);
   }
-  console.log("Verified packed compiler and Vite plugin declarations in a clean TypeScript consumer.");
+  console.log("Verified packed package declarations in a clean TypeScript consumer.");
 }
 
 function readManifest(name) {

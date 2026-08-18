@@ -6,6 +6,7 @@ vooya-vite: "patch:chore"
 vooya-vue: "patch:chore"
 vooya-react: "patch:chore"
 vooya-rspack: "patch:chore"
+vooya-webpack: "patch:chore"
 ---
 
 Rename @vooya/vite-plugin to @vooya/vite.

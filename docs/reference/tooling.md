@@ -75,7 +75,7 @@ user's PATH preference.
 
 ## Generated application workspace
 
-Vite and Rspack use one application-local `.vooya/` workspace:
+Vite, Rspack, and Webpack use one application-local `.vooya/` workspace:
 
 ```text
 .vooya/
@@ -94,7 +94,7 @@ npx vooya clean
 ```
 
 An advanced integration may set `workspace.root` in `vooya()` or
-`workspaceRoot` in `vooyaRspack()`; `vooya doctor --workspace-root <path>` and
+`workspaceRoot` in `vooyaRspack()` or `vooyaWebpack()`; `vooya doctor --workspace-root <path>` and
 `vooya clean --workspace-root <path>` accept the same override. Production
 bundler assets still belong to the bundler output directory, not `.vooya/`.
 TypeScript projects using an override must point `rootDirs` at that workspace's
@@ -136,6 +136,38 @@ framework and CSS rules in addition to `vooyaRspack().rule()`.
 Rspack rebuilds edited `.voo` files and recovers after mapped Rust compilation
 errors. Configured Rust path dependencies participate in builds, but editing a
 path dependency currently requires restarting the Rspack development server.
+
+## Webpack 5
+
+`@vooya/webpack` uses Webpack's public plugin and loader protocols and delegates
+Rust compilation, declarations, diagnostics, and workspace layout to
+`@vooya/build-core`.
+
+```js
+import { vooyaWebpack } from "@vooya/webpack";
+
+const vooya = vooyaWebpack({
+  framework: "vue",
+  rust: { dependencies: { "shared-engine": { path: "rust/shared-engine" } } },
+});
+
+export default {
+  experiments: { asyncWebAssembly: true },
+  module: {
+    rules: [
+      vooya.rule(),
+      { test: /\.css$/, use: ["style-loader", "css-loader"] },
+    ],
+  },
+  plugins: [vooya],
+};
+```
+
+The experimental range is Webpack `>=5.101.0 <6`. Exact fixtures cover
+5.101.0 production output and 5.109.2 Vue/React browser behavior, mapped Rust
+failure recovery, configured path-dependency rebuilds, rapid saves, and normal
+Webpack Dev Server live reload. Webpack 4, Module Federation, SSR, hydration,
+and state-preserving HMR are not support claims.
 
 ## Formatting
 
