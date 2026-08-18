@@ -1,5 +1,5 @@
 // This package has no bundled Rspack runtime dependency. It uses Rspack's
-// public plugin and loader protocols and is currently verified against 2.1.x.
+// public plugin and loader protocols and is currently verified against 2.1.10.
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";

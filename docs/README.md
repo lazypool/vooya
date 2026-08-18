@@ -1,7 +1,8 @@
 # Vooya Documentation
 
-Vooya compiles Rust component implementations from `.voo` files into WebAssembly
-and exposes them as ordinary Vue or React components.
+Vooya compiles Rust component implementations from `.voo` files into
+WebAssembly and exposes them through host-framework adapters for use in web
+applications. Vue and React are the current first-party adapters.
 
 This directory is the source of truth for user-facing documentation. It is kept
 as plain Markdown for now so the content can later move into a documentation
@@ -9,6 +10,8 @@ site without changing its structure or URLs unnecessarily.
 
 ## Start here
 
+- [Contributing](../CONTRIBUTING.md): project scope, development setup, testing,
+  and pull request expectations.
 - [Getting started](guide/getting-started.md): install the alpha toolchain and
   run a first component in Vue or React.
 - [Writing `.voo` components](guide/voo-components.md): contracts, Rust

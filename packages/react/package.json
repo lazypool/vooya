@@ -28,6 +28,6 @@
     "test": "npm run build && node --test test/*.test.js"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": ">=19"
   }
 }

@@ -41,7 +41,7 @@ vooyaWebpack({
 });
 ```
 
-The verified range is Webpack `>=5.101.0 <6`, with exact endpoint fixtures at
-5.101.0 and 5.109.2. Webpack 4, SSR, hydration, Module Federation, and
+The experimental range is Webpack `>=5`, with exact fixtures at 5.101.0 and
+5.109.2. Webpack 4, SSR, hydration, Module Federation, and
 state-preserving HMR are not supported claims. Webpack Dev Server uses its
 normal live reload behavior after successful Rust rebuilds.

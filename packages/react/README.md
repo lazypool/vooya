@@ -1,6 +1,6 @@
 # `@vooya/react`
 
-React 19 lifecycle adapter for Rust components compiled by Vooya.
+React `>=19` lifecycle adapter for Rust components compiled by Vooya.
 
 ```sh
 npm install @vooya/react@alpha

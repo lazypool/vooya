@@ -1,8 +1,10 @@
 # Contributing to Vooya
 
-Thank you for helping make Rust-backed components easier to use in existing
-Vue and React applications. Vooya is still a public alpha, so focused changes
-with clear evidence are more useful than broad framework promises.
+Thank you for helping make Rust-backed components easier to use in web
+applications. Vooya is still a public alpha, so focused changes with clear
+evidence are more useful than broad framework promises.
+
+This document is the canonical contribution guide for the repository.
 
 ## Before you start
 
@@ -75,17 +77,32 @@ claims to support.
 
 ### Keep private coordination out of the repository
 
-Do not commit local collaboration logs, agent prompts, volunteer evaluations,
-private contact details, or unpublished commitments. Mature technical decisions
-belong in public issues, RFCs, tests, or user-facing documentation.
+Do not commit local work logs, tool transcripts, volunteer evaluations, private
+contact details, or unpublished commitments. Mature technical decisions belong
+in public issues, RFCs, tests, or user-facing documentation.
 
 ## Testing
 
-Run the smallest relevant checks while developing. Common commands include:
+These are merge expectations, not a barrier to opening a draft for early
+feedback. Run the smallest relevant checks while developing, state any known
+gaps, and broaden verification in proportion to the affected surface before
+merge.
+
+| Change area | Typical checks |
+| --- | --- |
+| Documentation | `npm run verify:docs` |
+| Compiler or `.voo` syntax | `npm run test:compiler` and `npm run format:voo:check` |
+| Vite or shared build pipeline | `npm run test:voo`, plus the affected typecheck or compatibility fixture |
+| Vue or React adapter | The affected package test and application typecheck |
+| Rspack or Webpack | `npm run test:rspack` or `npm run test:webpack` |
+| Packaging or cross-package behavior | `npm run pack:check` and the affected clean-consumer test |
+
+Other common commands include:
 
 ```sh
 npm run test:compiler
 npm run test:voo
+npm run test:react
 npm run typecheck
 npm run typecheck:react
 npm run verify:docs
@@ -103,14 +120,26 @@ serially unless a test explicitly documents that parallel execution is safe.
 
 ## Pull requests
 
-Keep each pull request reviewable:
+Keep each pull request focused and reviewable:
 
 1. explain the user problem and the chosen boundary;
 2. link the issue for non-trivial behavior or public API changes;
 3. add or update tests for behavior changes;
 4. update documentation when the user workflow changes;
-5. list the exact verification you ran; and
+5. list the exact verification you ran and call out checks you could not run;
+   and
 6. avoid unrelated formatting or generated-file churn.
+
+Use whatever development tools help you contribute effectively. Pull requests
+are evaluated on their scope, evidence, maintainability, and value to the
+project rather than on how their first draft was produced.
+
+Draft pull requests are welcome when early feedback would help. Opening a pull
+request starts a review; it does not guarantee that the change will be merged.
+Maintainers may request a smaller scope, a clearer reproduction, additional
+tests, or an issue/RFC, and may decline changes that do not fit the current
+project direction or maintenance capacity. The project is responsible for
+applying its full review and CI requirements before merge.
 
 Vooya uses Semifold for coordinated package releases. Do not edit package
 versions, changelogs, or exact internal dependency versions by hand. A

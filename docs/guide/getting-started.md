@@ -1,8 +1,8 @@
 # Getting Started
 
-Vooya currently targets existing Vite 7 or Vite 8 applications using Vue 3 or
-React 19. Source `.voo` components are compiled on the application author's
-machine, so both the JavaScript and Rust toolchains are required.
+Vooya currently targets existing Vite `>=7` applications using Vue `>=3.5.2`
+or React `>=19`. Source `.voo` components are compiled on the application
+author's machine, so both the JavaScript and Rust toolchains are required.
 
 This guide covers authoring source `.voo` components. Vooya does not currently
 publish a user-facing precompiled component product. The repository's test-only
@@ -305,7 +305,7 @@ including the documented `vite` alias to
 `@voidzero-dev/vite-plus-core`. Keep `vooya()` in the normal Vite plugin list;
 the current fixture needs npm's legacy peer resolver because the aliased core
 uses Vite+'s `0.x` version instead of Vite's peer version. This is a recorded
-Vite+ integration cost, not a requirement of the normal Vite 7/8 path. The
+Vite+ integration cost, not a requirement of the normal Vite path. The
 Vooya compatibility check is:
 
 ```sh
@@ -315,7 +315,7 @@ npm run test:vite-plus
 This is a compatibility smoke path, not a claim that Vooya owns Vite+'s
 runtime, package manager, task runner, or every bundled tool.
 
-## Experimental Rspack 2.1 path
+## Experimental Rspack path
 
 For an existing Rsbuild Vue application, install the Vue adapter and Rspack
 integration from the same alpha channel:
@@ -341,14 +341,14 @@ React projects use `vooyaRsbuild({ framework: "react" })` with their normal
 Rsbuild React plugin. Direct Rspack configuration is documented in the
 [`@vooya/rspack` package README](../../packages/rspack/README.md).
 
-This path currently requires Rspack 2.1 and the same local Rust/WASM tools as
-Vite. It is experimental; SSR, Module Federation, Rspack 1.x, and arbitrary
-Rspack 2.x releases are not yet support claims.
+This path currently requires Rspack `>=2.1.10` and the same local Rust/WASM
+tools as Vite. It is experimental; SSR, Module Federation, and earlier Rspack
+versions are not support claims. Exact fixture evidence currently uses 2.1.10.
 
 ## Experimental Webpack 5 path
 
 Install the framework adapter and Webpack integration at the same exact Vooya
-version. The current experimental range is Webpack `>=5.101.0 <6`.
+version. The current experimental range is Webpack `>=5`.
 
 ```sh
 npm install @vooya/vue@alpha
