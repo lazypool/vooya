@@ -9,7 +9,7 @@ blocks. Run **Vooya: Check Embedded Rust** from the Command Palette (or save a
 the source `.voo` file.
 
 The bridge creates a disposable Cargo workspace under VS Code extension global
-storage, never in the opened project or its `.voo-cache`. It packages the
+storage, never in the opened project or its `.vooya` workspace. It packages the
 matching Vooya core Rust runtime and generates the component's `Context`,
 `Props`, and `Events` contract before asking rust-analyzer, so ordinary source
 components are checked against their real build surface. If rust-analyzer is

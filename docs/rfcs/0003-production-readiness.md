@@ -27,9 +27,10 @@ versioning adapters is deferred until the WASM ABI is explicitly stable.
 ## Compiler distribution decision
 
 The Vite plugin compiles source `.voo` files in a generated, application-local
-Cargo crate under `.voo-cache`. `@vooya/core` ships the Rust runtime source used
-by that crate. Each application has isolated Cargo targets and wasm-bindgen
-output; no build writes component exports into a shared package directory.
+Cargo crate under `.vooya/build`. `@vooya/core` ships the Rust runtime source
+used by that crate. Each application has isolated Cargo targets and
+wasm-bindgen output; no build writes component exports into a shared package
+directory.
 
 Source component authors therefore need Cargo, the `wasm32-unknown-unknown`
 target, and the matching `wasm-bindgen` CLI. `npm run test:portable` packs the

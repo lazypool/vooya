@@ -73,19 +73,37 @@ warning rather than an error. If a later Cargo candidate is selected because
 the first one is incomplete, doctor also warns that this may differ from the
 user's PATH preference.
 
-## Generated application
+## Generated application workspace
 
-The plugin creates `.voo-cache` under the Vite root. It contains:
+Vite and Rspack use one application-local `.vooya/` workspace:
 
-- a generated `vooya-app` Cargo package;
-- Rust extracted from each `<rust>` block;
-- a shared Cargo target directory;
-- wasm-bindgen browser output, including `vooya_app.js` and
-  `vooya_app_bg.wasm`.
+```text
+.vooya/
+├── build/        # generated Cargo workspaces and extracted Rust
+├── wasm/         # wasm-bindgen JavaScript and WASM output
+├── types/        # source-relative *.d.voo.ts declarations
+├── cache/        # bundler-facing generated modules and fingerprints
+└── metadata.json # workspace schema, ABI, and toolchain fingerprint
+```
 
-`.voo-cache` and generated `*.d.voo.ts` declarations should remain ignored by
-Git. Rust compiler diagnostics from extracted files are remapped to the source
-line in the original `.voo` file.
+Everything inside `.vooya/` is generated, ignored by Git, and safe to
+reconstruct while no build is running. Remove it through the supported command:
+
+```sh
+npx vooya clean
+```
+
+An advanced integration may set `workspace.root` in `vooya()` or
+`workspaceRoot` in `vooyaRspack()`; `vooya doctor --workspace-root <path>` and
+`vooya clean --workspace-root <path>` accept the same override. Production
+bundler assets still belong to the bundler output directory, not `.vooya/`.
+TypeScript projects using an override must point `rootDirs` at that workspace's
+`types` directory instead of `.vooya/types`.
+
+TypeScript resolves declarations from the mirrored generated tree with
+`allowArbitraryExtensions: true` and `rootDirs: [".", ".vooya/types"]`. Vooya
+does not rewrite tsconfig files automatically. Rust compiler diagnostics from
+extracted files are remapped to the source line in the original `.voo` file.
 
 ## Vite development rebuilds
 

@@ -169,6 +169,23 @@ rustup. To inspect an explicit plugin selection, pass the same path with
 If the doctor reports a Rust or WASM problem, return to
 [Prerequisites](#prerequisites) before starting the development server.
 
+For TypeScript projects, configure the tsconfig used by the application
+(normally `tsconfig.app.json` in a new Vite project):
+
+```json
+{
+  "compilerOptions": {
+    "allowArbitraryExtensions": true,
+    "rootDirs": [".", ".vooya/types"]
+  }
+}
+```
+
+Vooya mirrors declarations under `.vooya/types` so source directories remain
+clean. The plugin cannot silently change the configuration used by `tsc`,
+`vue-tsc`, or an editor language service; `vooya doctor` reports an actionable
+warning when it finds an incomplete TypeScript config.
+
 Run the application's normal Vite scripts after the doctor passes.
 
 npm:
@@ -257,8 +274,14 @@ export function App() {
 ```
 
 Starting the Vite development server or running a production build generates
-the application-local Rust crate, WASM module, framework adapter, and adjacent
-TypeScript declaration.
+the application-local Rust crate, WASM module, framework adapter, and mirrored
+TypeScript declaration under `.vooya/types`.
+
+All generated application state is disposable:
+
+```sh
+npm exec -- vooya clean
+```
 
 See the working [Vue counter](../../examples/vue-counter) and
 [React counter](../../examples/react-counter) for complete applications. For a

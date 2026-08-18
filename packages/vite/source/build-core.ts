@@ -20,7 +20,7 @@ export const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url)
 export function buildCore(root = repositoryRoot) {
   return buildSharedApplication({
     applicationRoot: root,
-    cacheRoot: resolve(root, "target/vooya-package"),
+    workspaceRoot: resolve(root, "target/vooya-package"),
     outputDir: resolve(root, "packages/core/dist"),
   });
 }
@@ -76,7 +76,7 @@ export function buildPrecompiledVueArtifact({ packageRoot, source, outputDir } =
   buildSharedApplication({
     applicationRoot: root,
     components: [component],
-    cacheRoot: resolve(root, ".artifact-build"),
+    workspaceRoot: resolve(root, ".artifact-build"),
     outputDir: resolve(distribution, "wasm"),
     rust: { webSysFeatures: ["Node", "NodeList"] },
     framework: "vue",

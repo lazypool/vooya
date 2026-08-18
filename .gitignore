@@ -4,6 +4,7 @@
 examples/*/dist
 /.vite
 **/.voo-cache
+**/.vooya
 /.playwright-cli
 /playwright-report
 /test-results

@@ -85,6 +85,7 @@ try {
       for (const file of ["dist/index.js", "dist/index.d.ts", "dist/runtime.js", "dist/runtime.d.ts"]) assert(files.has(file), name, `archive is missing Rspack output ${file}`);
     }
     for (const file of files) {
+      assert(!file.includes(".vooya/"), name, `archive contains application workspace state ${file}`);
       assert(!file.includes("VOOYA_COLLABORATION_LOG"), name, `archive leaks internal collaboration file ${file}`);
       assert(!file.includes("VOOYA_PRODUCT_OPERATING_PLAN"), name, `archive leaks internal planning file ${file}`);
       assert(!file.includes("/source/") && (!file.endsWith(".ts") || file.endsWith(".d.ts")), name, `archive must contain compiled JavaScript rather than TypeScript authoring source ${file}`);
@@ -133,7 +134,12 @@ function verifyTypeConsumer(packedPackages) {
     `import { parseVooComponent } from "@vooya/compiler";
 import type { SourceComponent } from "@vooya/compiler";
 import { vooya } from "@vooya/vite";
-import { buildApplication } from "@vooya/build-core";
+import {
+  buildApplication,
+  cleanVooyaWorkspace,
+  resolveVooyaWorkspace,
+  writeVooDeclarations,
+} from "@vooya/build-core";
 import { buildPrecompiledVueArtifact } from "@vooya/vite/build";
 import { formatVooComponent } from "@vooya/vite/format";
 import { assertVooAbiVersion, initializeWasm } from "@vooya/vite/runtime";
@@ -148,7 +154,7 @@ const component: SourceComponent = {
 function verifyBuildCoreContract() {
   const result = buildApplication({
     applicationRoot: "/consumer", components: [component], rust: { webSysFeatures: ["Node"] },
-    cacheRoot: "/consumer/.voo-cache", workspacePath: "/consumer/.voo-cache", outputDir: "/consumer/.voo-cache/dist",
+    workspaceRoot: "/consumer/.vooya", workspacePath: "/consumer/.vooya/build", outputDir: "/consumer/.vooya/wasm",
     buildMode: "production", framework: "vue",
   });
   const wasm: Uint8Array = result.wasm.bytes;
@@ -158,6 +164,9 @@ function verifyBuildCoreContract() {
   return [wasm, css, declaration, diagnostic];
 }
 void verifyBuildCoreContract;
+void cleanVooyaWorkspace;
+void resolveVooyaWorkspace;
+void writeVooDeclarations;
 void buildPrecompiledVueArtifact;
 void formatVooComponent;
 void assertVooAbiVersion;

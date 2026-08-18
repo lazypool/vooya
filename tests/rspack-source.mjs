@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -33,6 +33,16 @@ function verify(name, packages, expectWasm) {
   const files = walk(resolve(project, "dist"));
   if (expectWasm && !files.some((file) => file.endsWith(".wasm"))) throw new Error(`${name} did not emit a WASM asset.`);
   if (!files.some((file) => file.endsWith(".css"))) throw new Error(`${name} did not emit scoped CSS.`);
+  const generatedTypes = resolve(project, ".vooya/types");
+  if (!existsSync(generatedTypes) || !walk(generatedTypes).some((file) => file.endsWith(".d.voo.ts"))) {
+    throw new Error(`${name} did not generate declarations under .vooya/types.`);
+  }
+  if (walk(resolve(project, "src")).some((file) => file.endsWith(".d.voo.ts"))) {
+    throw new Error(`${name} wrote generated declarations beside source files.`);
+  }
+  if (!existsSync(resolve(project, ".vooya/metadata.json"))) {
+    throw new Error(`${name} did not write Vooya workspace metadata.`);
+  }
   console.log(`Verified ${name} source .voo build with ${files.length} output files.`);
   return project;
 }

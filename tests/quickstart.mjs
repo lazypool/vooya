@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,6 +40,8 @@ function verifyGettingStarted() {
     "npm exec -- vooya doctor",
     "npm run dev",
     "npm run build",
+    "npm exec -- vooya clean",
+    '"rootDirs": [".", ".vooya/types"]',
     greeting.trim(),
   ];
   const pnpm = [
@@ -84,6 +86,26 @@ function verifyQuickstart(framework, packages) {
   // the documented preflight separate from the workspace's own PATH.
   run(npmCommand, ["exec", "--", "vooya", "doctor"], project);
   run(npmCommand, ["run", "build"], project);
+  run(npmCommand, ["run", "typecheck"], project);
+
+  const typesRoot = resolve(project, ".vooya/types/src");
+  if (!readdirSync(typesRoot).some((file) => file.endsWith(".d.voo.ts"))) {
+    throw new Error(`${framework} quickstart did not generate central component declarations.`);
+  }
+  if (readdirSync(resolve(project, "src")).some((file) => file.endsWith(".d.voo.ts"))) {
+    throw new Error(`${framework} quickstart polluted its source directory with declarations.`);
+  }
+  const metadata = JSON.parse(readFileSync(resolve(project, ".vooya/metadata.json"), "utf8"));
+  if (metadata.product !== "vooya" || metadata.schemaVersion !== 1 || !metadata.toolchain?.rustc) {
+    throw new Error(`${framework} quickstart did not record workspace schema and toolchain metadata.`);
+  }
+  if (framework === "vue") {
+    run(npmCommand, ["exec", "--", "vooya", "clean"], project);
+    if (existsSync(resolve(project, ".vooya"))) {
+      throw new Error("vooya clean did not remove the disposable default workspace.");
+    }
+    run(npmCommand, ["run", "build"], project);
+  }
 
   const assets = readdirSync(resolve(project, "dist/assets"));
   if (!assets.some((asset) => /^vooya_app_bg-.*\.wasm$/.test(asset))) {

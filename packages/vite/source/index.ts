@@ -1,32 +1,39 @@
 // Vite supplies hook contexts dynamically. The public plugin implementation
 // is TypeScript-authored; its Vite hook boundary remains intentionally loose.
 // @ts-nocheck
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import {
   buildApplication,
   clearToolchainCache,
   formatResolvedToolchain,
   isVooyaUserError,
+  resolveVooyaWorkspace,
   resolveRuntimeCrateRoot,
   resolveRustDependencyRoots,
   resolveToolchain,
+  writeVooDeclarations,
 } from "@vooya/build-core";
 import { createBuildScheduler } from "./build-scheduler.js";
 import {
   compileVooStyle,
-  generateVooDeclaration,
   generatedAdapterDefinition,
   generatedComponentBinding,
   parseVooComponent,
 } from "@vooya/compiler";
 import { readVooComponents } from "./voo-project.js";
+import { inspectGeneratedTypesConfiguration } from "./typescript-config.js";
 
 const componentExtension = ".voo";
 const runtimeId = "virtual:vooya-runtime";
 const stylePrefix = "virtual:vooya-style:";
 
-export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOptions = {} } = {}) {
+export function vooya({
+  framework = "vue",
+  rust = {},
+  toolchain: toolchainOptions = {},
+  workspace: workspaceOptions = {},
+} = {}) {
   let applicationRoot;
   let buildScheduler;
   let runtimeModule;
@@ -52,7 +59,12 @@ export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOption
   const compile = () => {
     const components = applicationRoot ? readVooComponents(applicationRoot) : [];
     sourceComponents = components.filter((component) => component.format === "source");
-    writeVooDeclarations(components, framework);
+    writeVooDeclarations({
+      applicationRoot,
+      components,
+      framework,
+      workspaceRoot: workspaceOptions.root,
+    });
     const progress = createRustBuildProgress(logger);
     try {
       if (!toolchain) {
@@ -70,6 +82,7 @@ export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOption
         components: sourceComponents,
         rust,
         framework,
+        workspaceRoot: resolveVooyaWorkspace(applicationRoot, workspaceOptions.root).root,
         toolchain,
         onRustBuildStart: progress.start,
       }));
@@ -92,6 +105,11 @@ export function vooya({ framework = "vue", rust = {}, toolchain: toolchainOption
     configResolved(config) {
       applicationRoot = config.root;
       logger = config.logger;
+      const typesProblem = inspectGeneratedTypesConfiguration(
+        applicationRoot,
+        workspaceOptions.root,
+      );
+      if (typesProblem) logger?.warn(`Vooya: WARNING: ${typesProblem.message}`);
     },
     buildStart() {
       compile();
@@ -221,13 +239,6 @@ export function createRustBuildProgress(logger, now = () => performance.now()) {
       if (startedAt !== undefined) logger?.info(`Vooya: Rust/WASM build failed after ${elapsed()}.`);
     },
   };
-}
-
-function writeVooDeclarations(components, framework) {
-  for (const component of components) {
-    if (component.format !== "source") continue;
-    writeFileSync(component.id.replace(/\.voo$/, ".d.voo.ts"), generateVooDeclaration(component, framework));
-  }
 }
 
 function isPathInside(file, directory) {
