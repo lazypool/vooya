@@ -73,7 +73,7 @@ export function defineVooyaComponent(
           try {
             handle.current = bindings.mount(
               element,
-              ...definition.props.map((prop) => props.current[prop.name]),
+              ...definition.props.map((prop) => resolvePropValue(prop, props.current)),
             );
             emitDiagnostic(element, definition, "mount", elapsedSince(startedAt));
           } catch (cause) {
@@ -113,7 +113,7 @@ export function defineVooyaComponent(
       const previous = previousProps.current;
       if (previous) {
         for (const prop of definition.props) {
-          const value = componentProps[prop.name];
+          const value = resolvePropValue(prop, componentProps);
           if (Object.is(previous[prop.name], value)) continue;
           const update = handle.current?.[`update_${prop.name}`];
           if (typeof update !== "function" || !host.current) continue;
@@ -127,7 +127,7 @@ export function defineVooyaComponent(
         }
       }
       previousProps.current = Object.fromEntries(
-        definition.props.map((prop) => [prop.name, componentProps[prop.name]]),
+        definition.props.map((prop) => [prop.name, resolvePropValue(prop, componentProps)]),
       );
     });
 
@@ -174,6 +174,16 @@ function summarizeError(cause: unknown) {
 
 function truncate(value: string) {
   return value.slice(0, 200);
+}
+
+function resolvePropValue(
+  prop: VooyaComponentDefinition["props"][number],
+  props: Record<string, unknown>,
+): unknown {
+  const value = props[prop.name];
+  return value === undefined && Object.hasOwn(prop, "defaultValue")
+    ? prop.defaultValue
+    : value;
 }
 
 function isDevelopment() {

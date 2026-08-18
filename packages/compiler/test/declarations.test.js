@@ -41,7 +41,10 @@ test("generates React callback props from component events", () => {
   const declaration = generateVooDeclaration(
     {
       name: "Counter",
-      props: [{ name: "initial", rustType: "i32", required: true }],
+      props: [
+        { name: "initial", rustType: "i32", required: true },
+        { name: "label", rustType: "String", required: false },
+      ],
       events: [
         { name: "change", parameters: [{ name: "value", rustType: "i32" }] },
         { name: "reset-all", parameters: [] },
@@ -51,6 +54,7 @@ test("generates React callback props from component events", () => {
   );
 
   assert.match(declaration, /initial: number;/);
+  assert.match(declaration, /label\?: string;/);
   assert.match(declaration, /onChange\?: \(value: number\) => void;/);
   assert.match(declaration, /onResetAll\?: \(\) => void;/);
   assert.match(declaration, /ComponentType<CounterProps>/);
