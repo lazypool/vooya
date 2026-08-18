@@ -1,6 +1,6 @@
 # `@vooya/rspack`
 
-Experimental Rspack 2.1 integration for Vooya source `.voo` components.
+Experimental Rspack `>=2.1.10` integration for Vooya source `.voo` components.
 
 The package supports Vue and React applications through Rsbuild, and exposes a
 lower-level Rspack plugin and loader rule for applications that configure
@@ -69,8 +69,9 @@ entry, HTML, and CSS configuration.
 - production WASM/CSS emission;
 - source `.voo` rebuild, mapped Rust diagnostics, and failed-build recovery.
 
-SSR, hydration, Module Federation, state-preserving HMR, Rspack 1.x, and other
-Rspack 2.x releases are not yet compatibility claims.
+SSR, hydration, Module Federation, state-preserving HMR, and Rspack versions
+below 2.1.10 are not compatibility claims. Exact fixture evidence currently
+uses Rspack 2.1.10.
 
 Configured Rust path dependencies participate in builds, but editing one while
 the Rspack development server is running currently requires restarting that

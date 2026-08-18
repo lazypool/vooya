@@ -8,10 +8,10 @@
 
 ## Verification
 
-<!-- List the exact commands and browser/manual checks you ran. -->
+<!-- List the exact commands and browser/manual checks you ran. Draft PRs may leave items unchecked; briefly note what is still pending. -->
 
 - [ ] Relevant automated tests pass.
-- [ ] User-facing behavior was exercised in a real Vue or React project when applicable.
+- [ ] User-facing behavior was exercised in a real host application when applicable.
 - [ ] Documentation was updated when the workflow or public contract changed.
 - [ ] Public claims distinguish current, experimental, and planned behavior.
 - [ ] No generated package JavaScript, local collaboration notes, private paths, or credentials were committed.

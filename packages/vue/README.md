@@ -1,6 +1,6 @@
 # `@vooya/vue`
 
-Vue 3 lifecycle adapter for Rust components compiled by Vooya.
+Vue `>=3.5.2` lifecycle adapter for Rust components compiled by Vooya.
 
 ```sh
 npm install @vooya/vue@alpha

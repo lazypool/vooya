@@ -21,7 +21,7 @@ body:
       label: Primary user
       options:
         - .voo component author
-        - Vue or React application developer
+        - Web application developer
         - Component package publisher
         - Vooya contributor or maintainer
         - Other

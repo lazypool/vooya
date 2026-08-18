@@ -46,6 +46,6 @@
     "@vooya/compiler": "0.1.0-alpha.8"
   },
   "peerDependencies": {
-    "webpack": ">=5.101.0 <6"
+    "webpack": ">=5"
   }
 }

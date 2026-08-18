@@ -15,11 +15,11 @@ may remain JavaScript when Node or a consumer tool must execute them directly.
 
 The public plugin entry is `vooya()` from `@vooya/vite`.
 
-The plugin peer range covers Vite 7 and Vite 8. Vite+ is tested as a separate
+The plugin requires Vite `>=7`. Vite+ is tested as a separate
 toolchain because it aliases `vite` to `@voidzero-dev/vite-plus-core`; it still
 uses the same `vooya()` plugin and does not create a second Vooya adapter API.
 The current Vite+ fixture uses npm legacy peer resolution because its aliased
-core has a `0.x` package version; normal Vite 7/8 fixtures install strictly.
+core has a `0.x` package version; the normal Vite fixtures install strictly.
 
 ```ts
 vooya({
@@ -129,9 +129,9 @@ vooyaRsbuild({
 });
 ```
 
-The current compatibility claim is limited to Rspack 2.1.10 and the named
-Rsbuild/Rslib fixtures. Direct Rspack users must configure their normal
-framework and CSS rules in addition to `vooyaRspack().rule()`.
+The minimum supported Rspack version is 2.1.10. Exact evidence comes from that
+version and the named Rsbuild/Rslib fixtures. Direct Rspack users must configure
+their normal framework and CSS rules in addition to `vooyaRspack().rule()`.
 
 Rspack rebuilds edited `.voo` files and recovers after mapped Rust compilation
 errors. Configured Rust path dependencies participate in builds, but editing a
@@ -163,7 +163,7 @@ export default {
 };
 ```
 
-The experimental range is Webpack `>=5.101.0 <6`. Exact fixtures cover
+The experimental range is Webpack `>=5`. Exact fixtures cover
 5.101.0 production output and 5.109.2 Vue/React browser behavior, mapped Rust
 failure recovery, configured path-dependency rebuilds, rapid saves, and normal
 Webpack Dev Server live reload. Webpack 4, Module Federation, SSR, hydration,

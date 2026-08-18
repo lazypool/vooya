@@ -1,7 +1,7 @@
 <h1 align="center">Vooya</h1>
 
 <p align="center">
-  <strong>Write Rust-powered components. Use them from Vue and React.</strong>
+  <strong>Write Rust-powered components for web applications.</strong>
 </p>
 
 <p align="center">
@@ -10,9 +10,10 @@
   <a href="LICENSE-MIT"><img src="https://img.shields.io/github/license/vooyajs/vooya" alt="license"></a>
 </p>
 
-Vooya compiles Rust from a `.voo` component into WebAssembly and exposes it as
-an ordinary Vue or React component. The host framework keeps the application,
-routing, and surrounding UI; Rust owns one isolated component surface.
+Vooya compiles Rust from a `.voo` component into WebAssembly and exposes it
+through host-framework adapters for use in web applications. The application
+shell keeps routing and surrounding UI; Rust owns one isolated component
+surface. Vue and React are the current first-party adapters.
 
 ```vue
 <script setup lang="ts">
@@ -29,20 +30,21 @@ Vooya generates the framework adapter, TypeScript declarations, WASM lifecycle,
 event forwarding, and diagnostic mappings.
 
 > [!IMPORTANT]
-> Vooya is a public alpha. Source `.voo` authoring supports Vite 7/8, with
-> experimental Rspack 2.1 and Webpack 5 paths and a local Rust/WASM toolchain.
+> Vooya is a public alpha. Source `.voo` authoring supports Vite `>=7`, with
+> experimental Rspack `>=2.1.10` and Webpack `>=5` paths and a local Rust/WASM
+> toolchain.
 > Published alpha APIs may still change.
 
 ## Why Vooya?
 
 Rust already has strong libraries for parsing, graphics, simulation, search,
 editors, media, and data processing. Bringing one of those libraries into an
-existing frontend application usually means maintaining WASM initialization,
+existing web application usually means maintaining WASM initialization,
 framework wrappers, types, events, cleanup, diagnostics, and packaging by hand.
 
 Vooya is exploring a repeatable component boundary for that work:
 
-- keep existing Vue and React applications;
+- keep existing web applications and framework choices;
 - reuse browser-compatible Rust crates;
 - generate typed props and events;
 - manage mount, updates, failures, and disposal;
@@ -50,9 +52,9 @@ Vooya is exploring a repeatable component boundary for that work:
 - eventually distribute precompiled components whose consumers do not need
   Rust installed.
 
-Vooya is not a replacement for Vue or React, and it does not assume that WASM
-makes ordinary DOM work faster. Performance claims belong to measured,
-component-level workloads.
+Vooya is not a replacement for the application framework, and it does not
+assume that WASM makes ordinary DOM work faster. Performance claims belong to
+measured, component-level workloads.
 
 ## Quick start with Vue
 
@@ -68,11 +70,10 @@ rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli --version 0.2.115 --locked
 ```
 
-### 2. Create a Vite 7 or Vite 8 application
+### 2. Create a Vite application
 
-The current Vooya alpha supports Vite 7 and Vite 8. Pin the matching
-`create-vite` major so a new project does not silently select an unverified Vite
-major.
+The current Vooya alpha requires Vite `>=7`. This guide pins the currently
+verified Vite 8 toolchain so the generated project matches the example.
 
 Using npm:
 
@@ -282,11 +283,11 @@ APIs when necessary.
 
 ## What works today
 
-- source `.voo` components in Vite 7 and Vite 8;
-- experimental source `.voo` components in Rspack 2.1 through Rsbuild or the
-  first-party Rspack plugin;
-- experimental source `.voo` components in Webpack `>=5.101.0 <6`;
-- Vue 3.5 and React 19 adapters;
+- source `.voo` components in Vite `>=7`;
+- experimental source `.voo` components in Rspack `>=2.1.10` through Rsbuild
+  or the first-party Rspack plugin;
+- experimental source `.voo` components in Webpack `>=5`;
+- Vue `>=3.5.2` and React `>=19` adapters;
 - typed primitive props and component events;
 - generated mount, prop-update, error, dispose, and ABI bindings;
 - TypeScript declarations and scoped CSS;
@@ -300,15 +301,15 @@ APIs when necessary.
 
 ### Compatibility at a glance
 
-| Layer | Version range | Status | Exact evidence |
+| Layer | Minimum version | Status | Exact evidence |
 | --- | --- | --- | --- |
-| Node.js | `^20.19.0 || >=22.12.0` | supported | Vite 7/8 toolchain floor |
-| Vue | `>=3.5.2 <3.6` | supported | adapter checks through 3.5.41; browser fixtures at 3.5.40/3.5.41 |
-| React | `>=19.0.0 <20` | supported | browser fixtures at 19.0.0 and 19.2.0 |
-| Vite | `>=7 <9` | supported | repository Vite 7 path and packed Vite 8.2.1 fixture |
-| Vite+ | `0.2.9` | tested only | Vite-core alias production smoke |
-| Rspack / Rsbuild | Rspack `2.1.x`; Rsbuild `2.1.13` | experimental | Rspack 2.1.10 with Rsbuild, Rslib, and native Rspack fixtures |
-| Webpack | `>=5.101.0 <6` | experimental | 5.101.0 production lower bound; 5.109.2 Vue/React browser and watch recovery |
+| Node.js | `^20.19.0 \|\| >=22.12.0` | supported | Vite 7/8 toolchain floor |
+| Vue | `>=3.5.2` | supported | adapter checks through 3.5.41; browser fixtures at 3.5.40/3.5.41 |
+| React | `>=19` | supported | browser fixtures at 19.0.0 and 19.2.0 |
+| Vite | `>=7` | supported | repository Vite 7 path and packed Vite 8.2.1 fixture |
+| Vite+ | `>=0.2.9` | tested only | Vite-core alias production smoke at 0.2.9 |
+| Rspack / Rsbuild | Rspack `>=2.1.10`; Rsbuild `>=2.1.13` | experimental | Rspack 2.1.10 with Rsbuild, Rslib, and native Rspack fixtures |
+| Webpack | `>=5` | experimental | production fixture at 5.101.0; Vue/React browser and watch recovery at 5.109.2 |
 
 “Supported” and “experimental” describe Vooya's tested integration boundary,
 not every feature of the host framework or bundler. See the detailed
@@ -317,9 +318,8 @@ hydration, HMR state preservation, Vue Vapor, or a toolchain not listed here.
 
 Current boundaries:
 
-- Rspack support is experimental and currently verified only against the
-  recorded 2.1 fixtures; Vite+ remains a Vite-core alias rather than a second
-  adapter;
+- Rspack support is experimental; exact evidence comes from the recorded
+  fixtures, and Vite+ remains a Vite-core alias rather than a second adapter;
 - Webpack 5 support is experimental; Webpack 4, Turbopack, Rollup, SSR, and
   hydration are not supported;
 - successful Rust HMR currently performs a full reload and loses local state;
@@ -365,52 +365,18 @@ CLI shown in the quick start above.
 | [`@vooya/core`](packages/core) | Rust component runtime source and ownership primitives |
 | [`@vooya/build-core`](packages/build-core) | Bundler-neutral Cargo, wasm-bindgen, asset, declaration, watch, and diagnostic pipeline |
 | [`@vooya/vite`](packages/vite) | Vite integration, Rust/WASM build orchestration, diagnostics, and CLI |
-| [`@vooya/rspack`](packages/rspack) | Experimental Rspack 2.1 and Rsbuild source `.voo` integration |
-| [`@vooya/webpack`](packages/webpack) | Experimental Webpack 5 source `.voo` integration |
+| [`@vooya/rspack`](packages/rspack) | Experimental Rspack `>=2.1.10` and Rsbuild source `.voo` integration |
+| [`@vooya/webpack`](packages/webpack) | Experimental Webpack `>=5` source `.voo` integration |
 | [`@vooya/vue`](packages/vue) | Vue lifecycle and event adapter |
 | [`@vooya/react`](packages/react) | React lifecycle and event adapter |
 
 All public packages use one coordinated alpha version. Install the framework
 adapter and selected bundler integration from the same `alpha` channel.
 
-### Migration from `@vooya/vite-plugin`
-
-The Vite integration package is named `@vooya/vite`. Update existing installs
-and imports:
-
-```diff
--npm install --save-dev @vooya/vite-plugin@alpha
-+npm install --save-dev @vooya/vite@alpha
-```
-
-```diff
--import { vooya } from "@vooya/vite-plugin";
-+import { vooya } from "@vooya/vite";
-```
-
 ## Contributing
 
-Vooya is looking for feedback and contributions across Rust/WASM runtime work,
-compiler design, Vue/React integration, build tooling, compatibility testing,
-examples, and documentation.
-
-- Read the [contribution guide](CONTRIBUTING.md) before starting code or public
-  API work.
-- Browse the [open issues](https://github.com/vooyajs/vooya/issues).
-- Read [Issue #16](https://github.com/vooyajs/vooya/issues/16) for the current
-  0.1 product boundary.
-- Use a focused issue or RFC before expanding public APIs.
-- Keep performance claims tied to reproducible browser evidence.
-
-Before submitting a code change, run the checks relevant to the area you
-changed. The complete release gate is:
-
-```sh
-npm run verify:ci
-```
-
-Security reports should follow [SECURITY.md](SECURITY.md). Community
-participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for project
+scope, development setup, testing guidance, and pull request expectations.
 
 ## License
 

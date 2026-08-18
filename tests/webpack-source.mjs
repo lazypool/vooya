@@ -40,8 +40,8 @@ try {
   await verifyReactBrowser(react);
   await verifyDevRecovery(vue);
 
-  const lowerBound = prepare("webpack-vue", "5.101.0", packages);
-  buildAndInspect(lowerBound, "webpack-vue-5.101.0");
+  const olderFixture = prepare("webpack-vue", "5.101.0", packages);
+  buildAndInspect(olderFixture, "webpack-vue-5.101.0");
   console.log("Verified Webpack 5.109.2 Vue/React and Webpack 5.101.0 Vue source builds.");
 } finally {
   if (!process.env.VOOYA_KEEP_WEBPACK_FIXTURES) {
