@@ -143,7 +143,18 @@ props:
 });
 
 test("rejects borrowed string props at the parse boundary with source line", () => {
-  for (const rustType of ["str", "&str", "& str", "&'a str", "&'static str"]) {
+  for (const rustType of [
+    "str",
+    "&str",
+    "& str",
+    "&'a str",
+    "&'static str",
+    "&mut str",
+    "& mut str",
+    "&'a mut str",
+    "& 'a mut str",
+    "&'static mut str",
+  ]) {
     assert.throws(
       () =>
         parseVooComponent(
@@ -171,7 +182,18 @@ props:
 });
 
 test("rejects borrowed string event parameters at the parse boundary with source line", () => {
-  for (const rustType of ["str", "&str", "& str", "&'a str", "&'static str"]) {
+  for (const rustType of [
+    "str",
+    "&str",
+    "& str",
+    "&'a str",
+    "&'static str",
+    "&mut str",
+    "& mut str",
+    "&'a mut str",
+    "& 'a mut str",
+    "&'static mut str",
+  ]) {
     assert.throws(
       () =>
         parseVooComponent(
