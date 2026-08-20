@@ -20,7 +20,13 @@ function canRun(command, args) {
 }
 
 function run(command, args) {
-  const result = spawnSync(command, args, { cwd: root, stdio: "inherit" });
+  const result = spawnSync(command, args, {
+    cwd: root,
+    stdio: "inherit",
+    // Node rejects spawning .cmd shims directly on Windows (EINVAL); route
+    // through the shell there while keeping POSIX behavior unchanged.
+    ...(process.platform === "win32" ? { shell: true } : {}),
+  });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}.`);
 }
