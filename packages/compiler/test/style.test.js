@@ -34,3 +34,39 @@ test("leaves unscoped styles unchanged", () => {
     ".counter { display: flex; }",
   );
 });
+
+test("compiles functional :host selectors into valid scoped selectors", () => {
+  const css = compileVooStyle({
+    ...component,
+    style: {
+      content: `:host(.active) > button,
+:host-context(.dark) p,
+:host:hover { color: red; }`,
+      scoped: true,
+    },
+  });
+
+  assert.match(css, /\[data-voo-scope="voo-[a-f0-9]+"\]\.active > button/);
+  assert.match(css, /\.dark \[data-voo-scope="voo-[a-f0-9]+"\] p/);
+  assert.match(css, /\[data-voo-scope="voo-[a-f0-9]+"\]:hover \{ color: red; \}/);
+});
+
+test("rejects unsupported :host forms with a source-oriented error", () => {
+  for (const source of [
+    ":host() { color: red; }",
+    ":host-context { color: red; }",
+    ":host(.a, .b) { color: red; }",
+  ]) {
+    assert.throws(
+      () =>
+        compileVooStyle({
+          ...component,
+          style: { content: source, scoped: true },
+        }),
+      (error) =>
+        error instanceof Error &&
+        /Unsupported :host selector/.test(error.message) &&
+        /Counter\.voo/.test(error.message),
+    );
+  }
+});

@@ -92,6 +92,17 @@ Scoped CSS protects component selectors from the surrounding application. It
 does not create Shadow DOM, isolate inherited properties, or replace normal CSS
 cascade rules.
 
+Inside a scoped block, `:host` refers to the component's host element:
+
+- Bare `:host` matches the host itself.
+- `:host(.active)` matches a host that also carries the `.active` class.
+- `:host-context(.dark)` matches a host inside an ancestor with the `.dark`
+  class, compiling to `.dark [data-voo-scope="..."]`.
+
+Forms with empty or comma-separated arguments are rejected with a compiler
+error that names the selector. During the alpha/beta period these are the only
+functional host selectors; `:deep()` and `:global()` are not provided.
+
 ## Rust dependencies
 
 Application crates are configured in `vooya({ rust: ... })`, not in a Cargo
