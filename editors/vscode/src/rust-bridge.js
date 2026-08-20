@@ -56,12 +56,12 @@ export async function prepareBridgeWorkspace(storageRoot, extracted, { runtimeCr
 export async function cleanupBridgeStorage(storageRoot) {
     await rm(join(storageRoot, "vooya-rust-bridge"), { force: true, recursive: true });
 }
-export async function collectRustAnalyzerDiagnostics(workspace, extracted, { command = "rust-analyzer", timeoutMs = 10_000 } = {}) {
+export async function collectRustAnalyzerDiagnostics(workspace, extracted, { command = "rust-analyzer", timeoutMs = 60_000 } = {}) {
     return new Promise((resolve, reject) => {
         const child = spawn(command, [], { cwd: workspace.root, stdio: ["pipe", "pipe", "pipe"] });
         let buffer = Buffer.alloc(0);
         let diagnosticsTimer;
-        const timer = setTimeout(() => finish(new Error(`rust-analyzer did not publish diagnostics within ${timeoutMs}ms`)), timeoutMs);
+        const timer = setTimeout(() => finish(timeoutError(timeoutMs)), timeoutMs);
         const send = (message) => child.stdin.write(`Content-Length: ${Buffer.byteLength(JSON.stringify(message))}\r\n\r\n${JSON.stringify(message)}`);
         const finish = (error, result = []) => {
             clearTimeout(timer);
@@ -87,7 +87,9 @@ export async function collectRustAnalyzerDiagnostics(workspace, extracted, { com
                     send({ jsonrpc: "2.0", method: "textDocument/didOpen", params: { textDocument: { uri: workspace.sourceUri, languageId: "rust", version: 1, text: workspace.sourceText } } });
                 }
                 if (message.method === "textDocument/publishDiagnostics" &&
-                    message.params?.uri === workspace.sourceUri &&
+                    // rust-analyzer normalizes file URIs (lowercasing the drive letter
+                    // on Windows), so compare case-insensitively.
+                    message.params?.uri?.toLowerCase() === workspace.sourceUri.toLowerCase() &&
                     Array.isArray(message.params.diagnostics)) {
                     // rust-analyzer may first publish diagnostics from the on-disk file,
                     // then replace them after didOpen. Wait for the short quiet period
@@ -100,6 +102,9 @@ export async function collectRustAnalyzerDiagnostics(workspace, extracted, { com
         });
         send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { processId: process.pid, rootUri: pathToFileUri(workspace.root), capabilities: {} } });
     });
+}
+function timeoutError(timeoutMs) {
+    return Object.assign(new Error(`rust-analyzer did not publish diagnostics within ${timeoutMs}ms`), { code: "VOoyaRustAnalyzerTimeout" });
 }
 export function mapWorkspaceDiagnostic(diagnostic, extracted, workspace) {
     if (!diagnostic.range || diagnostic.range.start.line < workspace.generatedLineOffset)

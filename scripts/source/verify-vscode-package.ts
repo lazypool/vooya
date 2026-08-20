@@ -7,7 +7,10 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const archive = resolve(root, "dist/voo-vscode.vsix");
 if (!existsSync(archive)) throw new Error(`Expected VSIX archive at ${archive}.`);
 
-const files = execFileSync("unzip", ["-Z1", archive], { encoding: "utf8" }).split("\n").filter(Boolean);
+const files = execFileSync("unzip", ["-Z1", archive], { encoding: "utf8" })
+  .split("\n")
+  .map((line) => line.trim())
+  .filter(Boolean);
 for (const file of [
   "extension/runtime/vooya-core/Cargo.toml",
   "extension/runtime/vooya-core/src/lib.rs",

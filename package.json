@@ -32,7 +32,7 @@
     "verify:editor": "npm run build:scripts && node scripts/generated/verify-vscode-extension.js && npm run test:editor && npm run package:editor",
     "verify:branding": "npm run build:scripts && node scripts/generated/verify-branding.js",
     "verify:docs": "npm run build --workspace @vooya/compiler && npm run build:scripts && node scripts/generated/verify-docs.js",
-    "package:editor": "npm run build:scripts && mkdir -p dist && cd editors/vscode && vsce package --no-dependencies --out ../../dist/voo-vscode.vsix && cd ../.. && node scripts/generated/verify-vscode-package.js",
+    "package:editor": "npm run build:scripts && node -e \"fs.mkdirSync('dist',{recursive:true})\" && cd editors/vscode && vsce package --no-dependencies --out ../../dist/voo-vscode.vsix && cd ../.. && node scripts/generated/verify-vscode-package.js",
     "changeset": "npm run build:scripts && node scripts/generated/semifold.js commit",
     "release:status": "npm run build:scripts && node scripts/generated/verify-semifold-release-contract.js && node scripts/generated/semifold.js status",
     "version:packages": "npm run build:scripts && node scripts/generated/verify-semifold-release-contract.js && node scripts/generated/semifold.js version",
