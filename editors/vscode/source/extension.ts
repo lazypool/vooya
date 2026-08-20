@@ -20,7 +20,7 @@ export function activate(context) {
       const found = await collectRustAnalyzerDiagnostics(workspace, extracted);
       diagnostics.set(document.uri, found.map((item) => mapWorkspaceDiagnostic(item, extracted, workspace)).filter(Boolean).map(toVsCodeDiagnostic));
     } catch (error) {
-      void vscode.window.showWarningMessage(`Vooya embedded Rust check unavailable: ${error.message}`);
+      void vscode.window.showWarningMessage(diagnosticBridgeMessage(error));
     }
   };
   context.subscriptions.push(vscode.commands.registerCommand("vooya.checkEmbeddedRust", check));
@@ -29,6 +29,16 @@ export function activate(context) {
 
 export async function deactivate() {
   if (storageRoot) await cleanupBridgeStorage(storageRoot);
+}
+
+function diagnosticBridgeMessage(error) {
+  if (error?.code === "ENOENT") {
+    return "Vooya embedded Rust check unavailable: rust-analyzer is not installed. Install it with: rustup component add rust-analyzer";
+  }
+  if (error?.code === "VOoyaRustAnalyzerTimeout") {
+    return "Vooya embedded Rust check unavailable: rust-analyzer did not respond in time, likely still loading a cold workspace. Run the check again shortly.";
+  }
+  return `Vooya embedded Rust check unavailable: ${error.message}`;
 }
 
 function toVsCodeDiagnostic(diagnostic) {

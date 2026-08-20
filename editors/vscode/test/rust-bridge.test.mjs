@@ -47,3 +47,14 @@ test("reports a missing rust-analyzer process without writing the source project
     /ENOENT/,
   );
 });
+
+test("distinguishes a diagnostics timeout from a missing rust-analyzer process", async () => {
+  const extracted = extractEmbeddedRust('<component name="Counter"></component>\n<rust>pub fn ok() {}</rust>', "file:///project/Counter.voo");
+  const workspace = await prepareBridgeWorkspace(await mkdtemp(join(tmpdir(), "vooya-editor-timeout-")), extracted);
+  await assert.rejects(
+    collectRustAnalyzerDiagnostics(workspace, extracted, { command: process.execPath, timeoutMs: 100 }),
+    (error) =>
+      error.code === "VOoyaRustAnalyzerTimeout" &&
+      /did not publish diagnostics within 100ms/.test(error.message),
+  );
+});
