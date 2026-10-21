@@ -71,7 +71,7 @@ export function buildPrecompiledVueArtifact({
   const distribution = resolveArtifactOutput(root, outputDir);
   const adapterRange = resolveVueAdapterRange(metadata);
   const adapterVersion = resolveVueAdapterVersion(root);
-  if (!satisfies(adapterVersion, adapterRange, { includePrerelease: true })) {
+  if (!satisfies(adapterVersion, adapterRange)) {
     throw new Error(
       `${metadata.name} declares @vooya/vue "${adapterRange}", but this artifact is generated against `
       + `@vooya/vue ${adapterVersion}; the declared range must include the generated adapter version.`,
@@ -403,7 +403,7 @@ function validateArtifactAdapter(adapter: unknown, component: string) {
   if (typeof range !== "string" || validRange(range) === null) {
     throw new Error(`Vooya precompiled Vue artifact component "${component}" adapter range must be a valid semver range.`);
   }
-  if (!satisfies(version, range, { includePrerelease: true })) {
+  if (!satisfies(version, range)) {
     throw new Error(
       `Vooya precompiled Vue artifact component "${component}" adapter version ${version} `
       + `is outside its declared @vooya/vue range ${range}.`,

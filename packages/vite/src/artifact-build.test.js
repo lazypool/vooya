@@ -90,6 +90,46 @@ test("rejects invalid @vooya/vue adapter dependency declarations before building
   }
 });
 
+test("rejects adapter prereleases excluded by npm dependency ranges before building", () => {
+  for (const [installedAdapterVersion, vueDependency] of [
+    ["0.2.0-alpha.0", "*"],
+    ["0.2.1-alpha.0", "^0.2.0"],
+  ]) {
+    const fixture = createArtifactFixture({ installedAdapterVersion, vueDependency });
+    try {
+      assert.throws(
+        () => buildPrecompiledVueArtifact({ packageRoot: fixture.root, source: fixture.source }),
+        /declared range must include the generated adapter version/,
+      );
+      assert.equal(existsSync(resolve(fixture.root, "dist")), false);
+    } finally {
+      fixture.cleanup();
+    }
+  }
+});
+
+test("validates adapter prereleases using npm dependency range semantics", () => {
+  const fixture = createArtifactFixture();
+  try {
+    for (const [version, range] of [
+      ["0.2.0-alpha.0", "*"],
+      ["0.2.1-alpha.0", "^0.2.0"],
+    ]) {
+      writeArtifactOutput(fixture.root, { adapter: { package: "@vooya/vue", version, range } });
+      assert.throws(
+        () => validatePrecompiledVueArtifactOutput(resolve(fixture.root, "dist")),
+        /is outside its declared @vooya\/vue range/,
+      );
+    }
+    writeArtifactOutput(fixture.root, {
+      adapter: { package: "@vooya/vue", version: "0.2.0-alpha.0", range: "^0.2.0-alpha.0" },
+    });
+    validatePrecompiledVueArtifactOutput(resolve(fixture.root, "dist"));
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test("validates manifest bindings, loader, stylesheet and entry against shipped output", () => {
   const fixture = createArtifactFixture();
   try {
