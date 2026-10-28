@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
@@ -170,32 +171,76 @@ process.exit(result.status ?? 1);
 chmodSync(wrapper, 0o755);
 config.plugins[0].toolchain = { mode: "system", cargoPath: wrapper };
 const compiler = build({ ...config, mode: "development" });
+compiler.hooks.invalid.tap("vooya-watch-test", () => console.log("WATCH_INVALID"));
+compiler.hooks.watchRun.tap("vooya-watch-test", () => console.log("WATCH_START"));
+let delayNextRun = false;
+compiler.hooks.watchRun.tapPromise("vooya-watch-slow-runner", async () => {
+  if (!delayNextRun) return;
+  delayNextRun = false;
+  console.log("WATCH_DELAY_START");
+  await new Promise((done) => setTimeout(done, 2200));
+  console.log("WATCH_DELAY_END");
+});
+compiler.hooks.done.tap("vooya-watch-test", () => console.log("WATCH_DONE"));
 const watcher = compiler.watch({ aggregateTimeout: 100 }, (error, stats) => {
   if (error || stats.hasErrors()) console.log("WATCH_ERROR", error?.message ?? stats.toString({ all: false, errors: true }));
   else console.log("WATCH_SUCCESS");
+});
+process.on("message", (message) => {
+  if (message !== "slow-rebuild") return;
+  delayNextRun = true;
+  watcher.invalidate();
 });
 process.on("SIGTERM", () => watcher.close(() => compiler.close(() => process.exit(0))));
 `);
   const sourcePath = resolve(project, "Counter.rs");
   const original = readFileSync(sourcePath, "utf8");
   let output = "";
-  const processHandle = spawn(process.execPath, ["watch.mjs"], { cwd: project, stdio: ["ignore", "pipe", "pipe"] });
+  let lastWatchActivity = Date.now();
+  let watchPending = true;
+  const processHandle = spawn(process.execPath, ["watch.mjs"], { cwd: project, stdio: ["ignore", "pipe", "pipe", "ipc"] });
   processHandle.stdout.on("data", (chunk) => { output += chunk; });
   processHandle.stderr.on("data", (chunk) => { output += chunk; });
+  // stdout carries the lifecycle protocol. readline preserves complete markers
+  // across pipe chunks; stderr diagnostics must not splice into those markers.
+  const watchLines = createInterface({ input: processHandle.stdout });
+  watchLines.on("line", (line) => {
+    const event = /^WATCH_(INVALID|START|DONE|SUCCESS|ERROR)(?:\s|$)/.exec(line);
+    if (event) {
+      lastWatchActivity = Date.now();
+      if (event[1] === "INVALID" || event[1] === "START") watchPending = true;
+      if (event[1] === "DONE") watchPending = false;
+    }
+  });
   const successes = () => output.match(/WATCH_SUCCESS/g)?.length ?? 0;
+  const watchState = () => ({
+    invalid: output.match(/WATCH_INVALID/g)?.length ?? 0,
+    starts: output.match(/WATCH_START/g)?.length ?? 0,
+    done: output.match(/WATCH_DONE/g)?.length ?? 0,
+    successes: successes(),
+    pending: watchPending,
+    lastActivity: lastWatchActivity,
+  });
   try {
     await waitFor(() => successes() > 0, () => output);
-    await settle(successes, () => output);
+    await settle(watchState, () => output);
     const initial = successes();
     await new Promise((done) => setTimeout(done, 1200));
     assert.equal(successes(), initial, `${bundler} rebuilt its own generated assets without an authored edit.\n${output}`);
+    // After startup convergence, explicitly rebuild unchanged inputs. This avoids
+    // a cold Cargo build while testing a pending run longer than the idle window.
+    processHandle.send("slow-rebuild");
+    await waitFor(() => output.includes("WATCH_DELAY_START"), () => output);
+    await settle(watchState, () => output);
+    assert.ok(output.includes("WATCH_DELAY_END") && successes() > initial,
+      `${bundler} settled before the delayed compilation completed.\n${output}`);
     // Simulate a second save after Cargo has already consumed the first edit.
     // The first artifact must not acknowledge that newer source fingerprint.
     writeFileSync(resolve(project, "race-edit.json"), JSON.stringify({ path: sourcePath, source: original.replace("Count: {}", "During build: {}") }));
     const beforeRace = successes();
     writeFileSync(sourcePath, original.replace("Count: {}", "First edit: {}"));
     await waitFor(() => output.includes("WATCH_RACE_EDIT") && successes() > beforeRace + 1, () => output);
-    await settle(successes, () => output);
+    await settle(watchState, () => output);
     await verify(project, "During build");
     writeFileSync(sourcePath, `${original}\ninvalid Rust\n`);
     await waitFor(() => output.includes("WATCH_ERROR"), () => output);
@@ -204,7 +249,7 @@ process.on("SIGTERM", () => watcher.close(() => compiler.close(() => process.exi
     writeFileSync(sourcePath, original.replace("Count: {}", "Recovered: {}"));
     await waitFor(() => successes() > beforeRecovery, () => output);
     await verify(project, "Recovered");
-    await settle(successes, () => output);
+    await settle(watchState, () => output);
     const recovered = successes();
     await new Promise((done) => setTimeout(done, 1200));
     assert.equal(successes(), recovered, `${bundler} did not settle after Rust recovery.\n${output}`);
@@ -212,7 +257,7 @@ process.on("SIGTERM", () => watcher.close(() => compiler.close(() => process.exi
     writeFileSync(stylePath, ".rust-counter { color: rgb(90, 30, 70); }\n");
     await waitFor(() => successes() > recovered, () => output);
     // Generated CSS can invalidate its Webpack module in the following watch pass.
-    await settle(successes, () => output);
+    await settle(watchState, () => output);
     await verify(project, "Recovered", "rgb(90, 30, 70)");
     const styled = successes();
     await new Promise((done) => setTimeout(done, 1200));
@@ -224,7 +269,7 @@ process.on("SIGTERM", () => watcher.close(() => compiler.close(() => process.exi
     const beforeNewFileRecovery = successes();
     writeFileSync(extraSource, "pub fn value() -> u32 { 1 }\n");
     await waitFor(() => successes() > beforeNewFileRecovery, () => output);
-    await settle(successes, () => output);
+    await settle(watchState, () => output);
     const errorsBeforeUndo = output.match(/WATCH_ERROR/g)?.length ?? 0;
     const undoSource = resolve(project, "Undo.rs");
     writeFileSync(undoSource, "invalid new Rust module\n");
@@ -232,12 +277,13 @@ process.on("SIGTERM", () => watcher.close(() => compiler.close(() => process.exi
     const beforeUndo = successes();
     rmSync(undoSource);
     await waitFor(() => successes() > beforeUndo, () => output);
-    await settle(successes, () => output);
+    await settle(watchState, () => output);
     console.log(`Verified ${bundler} Rust-file watch: invalid Rust, recovery, stylesheet update, new .rs detection/recovery, edits during compilation, undo by deletion, and no generated-file rebuild loop.`);
   } catch (error) {
     console.error(output);
     throw error;
   } finally {
+    watchLines.close();
     processHandle.kill("SIGTERM");
     await Promise.race([new Promise((done) => processHandle.once("exit", done)), new Promise((done) => setTimeout(done, 3000))]);
     if (processHandle.exitCode === null) processHandle.kill("SIGKILL");
@@ -252,12 +298,13 @@ async function waitFor(predicate, detail) {
   throw new Error(`Timed out waiting for Rust watch compilation.\n${detail()}`);
 }
 
-async function settle(count, detail) {
+async function settle(state, detail) {
   const deadline = Date.now() + 10000;
   while (Date.now() < deadline) {
-    const before = count();
-    await new Promise((done) => setTimeout(done, 800));
-    if (count() === before) return;
+    const current = state();
+    const idleFor = Date.now() - current.lastActivity;
+    if (!current.pending && idleFor >= 1600) return;
+    await new Promise((done) => setTimeout(done, 100));
   }
-  throw new Error(`Bundler did not settle after generated output.\n${detail()}`);
+  throw new Error(`Bundler did not settle after generated output.\n${JSON.stringify(state())}\n${detail()}`);
 }
