@@ -147,9 +147,9 @@ See [the release guide](../maintainers/releases.md).
   as the primary compatibility target. Vite 7 Rust-file Vue, React, Solid, and Svelte
   production/browser fixtures pass, and the packed Vite 8 fixture covers
   production, rebuild, HMR, and error recovery. Rspack `>=2.1.10`
-  has an experimental first-party adapter with Rsbuild, Rslib, and direct
-  Rspack fixtures. Webpack `>=5` has an experimental first-party
-  adapter. Their `.rs` integration requires the opt-in 0.2 alpha packages; the older
+  has a supported first-party Vue/React adapter with Rsbuild, Rslib-output,
+  and direct Rspack fixtures. Webpack `>=5` also has a supported Vue/React
+  adapter. Production and development recovery are covered by packed browser fixtures. Their `.rs` integration requires the opt-in 0.2 alpha packages; the older
   non-Vite beta packages do not implement that path. Current development removes
   the custom format and its tooling; see [migration](retired-authoring.md). Webpack 4, Rollup,
   Turbopack, and other bundlers remain unsupported.

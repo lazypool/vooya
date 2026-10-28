@@ -108,12 +108,13 @@ Vite 7 + Chromium，包括 Component mount/callback、Store action、prop update
 SvelteKit、SSR/hydration、Vite 8 或其他 bundler/browser 兼容声明。main 的
 `test:vite8-frameworks` 和 `test:vite-plus-frameworks` 是另外的 Alpha 源码 fixture 验收，见[兼容性矩阵](../project/compatibility.md)。
 
-## Experimental adapter
+## Rspack 与 Webpack（正式支持 Vue/React）
 
 `@vooya/rspack` 提供 `vooyaRsbuild()` 与 `vooyaRspack()`；证据下限是 Rspack
-`2.1.10`、Rsbuild `2.1.13`。`@vooya/webpack` 的实验范围为 Webpack `>=5`，
+`2.1.10`、Rsbuild `2.1.13`。`@vooya/webpack` 的支持范围为 Webpack `>=5`，
 fixture 覆盖 5.101.0 和 5.109.2。普通 Rust 接入需要可选的 0.2 alpha 包组合；
-`test:rust-bundlers` 为 Alpha 的 Vue/React Rust-file 路径提供具名打包消费证据。
+`test:rust-bundlers` 覆盖 Alpha Vue/React 的 Rust-file 生产与 watch 路径；
+开发服务器测试也覆盖两种框架的 Rust 编译失败恢复与源码更新。
 SSR、hydration、Module Federation 和 state-preserving HMR 不在当前承诺内。
 
 完整英文参数说明见[Tooling Reference](../../reference/tooling.md)。

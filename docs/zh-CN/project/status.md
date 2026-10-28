@@ -65,7 +65,7 @@ Beta 发布 gate；见 [RFC 0011](../../rfcs/0011-lab-self-hosting-program.md) �
   子组件后断言 Component handle 与 generated Store 各执行一次 `dispose()`。该证据
   不延伸到 Svelte 3/4、SvelteKit、SSR/hydration、Vite 8 或其他 bundler/browser。
 - `.vooya/types` 中央声明目录、`vooya doctor`、Rust diagnostics 映射和失败恢复。
-- Vite 7/8 source-authoring fixture，以及 Rspack/Webpack 的 experimental fixture。
+- Vite 7/8 source-authoring，以及正式支持的 Rspack/Webpack Vue/React 生产构建、浏览器生命周期与开发恢复；具体版本见[兼容性矩阵](compatibility.md)。
 - `rsx!` 的 signal binding、条件分支、keyed loop 和 owned cleanup。
 - 100,000-row DataGrid 与 150,000-point Canvas scatter 等浏览器证据。
 

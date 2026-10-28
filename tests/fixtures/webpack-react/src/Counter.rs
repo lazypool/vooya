@@ -12,6 +12,7 @@ pub trait CounterEvents {
 
 use crate::{EventListener, View, ViewElement};
 use wasm_bindgen::JsValue;
+use counter_math::button_label;
 
 pub struct Component {
     root: ViewElement,
@@ -39,7 +40,7 @@ fn mount(context: MountContext) -> Result<Component, JsValue> {
     let button = view
         .element("button")?
         .attribute("data-inc", "")?
-        .text("Increment");
+        .text(button_label());
     root.append(&label)?;
     root.append(&button)?;
     root.mount(&context.host)?;

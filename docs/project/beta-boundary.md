@@ -25,7 +25,8 @@ implementation and migrated its acceptance fixtures; see
   consumer acceptance of Vue/React; see the [framework matrix](compatibility.md#beta-framework-capabilities).
 - Vite 7 and Vite 8 source builds; Vite+ is a separate compatibility smoke path.
 - Vue Vapor is experimental and depends on Vue's own Vapor interop setup.
-- Webpack and Rspack are experimental integration paths.
+- The older Webpack/Rspack beta packages predate the supported Rust-file path;
+  use the [0.2 alpha graph](next-release.md) for current Vue/React support.
 - ABI v1 covers the documented primitive, bigint, nullable, tuple, vector, and
   string-key map cases.
 - No global store, SSR, hydration, precompiled component product, or Turbopack

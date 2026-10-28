@@ -81,7 +81,7 @@ manifest's `web-sys` dependency. Supplying the option explicitly takes priority.
 | `rust.entry` | `string` | Unset; generate a module root | Selects an authored crate entry relative to the application root | An authored entry must be configured explicitly |
 | `rust.files` | `string[]` | `[]` | Adds Rust input files relative to the application root | These join the files discovered under `sourceRoot` |
 | `rust.public` | `string[]` | `[]` | Selects public root modules relative to `sourceRoot` | JavaScript exposure still follows the Component/Store contract; this does not export arbitrary Rust values |
-| `rust.dependencies` | `Record<string, string \| Dependency>` | Nearest `Cargo.toml`, then `{}` | Adds or overrides Cargo registry, Git, or path dependencies | The generated crate owns core browser dependency versions; path edits may require a server restart in experimental adapters |
+| `rust.dependencies` | `Record<string, string \| Dependency>` | Nearest `Cargo.toml`, then `{}` | Adds or overrides Cargo registry, Git, or path dependencies | The generated crate owns core browser dependency versions; Rspack path edits currently require a development-server restart |
 | `rust.webSysFeatures` | `string[]` | Nearest `Cargo.toml`, then `[]` | Enables the required `web-sys` browser APIs | An explicit array replaces manifest-provided features; built-in runtime features are always retained |
 | `toolchain.cargoPath` | `string` | PATH discovery | Chooses the Cargo executable used for the build | The selected Cargo's `rustc`, target, and CLI must be coherent; no silent fallback |
 | `workspace.root` | `string` | `.vooya/` | Moves generated build, WASM, types, cache, and metadata | `rootDirs` and cleanup commands must point to the override |
@@ -212,7 +212,7 @@ npm run test:rust-hmr
 
 ::: warning Rust-file support requires 0.2 alpha
 The npm 0.1 beta adapter does not implement ordinary Rust-file integration; use the documented opt-in 0.2 alpha package graph.
-Use the matching alpha.0 bundler and Vue/React adapter packages for the `.rs`
+Use the matching alpha.1 bundler and Vue/React adapter packages for the `.rs`
 configuration below. The [alpha installation guide](../project/next-release.md)
 records exact versions; SSR and unlisted framework combinations remain unverified.
 :::
@@ -243,7 +243,7 @@ server.
 
 ::: warning Rust-file support requires 0.2 alpha
 The npm 0.1 beta adapter does not implement ordinary Rust-file integration; use the documented opt-in 0.2 alpha package graph.
-Use the matching alpha.0 bundler and Vue/React adapter packages for the `.rs`
+Use the matching alpha.1 bundler and Vue/React adapter packages for the `.rs`
 configuration below. The [alpha installation guide](../project/next-release.md)
 records exact versions; SSR and unlisted framework combinations remain unverified.
 :::
@@ -272,7 +272,7 @@ export default {
 };
 ```
 
-The experimental range is Webpack `>=5`. Exact fixtures cover
+The supported range is Webpack `>=5`. Exact fixtures cover
 5.101.0 production output and 5.109.2 Vue/React browser behavior, mapped Rust
 failure recovery, configured path-dependency rebuilds, rapid saves, and normal
 Webpack Dev Server live reload. Webpack 4, Module Federation, SSR, hydration,

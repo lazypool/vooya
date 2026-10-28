@@ -39,7 +39,8 @@ try {
   buildAndInspect(react, "webpack-react");
   await verifyVueBrowser(vue);
   await verifyReactBrowser(react);
-  await verifyDevRecovery(vue);
+  await verifyDevRecovery(vue, "Vue");
+  await verifyDevRecovery(react, "React");
 
   const olderFixture = prepare("webpack-vue", "5.101.0", packages);
   buildAndInspect(olderFixture, "webpack-vue-5.101.0");
@@ -107,7 +108,7 @@ async function verifyCommonBrowserContract(page, label) {
   await waitForText(page, "[data-count]", "4", `${label} dispose/remount failed.`);
 }
 
-async function verifyDevRecovery(project) {
+async function verifyDevRecovery(project, framework) {
   const port = await availablePort();
   const cli = resolve(project, "node_modules/webpack-cli/bin/cli.js");
   let output = "";
@@ -202,7 +203,7 @@ async function verifyDevRecovery(project) {
     if (unexpected.length) {
       throw new Error(`Webpack development browser errors:\n${unexpected.join("\n")}`);
     }
-    console.log("Verified Webpack Rust failure recovery, path dependency watch, and rapid saves.");
+    console.log(`Verified Webpack ${framework} Rust failure recovery, path dependency watch, and rapid saves.`);
   } finally {
     await browser?.close();
     if (server?.exitCode === null) server.kill("SIGTERM");

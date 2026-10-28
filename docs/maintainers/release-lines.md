@@ -92,6 +92,10 @@ branch. It does not by itself establish eligibility for the 0.1 maintenance line
 
 ## 0.2 scope freeze
 
+The table records the original freeze. Rspack/Webpack have since graduated to
+supported Vue/React integrations within the [current matrix](../project/compatibility.md#supported-rust-file-bundlers).
+This support decision does not exit the npm alpha channel.
+
 The theme is easier Rust toolchain setup and a more complete host integration.
 These are the frozen feature boundaries for the first 0.2 alpha. Fixes, tests
 and documentation can continue; additional capabilities require a later batch:

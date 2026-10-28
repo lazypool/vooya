@@ -107,7 +107,8 @@ The first beta should make one path trustworthy:
 - `voo::rsx!` for the Rust-owned DOM surface;
 - typed primitive ABI v1, lifecycle, errors, events, stores, and disposal;
 - Vite as the primary source-authoring path;
-- experimental, explicitly bounded Rspack and Webpack paths;
+- Rspack and Webpack paths, experimental at this RFC checkpoint and now
+  [supported for the documented Vue/React matrix](../project/compatibility.md#supported-rust-file-bundlers);
 - generated declarations under `.vooya/types`;
 - clean-machine diagnostics and reproducible browser evidence; and
 - removal of the exploratory `.voo` authoring path.

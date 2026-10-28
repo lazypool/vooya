@@ -150,7 +150,9 @@ HMR. `npm run test:vite-plus` also exercises Rust source and dependency rebuilds
 These checks cover Vite+ dev/build integration at the pinned version; they do
 not cover every bundled Vite+ tool or imply SSR support.
 
-## Experimental Rspack path
+<span id="experimental-rspack-path"></span>
+
+## Rspack path
 
 ::: warning Rust-file support requires 0.2 alpha
 The npm 0.1 beta adapter does not implement ordinary Rust-file integration; use the documented opt-in 0.2 alpha package graph.
@@ -180,10 +182,13 @@ Rsbuild React plugin. Direct Rspack configuration is documented in the
 [`@vooya/rspack` package README](https://github.com/vooyajs/vooya/blob/main/packages/rspack/README.md).
 
 This path currently requires Rspack `>=2.1.10` and the same local Rust/WASM
-tools as Vite. It is experimental; SSR, Module Federation, and earlier Rspack
+tools as Vite. Vue/React production and development recovery are supported.
+SSR, Module Federation, and earlier Rspack
 versions are not support claims. Exact fixture evidence currently uses 2.1.10.
 
-## Experimental Webpack 5 path
+<span id="experimental-webpack-5-path"></span>
+
+## Webpack 5 path
 
 ::: warning Rust-file support requires 0.2 alpha
 The npm 0.1 beta adapter does not implement ordinary Rust-file integration; use the documented opt-in 0.2 alpha package graph.
@@ -194,7 +199,7 @@ records exact versions; SSR and unlisted framework combinations remain unverifie
 
 Install `@vooya/webpack@0.2.0-alpha.1` as a development dependency and the
 Vue/React alpha.1 adapter as an application dependency. Installing the bundler
-adapter at `@beta` does not provide this `.rs` integration. The experimental
+adapter at `@beta` does not provide this `.rs` integration. The supported
 range is Webpack `>=5`; the named Rust fixture uses 5.109.2.
 
 Add the plugin's loader rule alongside the application's normal framework and
