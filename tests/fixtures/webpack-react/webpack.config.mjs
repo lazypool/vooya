@@ -5,7 +5,14 @@ import HtmlWebpackPlugin from "html-webpack-plugin";
 import { vooyaWebpack } from "@vooya/webpack";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const vooya = vooyaWebpack({ framework: "react" });
+const vooya = vooyaWebpack({
+  framework: "react",
+  rust: {
+    dependencies: {
+      counter_math: { path: "rust/counter-math", package: "counter-math" },
+    },
+  },
+});
 
 export default {
   context: root,

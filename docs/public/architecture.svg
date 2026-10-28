@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1448" height="1086" viewBox="0 0 1448 1086" role="img" aria-labelledby="diagram-title diagram-description">
   <title id="diagram-title">Vooya — WebAssembly in your existing web app</title>
-  <desc id="diagram-description">At build time, Vite and experimental Rspack or webpack integrations connect to Vooya's Rust provider and native Cargo, rustc, and wasm-bindgen toolchain. Generated WASM and JavaScript run in the browser through Vue, React, or experimental Solid and Svelte adapters. Go/TinyGo, C, C++, and Zig providers are planned. Ellipses indicate additional future integrations. Vooya supplies build integration, types, diagnostics, bindings, lifecycle, and state.</desc>
+  <desc id="diagram-description">At build time, Vite, Rspack and webpack integrations connect to Vooya's Rust provider and native Cargo, rustc, and wasm-bindgen toolchain. Generated WASM and JavaScript run in the browser through Vue, React, or experimental Solid and Svelte adapters. Go/TinyGo, C, C++, and Zig providers are planned. Ellipses indicate additional future integrations. Vooya supplies build integration, types, diagnostics, bindings, lifecycle, and state.</desc>
   <!-- Editable source of truth. No generator, network request, font download, or raster image is required.
        Layers below use named groups; third-party SVG marks live in defs as logo-* symbols.
        Sources and editing guidance: ../maintainers/architecture-diagram.md -->
@@ -333,13 +333,11 @@
       <rect width="138" height="120" rx="9" class="tile"/>
       <use href="#logo-rspack" x="22" y="12" width="94" height="77"/>
       <text x="69" y="108" text-anchor="middle" class="label">Rspack</text>
-      <text x="114" y="27" class="star">*</text>
     </g>
     <g id="bundler-webpack" transform="translate(400 256)">
       <rect width="138" height="120" rx="9" class="tile"/>
       <use href="#logo-webpack" x="37" y="12" width="64" height="76"/>
       <text x="69" y="108" text-anchor="middle" class="label">webpack</text>
-      <text x="114" y="27" class="star">*</text>
     </g>
     <g id="bundler-more" transform="translate(564 256)">
       <rect width="138" height="120" rx="9" class="planned"/>

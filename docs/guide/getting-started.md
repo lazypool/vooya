@@ -275,10 +275,14 @@ See [Svelte setup](./other-integrations.md#svelte), an experimental Vite 7 path.
 
 See [Vite+ setup](./other-integrations.md#vite).
 
-## Experimental Rspack path
+<span id="experimental-rspack-path"></span>
 
-See [Rspack setup](./other-integrations.md#experimental-rspack-path).
+## Rspack path
 
-## Experimental Webpack 5 path
+See [Rspack setup](./other-integrations.md#rspack-path).
 
-See [Webpack setup](./other-integrations.md#experimental-webpack-5-path).
+<span id="experimental-webpack-5-path"></span>
+
+## Webpack 5 path
+
+See [Webpack setup](./other-integrations.md#webpack-5-path).

@@ -57,7 +57,7 @@ try {
       assert.match(readFileSync(resolve(project, ".vooya/types/Store.d.rs.ts"), "utf8"), /useCart/);
       assert.ok(readdirSync(resolve(project, "dist")).some((name) => name.endsWith(".wasm")));
       await verify(project);
-      if (framework === "vue") await verifyWatch(project, bundler);
+      await verifyWatch(project, bundler, framework);
       console.log(`Verified packed ${bundler} ${framework}: .rs component, scoped CSS, Store, props/events, unmount/remount, sourceRoot dot.`);
     }
   }
@@ -145,7 +145,7 @@ async function verify(project, label = "Count", color = "rgb(5, 103, 89)") {
 }
 
 
-async function verifyWatch(project, bundler) {
+async function verifyWatch(project, bundler, framework) {
   const api = bundler === "webpack" ? 'import build from "webpack";' : 'import { rspack as build } from "@rspack/core";';
   writeFileSync(resolve(project, "watch.mjs"), `${api}
 import config from "./bundler.config.mjs";
@@ -278,7 +278,7 @@ process.on("SIGTERM", () => watcher.close(() => compiler.close(() => process.exi
     rmSync(undoSource);
     await waitFor(() => successes() > beforeUndo, () => output);
     await settle(watchState, () => output);
-    console.log(`Verified ${bundler} Rust-file watch: invalid Rust, recovery, stylesheet update, new .rs detection/recovery, edits during compilation, undo by deletion, and no generated-file rebuild loop.`);
+    console.log(`Verified ${bundler} ${framework} Rust-file watch: invalid Rust, recovery, stylesheet update, new .rs detection/recovery, edits during compilation, undo by deletion, and no generated-file rebuild loop.`);
   } catch (error) {
     console.error(output);
     throw error;

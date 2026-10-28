@@ -50,8 +50,8 @@ Vue 将未传入的可选 Boolean prop 转成 `false` 的问题。Solid/Svelte �
 | Octane | `0.9.0` | 私有 workspace 实验；不纳入 0.2 | 独立 fixture 使用 plugin 0.2.1、Vite 8.0.16，覆盖 Component/Store 实例隔离、props/event、销毁重建和声明；Node >=22.22.2；尚无 npm 发布或 SSR 承诺 |
 | Vite | `>=7 <9` | 主路径 | Vite 8.2.1 四框架独立打包、类型、生产浏览器和开发恢复验收；Vite 7 保持回归测试 |
 | Vite+ | `0.2.9`，core alias `0.2.9`（Vite `8.2.1`） | Alpha 四框架具名验收 | Vue/React/Solid/Svelte 的干净 tarball 安装、`.rs` 生产构建、Chromium、严格声明检查、dev 重建与错误恢复 |
-| Rspack / Rsbuild | Rspack `>=2.1.10`；Rsbuild `>=2.1.13` | Experimental | Beta 保留旧 Vue/React/Rslib fixture；Alpha 增加 Vue/React `.rs` 生产验收 |
-| Webpack | `>=5` | Experimental | 5.101.0、5.109.2 fixture；Webpack 4 不支持 |
+| Rspack / Rsbuild | Rspack `>=2.1.10`；Rsbuild `>=2.1.13` | 正式支持 Vue/React | Alpha Rust-file 生产、watch、开发服务器恢复；Rslib 仅验证库构建输出 |
+| Webpack | `>=5` | 正式支持 Vue/React | 5.101.0 生产回归；5.109.2 生产、watch 与开发服务器恢复；Webpack 4 不支持 |
 | Vue Vapor | Vue 3.6.0-beta.17 + Vite 8.2.1 | Experimental | 需要 Vue 的 `vaporInteropPlugin`，不是 Vooya 自己的 renderer |
 
 Solid 这一行只说明当前 Vite 7 + Chromium fixture 与 adapter unit test 的证据，
@@ -65,21 +65,29 @@ SvelteKit、SSR/hydration、Rspack/Webpack 或其他浏览器已经兼容。fixt
 配置即可正常 npm 安装，不需要 legacy peer resolver。范围限定为上述版本的 dev/build，
 不推导其他 Vite+ 版本、其全部工具或 SSR 支持。配置见 [Vite+ 接入](../guide/other-integrations.md#vite)。
 
-## 0.2 Alpha：Rust-file bundler 接入
+## 正式支持的 Rust-file bundler
 
-`test:rust-bundlers` 从当前源码打包，在干净项目中验证 Webpack 5.109.2、
-Rspack 2.1.10 与 Vue/React 的 `.rs` Component、Store、props/event、scoped CSS、
-卸载重建，以及应用根目录 `rust.sourceRoot: "."`。这是 Alpha 对应源码的验证，
-不代表已发布 Beta 包具备此能力。Vue 的 Rust-file watch 还覆盖错误恢复、
-CSS 更新、新增 `.rs` 和产物不会造成循环重建。Next.js/SSR、Webpack/Rspack
-下的 Solid/Svelte 尚未完成验收。
+Rspack 与 Webpack 现为**正式支持的 Vue/React 一方接入**。使用[0.2 Alpha 包组合](next-release.md)；
+支持等级与 npm 发布通道不同，本次转正不会把包变成稳定版本，旧非 Vite Beta 包也不因此获得 `.rs` 能力。
+
+`test:rust-bundlers` 在干净 tarball 项目中验证 Webpack 5.109.2、Rspack 2.1.10：
+Vue/React 的 Rust Component、Store、props/event、scoped CSS、生成声明、卸载重建，
+以及 `rust.sourceRoot: "."`。两种框架的 watch 都覆盖编译错误恢复、CSS 更新、新增模块、
+编译期间再次保存、删除撤销，以及产物不会造成循环重建。
+`test:rspack` 与 `test:webpack` 还验证两种框架的开发服务器源码更新和失败恢复；
+Webpack 包含 path dependency 修改和快速保存，Rspack 的 path dependency 修改仍需重启开发服务器。
+这三条验收命令都在 PR 的 integration compatibility 工作流中持续运行。
+
+具名浏览器证据为 Chromium。Rsbuild 2.1.13 覆盖 Vue/React Component 的 dev/build；
+Rslib 0.23.2 仅验证库输出，不承诺 Store/库消费验收。Solid/Svelte、SSR/Next.js、hydration、
+Module Federation、保留 Rust 状态的 HMR、每种 bundler 组合独立的精确 registry 浏览器验收，
+以及未列出的 OS/browser 组合，均不在本次正式支持范围。
 
 ## 已实现的接入为什么仍标为实验性
 
 | 接入 | 已有实现与证据 | 仍缺少的验收 |
 | --- | --- | --- |
 | Managed preset | 固定工具版本、独立缓存、校验和、锁与重试；三平台源码打包消费者和[全新缓存 registry 消费者](https://github.com/vooyajs/vooya/actions/runs/37583146228) | 物理上未安装 Rust 的宿主、完整安装中断恢复；仍需要宿主 SDK/linker；musl Linux、Windows arm64 不在 managed 目标内 |
-| Webpack / Rspack | Vue/React Rust Component/Store、生产资源与浏览器生命周期；Vue watch 的编译错误恢复、样式修改与新增模块 | React 开发服务器矩阵、Solid/Svelte 消费者、精确 registry 包组合的浏览器验收，以及更多操作系统与浏览器 |
 
 [本次 Alpha 发布记录](../../maintainers/releases/0.2-alpha-refresh.md#verification-and-evidence)
 区分了源码 tarball 与精确 registry 版本的证据。移除旧源码格式不会自动补齐这些验收，

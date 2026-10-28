@@ -1,7 +1,7 @@
 {
   "name": "@vooya/rspack",
   "version": "0.2.0-alpha.1",
-  "description": "Experimental Rspack and Rsbuild integration for Vooya source components.",
+  "description": "Rspack and Rsbuild integration for Vooya Rust components and stores.",
   "type": "module",
   "license": "MIT OR Apache-2.0",
   "repository": {

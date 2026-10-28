@@ -1,6 +1,6 @@
 # `@vooya/rspack`
 
-Experimental Rspack `>=2.1.10` integration for Rust-file components and Stores.
+Supported Rspack `>=2.1.10` integration for Rust-file components and Stores.
 Import `.rs` files directly; the plugin builds WASM, generates the framework
 bridge, and writes declarations under `.vooya/types`. The current loader matches `.rs` only; see the [migration guide](../../docs/project/retired-authoring.md).
 
@@ -9,8 +9,10 @@ lower-level Rspack plugin and loader rule for applications that configure
 Rspack directly. Source consumers still need Cargo, the
 `wasm32-unknown-unknown` target, and `wasm-bindgen-cli` `0.2.115`.
 
-Install Vooya packages from the same `beta` channel and retain the lockfile;
-package versions are independent with exact internal dependencies.
+Install the [0.2 alpha package graph](../../docs/project/next-release.md) and retain
+the lockfile; package versions are independent with exact internal dependencies.
+Supported integration status does not promote npm packages to a stable release.
+The older non-Vite `beta` packages do not implement this Rust-file path.
 
 ## Rsbuild
 
@@ -80,11 +82,15 @@ SSR, hydration, Module Federation, state-preserving HMR, and Rspack versions
 below 2.1.10 are not compatibility claims. Exact fixture evidence currently
 uses Rspack 2.1.10.
 
-Rust source roots, manifests, path dependencies, and referenced styles are
-registered with Rspack's watcher. Rust-file production acceptance runs with
+Rust source roots, manifests, and referenced styles are registered with Rspack's
+watcher. Path dependencies participate in builds; restart the development server
+after editing them, since path-dependency live updates are outside this support
+contract. Rust-file production acceptance runs with
 `npm run test:rust-bundlers` against packed packages and Rspack 2.1.10: Vue/React,
-scoped CSS, Store actions, props/events, and unmount/remount. The Vue Rust-file
-fixture also checks watch error recovery, stylesheet updates, newly added Rust
-modules, and that generated assets do not cause a rebuild loop. Rust-file
-Rsbuild/Rslib parity and Solid/Svelte browser acceptance are not yet verified;
-the additional Rsbuild, Rslib, and direct-Rspack fixtures use Rust sources.
+scoped CSS, Store actions, props/events, and unmount/remount. The Vue and React Rust-file
+fixtures also check watch error recovery, stylesheet updates, newly added Rust
+modules, and that generated assets do not cause a rebuild loop. Rsbuild development-server
+fixtures cover Vue and React lifecycle, source edits
+and Rust-error recovery. Rslib evidence covers production library output; Store
+consumption from Rslib output and Solid/Svelte browser acceptance remain outside
+the supported matrix.

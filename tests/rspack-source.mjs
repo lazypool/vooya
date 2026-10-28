@@ -19,8 +19,8 @@ try {
   verify("rspack-native", packages, true);
   const reactProject = verify("rspack-react", packages, true);
   verify("rslib-vue", packages, true);
-  await verifyDevRecovery(vueProject);
-  await verifyReactBrowser(reactProject);
+  await verifyDevRecovery(vueProject, "Vue");
+  await verifyDevRecovery(reactProject, "React");
 } finally {
   if (!process.env.VOOYA_KEEP_RSPACK_FIXTURES) rmSync(temporaryRoot, { force: true, recursive: true });
 }
@@ -47,7 +47,7 @@ function verify(name, packages, expectWasm) {
   return project;
 }
 
-async function verifyDevRecovery(project) {
+async function verifyDevRecovery(project, framework) {
   const port = await availablePort();
   const command = resolve(project, "node_modules/@rsbuild/core/bin/rsbuild.js");
   let output = "";
@@ -72,16 +72,16 @@ async function verifyDevRecovery(project) {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
     await page.getByRole("button", { name: "Increment" }).waitFor();
-    await waitForText(page, "[data-count]", "2", "Rspack Vue island did not mount its initial prop.");
-    if (await page.locator(".counter").evaluate((node) => getComputedStyle(node).color) !== "rgb(5, 103, 89)") throw new Error("Rspack Vue scoped style was not applied.");
+    await waitForText(page, "[data-count]", "2", `Rspack ${framework} island did not mount its initial prop.`);
+    if (await page.locator(".counter").evaluate((node) => getComputedStyle(node).color) !== "rgb(5, 103, 89)") throw new Error(`Rspack ${framework} scoped style was not applied.`);
     await page.locator("[data-inc]").click();
-    await waitForText(page, "[data-event]", "3", "Rspack Vue event forwarding failed.");
+    await waitForText(page, "[data-event]", "3", `Rspack ${framework} event forwarding failed.`);
     await page.locator("[data-host-update]").click();
-    await waitForText(page, "[data-count]", "4", "Rspack Vue prop update failed.");
+    await waitForText(page, "[data-count]", "4", `Rspack ${framework} prop update failed.`);
     await page.locator("[data-host-toggle]").click();
     await page.locator("[data-count]").waitFor({ state: "detached" });
     await page.locator("[data-host-toggle]").click();
-    await waitForText(page, "[data-count]", "4", "Rspack Vue dispose/remount failed.");
+    await waitForText(page, "[data-count]", "4", `Rspack ${framework} dispose/remount failed.`);
 
     const componentPath = resolve(project, "src/Counter.rs");
     const source = readFileSync(componentPath, "utf8");
@@ -99,7 +99,8 @@ async function verifyDevRecovery(project) {
     );
     const buildsBeforeSourceEdit = successfulBuildCount(output);
     const navigationsBeforeSourceEdit = mainFrameNavigations;
-    const changedSource = source.replace(".text(button_label())", '.text("Increment source")');
+    const labelCall = framework === "Vue" ? ".text(button_label())" : '.text("Increment")';
+    const changedSource = source.replace(labelCall, '.text("Increment source")');
     if (changedSource === source) throw new Error("Rspack source fixture no longer contains the expected button label call.");
     writeFileSync(componentPath, changedSource);
     await waitFor(
@@ -133,47 +134,11 @@ async function verifyDevRecovery(project) {
       );
     }
     const unexpectedErrors = errors.filter((message) => !message.includes("Cargo build failed with exit code 101"));
-    if (unexpectedErrors.length) throw new Error(`Rspack Vue browser errors:\n${unexpectedErrors.join("\n")}`);
-    console.log("Verified Rsbuild .rs rebuild and Rust failure recovery without restarting the dev server.");
+    if (unexpectedErrors.length) throw new Error(`Rspack ${framework} browser errors:\n${unexpectedErrors.join("\n")}`);
+    console.log(`Verified Rsbuild ${framework} lifecycle, .rs rebuild and Rust failure recovery without restarting the dev server.`);
   } finally {
     await browser?.close();
     if (server && server.exitCode === null) server.kill("SIGTERM");
-  }
-}
-
-async function verifyReactBrowser(project) {
-  const port = await availablePort();
-  const command = resolve(project, "node_modules/@rsbuild/core/bin/rsbuild.js");
-  let server;
-  let browser;
-  let output = "";
-  try {
-    server = spawn(process.execPath, [command, "dev", "--host", "127.0.0.1", "--port", String(port), "--strictPort"], { cwd: project, env: { ...process.env, FORCE_COLOR: "0" } });
-    server.stdout.on("data", (chunk) => { output += chunk; });
-    server.stderr.on("data", (chunk) => { output += chunk; });
-    await waitFor(async () => (await fetch(`http://127.0.0.1:${port}`)).ok, 120_000, () => output);
-    browser = await chromium.launch();
-    const page = await browser.newPage();
-    const errors = [];
-    page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
-    page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(`http://127.0.0.1:${port}`);
-    await page.getByRole("button", { name: "Increment" }).waitFor();
-    await waitForText(page, "[data-count]", "2", "Rspack React island did not mount its initial prop.");
-    if (await page.locator(".counter").evaluate((node) => getComputedStyle(node).color) !== "rgb(5, 103, 89)") throw new Error("Rspack React scoped style was not applied.");
-    await page.locator("[data-inc]").click();
-    await waitForText(page, "[data-event]", "3", "Rspack React event forwarding failed.");
-    await page.locator("[data-host-update]").click();
-    await waitForText(page, "[data-count]", "4", "Rspack React prop update failed.");
-    await page.locator("[data-host-toggle]").click();
-    await page.locator("[data-count]").waitFor({ state: "detached" });
-    await page.locator("[data-host-toggle]").click();
-    await waitForText(page, "[data-count]", "4", "Rspack React dispose/remount failed.");
-    if (errors.length) throw new Error(`Rspack React browser errors:\n${errors.join("\n")}`);
-    console.log("Verified Rspack React island browser contract.");
-  } finally {
-    await browser?.close();
-    if (server?.exitCode === null) server.kill("SIGTERM");
   }
 }
 

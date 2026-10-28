@@ -25,14 +25,16 @@ factory 同步抛错应交给 `onError`；Rust sourceRoot 的点路径规范化�
 
 ## 0.2：已发布 Alpha 的冻结范围
 
-本批功能范围冻结为 Rust 工具链安装与宿主集成，后续继续修复、测试与文档：
+下表记录首次冻结时的范围。Rspack/Webpack 此后已转为正式支持的 Vue/React 接入，
+具体以[当前兼容性矩阵](compatibility.md)为准；npm Alpha 通道不变。
+本批功能范围为 Rust 工具链安装与宿主集成，后续继续修复、测试与文档：
 
 | Alpha 范围 | 限定边界 |
 | --- | --- |
 | Rust provider 包 | 现有 Rust 实现抽离、兼容 facade 与消费测试，不建立公共多语言协议 |
 | 可选托管 Rust preset | 固定工具、下载校验、缓存和恢复；仍需宿主 SDK/linker |
 | SSR 安全岛与 Nuxt | 浏览器挂载 WASM，服务器仅渲染宿主容器；Next.js 尚未验证 |
-| Webpack/Rspack 普通 `.rs` | Vue/React Component、Store、CSS、声明与已验证 watch 恢复；仍为实验性 |
+| Webpack/Rspack 普通 `.rs` | Vue/React Component、Store、CSS、声明与已验证 watch 恢复；首次冻结时为实验性 |
 | Vite 8 与 Vite+ | Vue/React/Solid/Svelte 四框架打包、类型、dev/build 与错误恢复；固定版本证据，不外推 SSR |
 
 这些能力由可选 Alpha 版本图提供，不能由当前 `@beta` 安装获得。Go/TinyGo、新框架、

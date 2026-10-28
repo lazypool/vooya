@@ -121,9 +121,9 @@ Octane 保留为私有 workspace 实验，不纳入本轮发布矩阵。
 
 ## Rspack 和 Webpack
 
-普通 `.rs` 接入需要可选的 0.2 Alpha 包组合；较早的非 Vite beta 包不支持此路径。新项目可先使用 Vite；Rust-file 示例按 Alpha 精确版本图安装，保留具名实验性边界。
+普通 `.rs` 接入需要可选的 0.2 Alpha 包组合；较早的非 Vite beta 包不支持此路径。新项目可先使用 Vite；Rust-file 示例按 Alpha 精确版本图安装，Vue/React 属于正式支持范围。
 
-- [实验性 Rspack 配置](../../guide/other-integrations.md#experimental-rspack-path)：包含 Rsbuild 和直接 Rspack 入口。
-- [实验性 Webpack 5 配置](../../guide/other-integrations.md#experimental-webpack-5-path)：包含 loader、CSS 配置和重建行为。
+- [Rspack 配置](../../guide/other-integrations.md#rspack-path)：包含 Rsbuild 和直接 Rspack 入口。
+- [Webpack 5 配置](../../guide/other-integrations.md#webpack-5-path)：包含 loader、CSS 配置和重建行为。
 
 这些路径不能推导出 SSR、hydration 或 Module Federation 支持；请按对应配置页的边界使用。

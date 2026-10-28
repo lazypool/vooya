@@ -1,7 +1,8 @@
 # Bundler 指南
 
-Vite 是当前主路径。Rspack 与 Webpack 有 first-party adapter，但仍属于
-experimental，不能把一次 fixture 通过理解成完整兼容承诺。
+Vite、Rspack 与 Webpack 都是正式支持的 Vue/React 接入。Vite 仍是默认快速开始路径；
+Rspack/Webpack 的普通 Rust-file 接入使用 0.2 Alpha 包组合。支持状态与 npm 发布通道分开，
+本次转正不改变包的预发布版本。
 
 ## Vite（主路径）
 
@@ -9,14 +10,14 @@ experimental，不能把一次 fixture 通过理解成完整兼容承诺。
 兼容目标。Vue、React 和 experimental Solid/Svelte 的安装方式见[快速开始](./getting-started.md)；
 Solid、Svelte 的已发布 Beta 证据仅覆盖 Vite 7；Alpha 增加 Vite 8 四框架打包验收。
 
-## Rspack / Rsbuild（experimental）
+## Rspack / Rsbuild
 
 使用 `@vooya/rspack` 的 `vooyaRsbuild()` 或直接配置的 `vooyaRspack()`。
 已命名证据使用 Rspack `2.1.10`、Rsbuild `2.1.13`，覆盖 Vue/React 浏览器
 fixture 和 Rslib 输出。普通 `.rs` 接入需要可选的 0.2 Alpha 包组合；SSR、
 Module Federation 以及更低版本不在承诺内。
 
-## Webpack（experimental）
+## Webpack
 
 使用 `@vooya/webpack` 的 `vooyaWebpack()` 和 Webpack 5。已命名 fixture 覆盖
 5.101.0、5.109.2、生产输出、生命周期行为和开发恢复。普通 Rust-file 接入
@@ -26,7 +27,7 @@ hydration、Module Federation 和 state-preserving HMR 不在当前边界。
 ## Alpha 的 Rust-file 路径
 
 `npm run test:rust-bundlers` 从源码打包验证 Vue/React 在 Rspack 2.1.10、
-Webpack 5.109.2 下的 `.rs` Component、Store、CSS、声明和生命周期；Vue watch
-还覆盖失败恢复。这属于 [0.2 Alpha 范围](../project/release-lines.md)，不能通过当前 `@beta` 安装获得。
+Webpack 5.109.2 下的 `.rs` Component、Store、CSS、声明和生命周期；Vue/React watch
+还覆盖编译失败恢复、样式更新、新模块、编译期间再次保存与删除撤销。这属于 [0.2 Alpha 范围](../project/release-lines.md)，不能通过当前 `@beta` 安装获得。
 
 详细配置见[工具参考](../reference/tooling.md)，具体证据见[兼容性矩阵](../project/compatibility.md)。

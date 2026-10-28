@@ -105,11 +105,12 @@ documented installation path rather than assigning one version to every package.
 | Development | Rust rebuilds reload the page; Rust state is not preserved |
 | Distribution | Authors organize and publish ordinary JS/WASM packages; Vooya has no dedicated component-package format |
 
-Rspack and Webpack integrations remain experimental: they have working
-implementations with a limited acceptance matrix. Rust `.rs` authoring requires
-the **0.2 alpha** package set; the older non-Vite beta packages do not implement
-that path. Production browser tests cover Vue and React; Rust watch recovery
-is verified for Vue. Other framework/watch combinations are not yet verified.
+Rspack and Webpack are supported first-party integrations for Vue and React.
+The supported contract covers Rust `.rs` Components and Stores, production
+WASM/CSS, declarations, props/events, lifecycle, and development rebuild/recovery.
+Use the **0.2 alpha** package graph; integration support does not change the npm
+prerelease channel. Solid/Svelte on these bundlers, SSR, Module Federation and
+state-preserving Rust HMR remain outside this contract.
 
 See the [compatibility matrix](https://vooyajs.com/project/compatibility),
 [project status](https://vooyajs.com/project/status), and
