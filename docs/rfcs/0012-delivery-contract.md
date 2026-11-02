@@ -36,12 +36,14 @@ The project is active. It has repeated alpha releases, a broad browser fixture
 suite, and a documented product boundary. The concerns in this RFC are about
 sequencing and public legibility, not effort.
 
-As of 2026-10-30:
+At the time this proposal was opened:
 
 - The open issue set is dominated by post-beta provider research: #94, #168,
   #175, #176, #209, #211, #212, #213, #214, #215, and #220.
-- Three of four open pull requests are stale, conflicting, or superseded:
-  #171 is replaced by #222, #186 is conflicting, and #110 overlaps #176.
+- The review queue included a superseded ABI proposal (#171), a conflicting
+  portable-interface proposal (#186), and an artifact proposal (#110) that
+  overlaps #176. #171 has since closed as superseded and #222 has merged; the
+  remaining decisions still need an explicit maintainer outcome.
 - Distribution is unresolved. #210 retired the dedicated precompiled Vue
   component-package builder. The current source path still requires Cargo, the
   WASM target, and `wasm-bindgen`; no supported zero-Rust consumer path exists.
@@ -145,11 +147,10 @@ coordination notes.
 
 ### 5. Pull request backlog
 
-The 1.0 contract cannot be reviewed on top of unresolved stale work:
+The 1.0 contract cannot be reviewed on top of unresolved stale work. The
+watch-settling fix in #221 and ABI metadata work in #222 have merged, and #171
+has closed as superseded. The remaining backlog actions are:
 
-- Rebase and merge #222 on top of #221. Its current `test:rust-bundlers`
-  failure appears to be the watch-settling issue addressed by #221.
-- Close #171 as superseded once #222 lands.
 - Rebase and land #186, or close it and split the remaining design work.
 - Fold #110 into #176 or close it. Do not maintain two competing artifact
   manifest designs.
